@@ -1,0 +1,75 @@
+security:
+
+    # On laisse symfony automatiquement choisir le meilleur algorithme afin de hasher les mots de passe (bcrypt par défaut)
+    password_hashers:
+        App\Entity\Utilisateur:
+            algorithm: auto
+
+    # Qui est l'utilisateur et comment le retrouver en BDD
+    providers:
+        # On dit à Symfony d'aller chercher les utilisateurs
+        # dans la base de données via l'entité Utilisateur
+        # et de les identifier par leur email
+        app_user_provider:
+            entity:
+                class: App\Entity\Utilisateur
+                property: email # on identifie l'utilisateur par son email
+
+    ### Rôles et hiérarchie des rôles
+    # On définit les rôles de notre application et leur hiérarchie
+    # ROLE_VISITEUR : rôle de base pour les visiteurs non connectés 
+    # ROLE_CLIENT : rôle pour les clients connectés, hérite de ROLE_VISITEUR
+    # ROLE_EMPLOYE : rôle pour les employés, hérite de ROLE_VISITEUR
+    # ROLE_ADMIN : rôle pour les administrateurs, hérite de ROLE_EMPLOYE et ROLE_CLIENT ainsi que du ROLE_VISITEUR
+    role_hierarchy:
+        ROLE_CLIENT:   [ROLE_VISITEUR]
+        ROLE_EMPLOYE:  [ROLE_VISITEUR]
+        ROLE_ADMIN:    [ROLE_EMPLOYE, ROLE_CLIENT]
+
+
+    firewalls:
+        dev:
+            # Les outils de développement Symfony sont toujours accessibles
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        main:
+            lazy: true
+            provider: app_user_provider  # on utilise notre provider BDD
+            # Authentification via JWT (token) car on est en API
+            stateless: true
+            #jwt: ~  # on active le support JWT (lexik/jwt-authentication-bundle)
+            # On gère le login via une requête JSON
+            json_login:
+                check_path: /api/login  # endpoint pour le login
+                username_path: email  # on identifie l'utilisateur par son email
+                password_path: password  # le mot de passe est dans le champ "password" de la requête JSON
+                #success_handler: App\Security\LoginSuccessHandler  # handler pour générer le JWT après un login réussi
+                #failure_handler: App\Security\LoginFailureHandler  # handler pour gérer les échecs de login
+
+     # Contrôle d'accès par route
+     # Attention : la première règle qui correspond est appliquée
+    access_control:
+        # Routes publiques — Accessible à tout le monde (visiteurs non connectés)
+        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/menus, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/horaires, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/contact, roles: PUBLIC_ACCESS }
+
+        # Routes client — nécessite ROLE_CLIENT, Accessible uniquement aux clients connectés
+        - { path: ^/api/client, roles: ROLE_CLIENT }
+
+        # Routes employé — nécessite ROLE_EMPLOYE, Accessible uniquement aux employés connectés
+        - { path: ^/api/employe, roles: ROLE_EMPLOYE }
+
+        # Routes admin — nécessite ROLE_ADMIN,  Accessible uniquement aux administrateurs connectés
+        - { path: ^/api/admin, roles: ROLE_ADMIN }
+
+when@test:
+    security:
+        password_hashers:
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10
