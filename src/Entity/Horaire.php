@@ -11,7 +11,7 @@ class Horaire
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'horaire_id')]
+    #[ORM\Column(name: 'horaire_id', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]

@@ -11,7 +11,7 @@ class Allergene
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'allergene_id')]
+    #[ORM\Column(name: 'allergene_id', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]

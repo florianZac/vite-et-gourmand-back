@@ -12,7 +12,7 @@ class Commande
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'commande_id')]
+    #[ORM\Column(name: 'commande_id', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
@@ -46,11 +46,11 @@ class Commande
     private ?bool $restitution_materiel = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(name: 'utilisateur_id', nullable: false)] // ajout du nom de la colonne
+    #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'utilisateur_id', nullable: false)] // ajout du nom de la colonne
     private ?Utilisateur $utilisateur = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(name: 'menu_id', nullable: false)] // ajout du nom de la colonne
+    #[ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id', nullable: false)] // ajout du nom de la colonne
     private ?Menu $menu = null;
 
     public function getId(): ?int

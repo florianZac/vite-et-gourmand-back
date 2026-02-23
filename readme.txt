@@ -112,7 +112,11 @@ php bin/console doctrine:database:create
 3.5 génération de la migration (création de la base de donnée)
 php bin/console make:migration
 
-3.6 pousser pour génèrer la bas de donnée
+en dev seulement :
+# Met à jour directement le schéma (sans fichier de migration)
+php bin/console doctrine:schema:update --force
+
+3.6 Execution de la migration pour génèrer la bas de donnée
 php bin/console doctrine:migrations:migrate
 
 4 Installation du composant sécurity pour gérer les rôles les connexions et la protection des routes.
@@ -141,7 +145,6 @@ JWT_PASSPHRASE=vite_et_gourmand_secret
 4.5 creation des fonctions handler dans src/Security
 LoginFailureHandler
 LoginSuccessHandler
-
 
 Test des routes et tokens
 

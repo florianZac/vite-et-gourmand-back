@@ -13,7 +13,7 @@ class Plat
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'plat_id')]
+    #[ORM\Column(name: 'plat_id', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
@@ -26,7 +26,11 @@ class Plat
      * @var Collection<int, Allergene>
      */
     #[ORM\ManyToMany(targetEntity: Allergene::class)]
-    #[ORM\JoinTable(name: 'contient')]
+    #[ORM\JoinTable(
+        name: 'contient',
+        joinColumns: [new ORM\JoinColumn(name: 'plat_id', referencedColumnName: 'plat_id')],
+        inverseJoinColumns: [new ORM\JoinColumn(name: 'allergene_id', referencedColumnName: 'allergene_id')]
+    )]
     private Collection $allergenes;
 
     public function __construct()

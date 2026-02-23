@@ -10,7 +10,7 @@ class Role
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'role_id')] // force le nom de la colonne à 'role_id'
+    #[ORM\Column(name: 'role_id', type: 'integer')] // force le nom de la colonne à 'role_id'
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]

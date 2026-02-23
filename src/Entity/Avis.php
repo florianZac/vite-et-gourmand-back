@@ -11,7 +11,7 @@ class Avis
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'avis_id')] // force le nom de la colonne à 'avis_id'
+    #[ORM\Column(name: 'avis_id', type: 'integer')] // force le nom de la colonne à 'avis_id'
     private ?int $id = null;
 
     #[ORM\Column]
@@ -24,7 +24,7 @@ class Avis
     private ?string $statut = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(name: 'utilisateur_id', nullable: false)]
+    #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'utilisateur_id', nullable: false)]
     private ?Utilisateur $utilisateur = null;
 
     public function getId(): ?int

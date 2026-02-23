@@ -11,7 +11,7 @@ class Regime
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'regime_id')]
+    #[ORM\Column(name: 'regime_id', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]

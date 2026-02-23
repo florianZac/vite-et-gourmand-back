@@ -13,7 +13,7 @@ class Utilisateur
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'utilisateur_id')]
+    #[ORM\Column(name: 'utilisateur_id', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
@@ -38,7 +38,7 @@ class Utilisateur
     private ?string $adresse_postale = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(name: 'role_id', nullable: false)]
+    #[ORM\JoinColumn(name: 'role_id', referencedColumnName: 'role_id', nullable: false)]
     private ?Role $role = null;
 
     public function getId(): ?int
