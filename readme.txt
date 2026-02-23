@@ -167,4 +167,21 @@ php bin/console cache:clear
 5.1 création du document de testpostman 
 Test_API_postman
 
+5.2 Choix de la solution mail
+Choix mailtrap 
+pourquoi : 
+    facile à installer sur symphony et configurer
+    Interface web pour voir les mails envoyées
+    fonctionne sans serveur mail
+    gratuit
+    peu de temps disponible 
 
+5.2.1 Installation de Mailtrap le composant officiel de Symfony pour envoyer des emails
+composer require symfony/mailer
+
+5.3 Installation de twig pour la création de template HTML pour les mails uniquement
+cela permet d'avoir un vrai fichier HTML dédié à chaque email
+composer require twig
+
+5.3 Création d'un template d'email
+dans le dossier templates/emails/contact.html.twig

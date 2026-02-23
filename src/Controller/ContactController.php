@@ -22,8 +22,8 @@ class ContactController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         // Vérifie que les champs obligatoires sont présents
-        if (empty($data['nom']) || empty($data['email']) || empty($data['message'])) {
-            return $this->json(['message' => 'Champs manquants : nom, email, message obligatoires'], 400);
+        if (empty($data['sujet']) || empty($data['email']) || empty($data['message'])) {
+            return $this->json(['message' => 'Champs manquants : sujet, email, message obligatoires'], 400);
         }
 
         // Envoie l'email via le service

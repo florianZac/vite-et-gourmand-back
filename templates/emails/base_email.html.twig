@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }
+        .container { background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: auto; }
+        h2 { color: #333333; }
+        p { color: #555555; }
+        .label { font-weight: bold; color: #333333; }
+        .footer { margin-top: 30px; font-size: 12px; color: #aaaaaa; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% block content %}{% endblock %}
+        <div class="footer">
+            Vite &amp; Gourmand - Ce mail a été envoyé automatiquement
+        </div>
+    </div>
+</body>
+</html>
