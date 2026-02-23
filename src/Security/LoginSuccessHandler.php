@@ -61,8 +61,9 @@ class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
      */
     public function onAuthenticationSuccess(Request $request, TokenInterface $token): Response
     {
-        // On récupère l'utilisateur connecté 
+        // On récupère l'utilisateur connecté et on le cast en Utilisateur
         $utilisateur = $token->getUser();
+        assert($utilisateur instanceof Utilisateur);
 
         // On génère le token JWT pour cet utilisateur
         $jwt = $this->jwtManager->create($utilisateur);

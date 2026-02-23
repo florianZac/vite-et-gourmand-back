@@ -81,8 +81,6 @@ INSERT INTO horaire (jour, heure_ouverture, heure_fermeture) VALUES
 ('Dimanche', NULL, NULL);
 
 
-
-
 -- Test de compréhension des requetes SQL
 
 -- Suppression du thème "événement" à des fins de test

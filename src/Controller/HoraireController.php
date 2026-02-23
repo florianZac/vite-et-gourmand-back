@@ -27,8 +27,36 @@ final class HoraireController extends AbstractController
     // permet de récupérer tous les horaires et de les retourner au format JSON
     public function indexHoraire(HoraireRepository $horaireRepository): JsonResponse
     {
+        // Récupère tous les horaires à partir de la BDD et les retourne en JSON
         $horaires = $horaireRepository->findAll();
-        return $this->json($horaires);
+        // Mise en forme de la données
+        // surout pour formater les heures d'ouverture et de fermeture au format 'H:i' (heures:minutes) avant de les retourner en JSON
+        // car de base il retourne les heures au format DateTime
+        // sa fait un rendue deguelasse 1970-01-01T09:00:00+00:00
+        $data = array_map(function ($horaire) {
+
+            // gestion du formatage et de null pour les heures d'ouvertures 
+            if ($horaire->getHeureOuverture() === null) {
+                $heureOuverture = 'Fermé';
+            } else {
+                $heureOuverture = $horaire->getHeureOuverture()->format('H:i');
+            }
+            // gestion du formatage et de null pour les heures de fermetures
+            if ($horaire->getHeureFermeture() === null) {
+                $heureFermeture = 'Fermé';
+            } else {
+                $heureFermeture = $horaire->getHeureFermeture()->format('H:i');
+            }
+            // Retourne le résulat de la mise en forme de la données
+            return [
+                'horaire_id' => $horaire->getId(),
+                'jour' => $horaire->getJour(),
+                'heureOuverture' => $heureOuverture,
+                'heureFermeture' => $heureFermeture,
+            ];
+        }, $horaires);
+
+        return $this->json($data);
     }
 
     #[Route('/api/horaires/{id}', name: 'api_horaire_show', methods: ['GET'])]
@@ -44,4 +72,35 @@ final class HoraireController extends AbstractController
         // Si l'horaire est trouvé, on le retourne en JSON
         return $this->json($horaire);
     }
+
+    // Fonction permétant de récupérer un horaire en fonction de son index dans la liste des horaires et de le retourner au format JSON
+    // l'index permet de cibler les ligne de table dans l'ordre de la BDD, index 1 = première ligne de la table, index 2 = deuxième ligne de la table etc...
+    #[Route('/api/horairesIndexTable/{index}', name: 'api_horaire_index_table', methods: ['GET'])]
+    public function getByIndex(int $index, HoraireRepository $horaireRepository): JsonResponse
+    {
+        // 1. Récupère tous les horaires
+        $horaires = $horaireRepository->findAll();
+
+        // 2. Retourne le nombre total de lignes
+        $total = count($horaires);
+
+        // 3. Vérifie que l'index demandé existe (commence à 1) et retourne le total de lignes.
+        if ($index < 1 || $index > $total) {
+            return $this->json([
+                'message' => 'Index invalide',
+                'total_lignes' => $total
+            ], 404);
+        }
+
+        // 4. Cible la ligne par rapport à l'index (index 1 = position 0 dans le tableau)
+        $horaire = $horaires[$index - 1];
+
+        return $this->json([
+            'total_lignes' => $total,
+            'index'        => $index,
+            'horaire_id'   => $horaire->getId(),
+            'jour'         => $horaire->getJour(),
+        ]);
+    }
+
 }

@@ -2,8 +2,6 @@ Aide mémoire est d'Installation Back-end
 
 1. Installation et mise en place de Symfony
 
-
-
 1.1 vérification des versions php,composeur etc ..
 php -v  -> vérification de la version de php
 composer -v  -> vérification de la version de composer
@@ -11,7 +9,6 @@ symfony -v  -> vérification de la version du Command Line Interface (CLI)
 
 1.1.1 Vérification des requirement syfony avant installation 
 symfony check:requirements
-
 
 1.1 deplacement et création du dossier projet 
 

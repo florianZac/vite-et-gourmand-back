@@ -2,11 +2,13 @@ route à tester
 
 PUBLIC_ACCESS
 test 1.1 ->  GET    /api/menus | voir fichier MenuController.php fonction index()
-test 1.2 ->  GET    /api/menus/{id}
-test 1.3 ->  GET    /api/horaires
-test 1.4 ->  POST   /api/contact
-test 1.5 ->  POST   /api/register
-test 1.6 ->  POST   /api/login
+test 1.2 ->  GET    /api/menus/{id} | voir fichier MenuController.php fonction show()
+test 1.3 ->  GET    /api/horaires | voir fichier HoraireController.php fonction indexHoraire()
+test 1.4 ->  GET    /api/horaires/{id} | voir fichier HoraireController.php fonction showHoraire()
+teste 1.5 ->  GET   /api/horairesIndexTable/{value} | voir fichier HoraireController.php fonction indexHoraireTable()
+test 1.6 ->  POST   /api/contact 
+test 1.7 ->  POST   /api/register
+test 1.8 ->  POST   /api/login
 
 ROLE_CLIENT
 GET    /api/client/profil
@@ -25,13 +27,16 @@ PUT    /api/employe/avis/{id}
 
 
 
-
+/*------------------------------------------------------------------------
+* Début des tests de l'API avec Postman
+* Les tests sont organisés par route et par méthode HTTP
+------------------------------------------------------------------------*/
 test 1.1 :
 Méthode : GET
 URL : http://127.0.0.1:8000/api/menus
 Body : aucun
 résultat : test 1.1 réussi, liste des menus reçue
-
+/*------------------------------------------------------------------------*/
 test 1.2 :
 Méthode : GET
 URL : http://127.0.0.1:8000/api/menus/1
@@ -43,22 +48,37 @@ Méthode : GET
 URL : http://127.0.0.1:8000/api/menus/100
 Body : aucun
 résultat : test 1.2.1 réussi, "message": "Menu non trouvé" reçu
-
-
-
+/*------------------------------------------------------------------------*/
 test 1.3 :
 Méthode : GET
 URL : http://127.0.0.1:8000/api/horaires
 Body : aucun
-résultat : test 1.3 réussi, liste des horaires reçue
+résultat : test 1.3 réussi, liste des horaires reçue avec gestion du cas null == Fermé
+/*------------------------------------------------------------------------*/
+test 1.4 :
+Méthode : GET
+URL : http://127.0.0.1:8000/api/horaires/1
+Body : aucun
+résultat : test 1.4 réussi, horaire 1 reçu
+
+test 1.4.1 : test complementaire du test 1.4 id qui n'existe pas
+Méthode : GET
+URL : http://127.0.0.1:8000/api/horaires/100
+Body : aucun
+résultat : test 1.4.1 réussi, "message": "Horaire non trouvé" reçu
+/*------------------------------------------------------------------------*/
+
+test 1.5 : test complementaire du test 1.4 id qui existe mais avec des valeurs null
+Méthode : GET 
+URL : http://127.0.0.1:8000/api/horairesIndexTable/1
+Body : aucun
+résultat : test 1.5 réussi, liste des horaires reçue avec gestion du cas null == Fermé
+
+/*------------------------------------------------------------------------*/
 
 
-test 1.x :
-Méthode : 
-URL : 
-Body : 
-résultat : 
 
+/*------------------------------------------------------------------------*/
 Méthode : POST
 URL : http://127.0.0.1:8000/api/login
 Body : raw → JSON
