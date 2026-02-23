@@ -1,4 +1,63 @@
-test 1.1
+route à tester 
+
+PUBLIC_ACCESS
+test 1.1 ->  GET    /api/menus | voir fichier MenuController.php fonction index()
+test 1.2 ->  GET    /api/menus/{id}
+test 1.3 ->  GET    /api/horaires
+test 1.4 ->  POST   /api/contact
+test 1.5 ->  POST   /api/register
+test 1.6 ->  POST   /api/login
+
+ROLE_CLIENT
+GET    /api/client/profil
+PUT    /api/client/profil
+GET    /api/client/commandes
+DELETE /api/client/commandes/{id}
+POST   /api/client/avis
+
+ROLE_EMPLOYE
+GET    /api/employe/commandes
+GET    /api/employe/commandes/{id}
+PUT    /api/employe/commandes/{id}
+DELETE /api/employe/commandes/{id}
+PUT    /api/employe/avis/{id}
+
+
+
+
+
+test 1.1 :
+Méthode : GET
+URL : http://127.0.0.1:8000/api/menus
+Body : aucun
+résultat : test 1.1 réussi, liste des menus reçue
+
+test 1.2 :
+Méthode : GET
+URL : http://127.0.0.1:8000/api/menus/1
+Body : aucun
+résultat : test 1.2 réussi, menu 1 reçu
+
+test 1.2.1 : test complementaire du test 1.2 id qui n'existe pas
+Méthode : GET
+URL : http://127.0.0.1:8000/api/menus/100
+Body : aucun
+résultat : test 1.2.1 réussi, "message": "Menu non trouvé" reçu
+
+
+
+test 1.3 :
+Méthode : GET
+URL : http://127.0.0.1:8000/api/horaires
+Body : aucun
+résultat : test 1.3 réussi, liste des horaires reçue
+
+
+test 1.x :
+Méthode : 
+URL : 
+Body : 
+résultat : 
 
 Méthode : POST
 URL : http://127.0.0.1:8000/api/login
@@ -8,3 +67,11 @@ Body : raw → JSON
     "password": "123456"
 }
 
+résultat : test 1.1 réussi, token d'authentification reçu
+token	: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NzE4NDkyOTIsImV4cCI6MTc3MTg1Mjg5Miwicm9sZXMiOlsiUk9MRV9BRE1JTiJdLCJ1c2VybmFtZSI6ImFkbWluQHZpdGUtZXQtZ291cm1hbmQuZnIifQ.hVKUz_drs2ZBc5MjIm6cAwJfneQaX087gbgDqAUcD1V0m7M0iZHWu2lm6_X9CVTQa4gn6fYn1AXHeNkvY7b7uz4rsWMrtnUSLHTeahjF7ASF3WmSbIXiTuiDDtoN9QB7rRQeeUmxekZo2gbF641AfRcr1Vlr_WjKd5JjQQwfVkmHdIis57MbKfwxgfSXdj7bh-sFIYGRVembTKjMmFuVw8HUT9Qxod1kN2zH0w-mRy51KUJdlFqsUKIA9-ncJ6nsNDiNpHf6v4uosh_NjWfaVRJfoVLoRocGr83N2rz2mIMO1HlfiCKWYcZP96IZZEDRWjtPLA7KSYpwXMzbT1nZXg
+email	admin@vite-et-gourmand.fr
+prenom	Admin
+role	ROLE_ADMIN
+
+
+test 1.2
