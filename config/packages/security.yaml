@@ -37,14 +37,17 @@ security:
             provider: app_user_provider  # on utilise notre provider BDD
             # Authentification via JWT (token) car on est en API
             stateless: true
-            #jwt: ~  # on active le support JWT (lexik/jwt-authentication-bundle)
+            
             # On gère le login via une requête JSON
             json_login:
                 check_path: /api/login  # endpoint pour le login
                 username_path: email  # on identifie l'utilisateur par son email
                 password_path: password  # le mot de passe est dans le champ "password" de la requête JSON
-                #success_handler: App\Security\LoginSuccessHandler  # handler pour générer le JWT après un login réussi
-                #failure_handler: App\Security\LoginFailureHandler  # handler pour gérer les échecs de login
+                #handler personnalisé pour générer le JWT après un login réussi et gérer les échecs de login par bibi 
+                success_handler: App\Security\LoginSuccessHandler  # handler pour générer le JWT après un login réussi
+                failure_handler: App\Security\LoginFailureHandler  # handler pour gérer les échecs de login
+
+            jwt: ~  # on active le support JWT (lexik/jwt-authentication-bundle)
 
      # Contrôle d'accès par route
      # Attention : la première règle qui correspond est appliquée

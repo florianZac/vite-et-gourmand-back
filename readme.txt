@@ -119,3 +119,50 @@ php bin/console doctrine:migrations:migrate
 
 4.1 Installation du bundle JWT pour la gestion des tokens
 composer.bat require lexik/jwt-authentication-bundle
+
+4.2 génèration des clefs de chiffrement
+php bin/console lexik:jwt:generate-keypair
+-> génération de deux fichiers dans le dossier config/jwt
+    private.pem qui est la clé privée pour signer les tokens
+    public.pem qui est la clé publique afin de vérifier les tokens
+
+4.3 modification du fichier .env
+avec 
+// variable Symfony qui pointe vers le fichier private.pem ou est présente la clefs privée
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+// variable Symfony qui pointe vers le fichier private.pem ou est présente la clefs publique
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+//  le mot de passe qui protège la clé privée
+JWT_PASSPHRASE=vite_et_gourmand_secret
+
+4.4 génération des clefs JWT
+ php bin/console lexik:jwt:generate-keypair --overwrite
+
+4.5 creation des fonctions handler dans src/Security
+LoginFailureHandler
+LoginSuccessHandler
+
+
+Test des routes et tokens
+
+4.6 Installation de doctrine bundle pour inserer les données dans la base
+composer.bat require doctrine/doctrine-bundle
+
+4.7 creation de script sql pour l'instantiation des données dans un users et la table role. 
+création_utilisateur.sql
+
+
+4.8 création de la route login dans un controleur
+php bin/console make:controller AuthController
+
+4.9 Lancement du handler pour test 
+php bin/console server:start
+avec cli symfony server:start
+
+5 Vidé le cache symfony
+php bin/console cache:clear
+
+5.1 création du document de testpostman 
+Test_API_postman
+
+
