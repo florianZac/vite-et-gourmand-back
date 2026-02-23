@@ -9,7 +9,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
 #[ORM\Table(name: 'utilisateur')]
-class Utilisateur
+class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

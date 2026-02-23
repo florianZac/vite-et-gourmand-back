@@ -159,8 +159,10 @@ création_utilisateur.sql
 php bin/console make:controller AuthController
 
 4.9 Lancement du handler pour test 
-php bin/console server:start
-avec cli symfony server:start
+symfony server:start
+
+Sans Symfony CLI :
+php -S localhost:8000 -t public/
 
 5 Vidé le cache symfony
 php bin/console cache:clear
