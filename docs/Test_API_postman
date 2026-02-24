@@ -11,8 +11,18 @@ test 1.6 ->  POST   /api/contact  | voir fichier ContactController.php fonction 
                                    ainsi que le service MailerService.php fonction sendContactEmail() 
                                    qui utilise Twig pour générer le contenu de l'email à partir du template
 
-test 1.7 ->  POST   /api/register
-test 1.8 ->  POST   /api/login
+test 1.7 ->  POST   /api/register | voir fichier AuthController.php fonction register()
+test 1.8 ->  POST   /api/login    | voir fichier AuthController.php fonction login()
+
+hors cadre des contexte métier :
+test 1.9 -> GET    /api/utilisateurs | voir fichier UtilisateurController.php fonction getAllUsers()
+test 1.10 -> GET    /api/utilisateurs/{id} | voir fichier UtilisateurController.php fonction getUserById()
+test 1.11 -> DELETE /api/utilisateurs/{id} | voir fichier UtilisateurController.php fonction deleteUserByID()
+test 1.12 -> DELETE /api/utilisateurs/email/{email} | voir fichier UtilisateurController.php fonction deleteUserByEmail()
+test 1.13 -> PUT    /api/utilisateurs/{id} | voir fichier UtilisateurController.php fonction updateUserAdminById()
+test 1.14 -> PUT    /api/utilisateurs/email/{email} | voir fichier UtilisateurController.php fonction updateUserAdminByEmail()
+
+
 
 ROLE_CLIENT
 GET    /api/client/profil
@@ -35,13 +45,13 @@ PUT    /api/employe/avis/{id}
 * Début des tests de l'API avec Postman
 * Les tests sont organisés par route et par méthode HTTP
 ------------------------------------------------------------------------*/
-test 1.1 :
+test 1.1 : test qui retourne la liste des menus
 Méthode : GET
 URL : http://127.0.0.1:8000/api/menus
 Body : aucun
 résultat : test 1.1 réussi, liste des menus reçue
 /*------------------------------------------------------------------------*/
-test 1.2 :
+test 1.2 : test qui retourne un menu par son id
 Méthode : GET
 URL : http://127.0.0.1:8000/api/menus/1
 Body : aucun
@@ -53,13 +63,13 @@ URL : http://127.0.0.1:8000/api/menus/100
 Body : aucun
 résultat : test 1.2.1 réussi, "message": "Menu non trouvé" reçu
 /*------------------------------------------------------------------------*/
-test 1.3 :
+test 1.3 : test qui retourne la liste des horaires d'ouverture du restaurant
 Méthode : GET
 URL : http://127.0.0.1:8000/api/horaires
 Body : aucun
 résultat : test 1.3 réussi, liste des horaires reçue avec gestion du cas null == Fermé
 /*------------------------------------------------------------------------*/
-test 1.4 :
+test 1.4 : test qui retourne un horaire d'ouverture du restaurant par son id
 Méthode : GET
 URL : http://127.0.0.1:8000/api/horaires/1
 Body : aucun
@@ -91,10 +101,76 @@ Body : raw → JSON
 }
 résultat : test 1.6 réussi, message envoyé avec succès
 
+test 1.6.1 : test Protection Content-Type
+Méthode : POST
+URL : http://127.0.0.1:8000/api/contact
+Headers : Content-Type: text/plain
+Body :
+{
+    "email": "client@gmail.com",
+    "sujet": "Demande de devis",
+    "message": "Bonjour je souhaite un devis"
+}
+résultat : test 1.6.1 réussi, erreur 415 Unsupported Media Type reçue
+{
+    "status": "error",
+    "message": "Content-Type invalide, JSON attendu"
+}
 
+test 1.6.2 : test JSON invalide
+Méthode : POST
+URL : http://127.0.0.1:8000/api/contact
+Headers : Content-Type: text/plain
+Body : 
+"Bonjour je souhaite un devis"
 
+résultat : test 1.6.2 réussi, erreur 400 + Format JSON invalide reçu
+{
+    "status": "error",
+    "message": "Format JSON invalide"
+}
+
+test 1.6.3 : test Champs vides
+Méthode : POST
+URL : http://127.0.0.1:8000/api/contact
+Headers : Content-Type: application/json
+Body : 
+{
+    "email": "",
+    "sujet": "",
+    "message": ""
+}
+A continuer .............
 
 /*------------------------------------------------------------------------*/
+test 1.7 : test pour l'inscription d'un nouvel utilisateur dans le cas ROLE_VISITEUR ou ROLE_CLIENT
+Méthode : POST
+URL : http://127.0.0.1:8000/api/register
+Body : raw → JSON
+{
+    "email": "client@gmail.com",
+    "password": "123456789",
+    "prenom": "Florian",
+    "telephone": "0600000000",
+    "ville": "Montpellier",
+    "pays": "France",
+    "adresse_postale": "1 rue de la gourmande"
+}
+résultat : test 1.7 réussi, utilisateur créé avec succès code 201 reçu
+{
+    "status": "success",
+    "message": "Compte créé avec succès"
+}
+
+test 1.7.1 : test pour l'inscription d'un nouvel utilisateur avec un email déjà utilisé
+la même requete que le test 1.7 est utilisée mais avec un email déjà utilisé
+résultat : test 1.7.1 réussi, erreur 409 + message "Email déjà utilisé" reçu
+{
+    "status": "error",
+    "message": "Cet email est déjà utilisé"
+}
+/*------------------------------------------------------------------------*/
+test 1.8 : test pour la connexion d'un utilisateur et la réception du token d'authentification
 Méthode : POST
 URL : http://127.0.0.1:8000/api/login
 Body : raw → JSON
@@ -102,12 +178,164 @@ Body : raw → JSON
     "email": "admin@vite-et-gourmand.fr",
     "password": "123456"
 }
-
-résultat : test 1.1 réussi, token d'authentification reçu
+résultat : test 1.8 réussi, token d'authentification reçu
 token	: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NzE4NDkyOTIsImV4cCI6MTc3MTg1Mjg5Miwicm9sZXMiOlsiUk9MRV9BRE1JTiJdLCJ1c2VybmFtZSI6ImFkbWluQHZpdGUtZXQtZ291cm1hbmQuZnIifQ.hVKUz_drs2ZBc5MjIm6cAwJfneQaX087gbgDqAUcD1V0m7M0iZHWu2lm6_X9CVTQa4gn6fYn1AXHeNkvY7b7uz4rsWMrtnUSLHTeahjF7ASF3WmSbIXiTuiDDtoN9QB7rRQeeUmxekZo2gbF641AfRcr1Vlr_WjKd5JjQQwfVkmHdIis57MbKfwxgfSXdj7bh-sFIYGRVembTKjMmFuVw8HUT9Qxod1kN2zH0w-mRy51KUJdlFqsUKIA9-ncJ6nsNDiNpHf6v4uosh_NjWfaVRJfoVLoRocGr83N2rz2mIMO1HlfiCKWYcZP96IZZEDRWjtPLA7KSYpwXMzbT1nZXg
 email	admin@vite-et-gourmand.fr
 prenom	Admin
 role	ROLE_ADMIN
 
+/*------------------------------------------------------------------------*/
+test 1.9 : test pour la récupération de la liste des utilisateurs
+Méthode : GET
+URL : http://127.0.0.1:8000/api/utilisateurs
+Headers : Authorization
+Résultat : test 1.9 réussi, liste des utilisateurs reçue
+/*------------------------------------------------------------------------*/
+test 1.10 : test pour la récupération d'un utilisateurs
+Méthode : GET
+URL : http://127.0.0.1:8000/api/utilisateurs/{id}
+Headers : Authorization
+Résultat : test 1.10 réussi, utilisateur récupéré
 
-test 1.2
+test 1.10.1 : test pour la récupération d'un utilisateurs avec un id qui n'existe pas
+Méthode : GET
+URL : http://127.0.0.1:8000/api/utilisateurs/{id}
+Headers : Authorization
+Résultat : test 1.10.1 réussi, erreur 404 + message "Utilisateur non trouvé" reçu
+{
+    "message": "Utilisateur non trouvé"
+}
+/*------------------------------------------------------------------------*/
+test 1.11 : test pour la suppression d'un utilisateur par son id
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/utilisateurs/1
+Headers : Authorization
+Résultat : test 1.11 réussi, utilisateur supprimé avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur supprimé avec succès" 
+}
+
+test 1.11.1 : test pour la suppression d'un utilisateur avec un id qui n'existe pas
+Méthode : DELETE  
+URL : http://127.0.0.1:8000/api/utilisateurs/999
+Headers : Authorization
+Résultat : test 1.11.1 réussi, erreur 404 + message "Utilisateur non trouvé" reçu
+{
+    "message": "Utilisateur non trouvé"
+}
+
+test 1.11.2 : test pour la suppression d'un utilisateur sans token d'authentification
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/utilisateurs/2
+Headers : aucun
+Résultat : test 1.11.2 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "error",
+    "message": "Accès refusé"
+}
+
+test 1.11.3 : test pour la suppression d'un utilisateur avec un token d'authentification mais sans le rôle ADMIN
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/utilisateurs/2
+Headers : Authorization (token d'un utilisateur non ADMIN)
+Résultat : test 1.11.3 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "Erreur",
+    "message": "Accès refusé"
+}
+
+test 1.11.4 : test pour la suppression d'un utilisateur avec un token d'authentification et le rôle ADMIN mais qui tente de se supprimer lui meme
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/utilisateurs/1
+Headers : Authorization (token d'un utilisateur ADMIN)
+Résultat : test 1.11.4 réussi, erreur 403 + message "Vous ne pouvez pas supprimer votre propre compte" reçu
+{
+    "status": "Erreur",
+    "message": "Vous ne pouvez pas supprimer votre propre compte"
+}
+
+test 1.12 : test pour la suppression d'un utilisateur via son email
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/utilisateurs/email/test@example.com
+Headers : Authorization (token d'un utilisateur ADMIN)
+Résultat : test 1.12 réussi, utilisateur supprimé avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur supprimé avec succès" 
+}
+
+/*------------------------------------------------------------------------*/
+test 1.13 : test pour la mise à jour des informations d'un utilisateur par son id
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/utilisateurs/{id}
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "prenom": "FloFlo"
+}
+Résulat : test 1.13 réussi, utilisateur mis à jour avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur mis à jour avec succès"
+}
+
+test 1.13.1 : test pour la mise à jour des informations d'un utilisateur avec un id qui n'existe pas
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/utilisateurs/40
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "prenom": "FloFlo"
+}
+Résulat : test 1.13.1 réussi, erreur 404 + message "Utilisateur non trouvé" reçu
+{
+    "message": "Utilisateur non trouvé"
+}
+
+test 1.13.2 : test pour la mise à jour des informations d'un utilisateur sans token d'authentification
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/utilisateurs/40
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "prenom": "FloFlo"
+}
+Résulat : test 1.13.2 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "Erreur",
+    "message": "Accès refusé"
+}
+
+test 1.13.3 : test mise à jour du mot de passe d'un utilisateur et vérification de la réception de l'email de notification
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/utilisateurs/7
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "password": "nouveaumdp"
+}
+Résulat : test 1.13.3 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "Erreur",
+    "message": "Accès refusé"
+}
+
+/*------------------------------------------------------------------------*/
+test 1.14 : test pour la mise à jour des informations d'un utilisateur par son email par un admin
+Méthode : PUT
+URL :http://127.0.0.1:8000/api/utilisateurs/email/client2@gmail.com
+Headers : Authorization: Bearer TON_TOKEN_ADMIN
+Body :
+{
+    "prenom": "clientcontent"
+}
+Résulat : test 1.14 réussi, utilisateur mis à jour avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur mis à jour avec succès"
+}
+
+
+
+
+
+
+test 1.13 -> PUT    /api/utilisateurs/{id} | voir fichier UtilisateurController.php fonction updateUserAdminById()
+test 1.14 -> PUT    /api/utilisateurs/email/{email} | voir fichier UtilisateurController.php fonction updateUserAdminByEmail()

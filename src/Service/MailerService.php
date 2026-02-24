@@ -9,6 +9,8 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 // Importe l'environnement Twig pour pouvoir utiliser les templates d'emails.
 use Twig\Environment;
+// Importe la classe Utilisateur pour pouvoir l'utiliser dans la fonction de réinitialisation de mot de passe
+use App\Entity\Utilisateur;
 
 /**
  * @author      Florian Aizac
@@ -48,4 +50,31 @@ class MailerService
         // C'est ici que Mailtrap intercepte l'email en développement
         $this->mailer->send($email);
     }
+
+    /*
+    * @description : envoie un email de réinitialisation de mot de passe à un utilisateur
+    *  Fonction appellée lors de la réinitialisation du mdp par l'admin
+    *  elle permet de générer un mot de passe temporaire aléatoire et d'envoyer un email au client.
+    * @param Utilisateur $utilisateur : l'utilisateur qui a demandé la réinitialisation de son mot de passe
+    * @param string $motDePasseTemporaire : le mot de passe temporaire généré pour l'utilisateur
+    */
+    public function sendPasswordResetEmail(Utilisateur $utilisateur, string $motDePasseTemporaire): void
+    {
+        // Génère le HTML à partir du template Twig
+        $html = $this->twig->render('emails/password_reset.html.twig', [
+            'prenom'     => $utilisateur->getPrenom(),
+            'motDePasse' => $motDePasseTemporaire,
+        ]);
+
+        // Crée l'email
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Réinitialisation de votre mot de passe')
+            ->html($html);
+
+        // Envoie l'email
+        $this->mailer->send($email);
+    }
+
 }

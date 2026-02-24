@@ -228,3 +228,8 @@ Un attaquant peut tenter d'injecter des commandes SQL dans les champs texte pour
 Solution :
 preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i')
 cette reggex permet de supprimer tout les mots clefs dangereux SQL.
+
+5.6 Apprendre à utiliser l'injection de dépendance
+taper dans le terminal  php bin/console debug:autowiring --all
+https://symfony.com/doc/current/reference/forms/types/entity.html
+https://symfony.com/doc/current/doctrine.html#fetching-objects-from-the-database
