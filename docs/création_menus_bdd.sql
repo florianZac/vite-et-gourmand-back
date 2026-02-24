@@ -103,3 +103,49 @@ WHERE NOT EXISTS (
 );
 -- retour à l'insertion pas le temps de niaiser
 
+
+
+--insertion de données dans la table commande
+
+INSERT INTO commande (
+    numero_commande, 
+    date_commande, 
+    date_prestation, 
+    heure_livraison, 
+    prix_menu, 
+    nombre_personne, 
+    prix_livraison, 
+    statut, 
+    pret_materiel, 
+    restitution_materiel, 
+    utilisateur_id, 
+    menu_id)
+VALUES 
+(
+    'CMD-001',
+    '2026-02-24 10:00:00', 
+    '2026-02-25', 
+    '12:00:00', 
+    150.00, 
+    10, 
+    20.00, 
+    'en_cours', 
+    0, 
+    0, 
+    1, 
+    1
+),
+(
+    'CMD-002', 
+    '2026-02-24 11:00:00', 
+    '2026-02-26', 
+    '14:00:00', 
+    200.00, 
+    15, 
+    25.00, 
+    'validée', 
+    1, 
+    0, 
+    1, 
+    2
+);

@@ -45,6 +45,12 @@ class Commande
     #[ORM\Column]
     private ?bool $restitution_materiel = null;
 
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $motif_annulation = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $montant_rembourse = null;
+    
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'utilisateur_id', nullable: false)] // ajout du nom de la colonne
     private ?Utilisateur $utilisateur = null;
@@ -189,4 +195,31 @@ class Commande
         $this->menu = $menu;
         return $this;
     }
+
+    // Récupération du motif d'annulation des commandes
+    public function getMotifAnnulation(): ?string
+    {
+        return $this->motif_annulation;
+    }
+
+    // Mise à jour du motif d'annulation des commandes
+    public function setMotifAnnulation(?string $motif_annulation): static
+    {
+        $this->motif_annulation = $motif_annulation;
+        return $this;
+    }
+
+    // Récupération du montant remboursé pour les commandes annulées
+    public function getMontantRembourse(): ?float
+    {
+        return $this->montant_rembourse;
+    }
+
+    // Mise à jour du montant remboursé pour les commandes annulées
+    public function setMontantRembourse(?float $montant_rembourse): static
+    {
+        $this->montant_rembourse = $montant_rembourse;
+        return $this;
+    }
+
 }

@@ -68,7 +68,7 @@ class ContactController extends AbstractController
         // Tableau qui va stocker toutes les erreurs de validation
         $erreurs = [];
 
-        // Etape 1 — Nettoyage des données avant validation
+        // Etape 1 - Nettoyage des données avant validation
         // On vérifie que chaque champ existe avant de le sanitizer
         // Si le champ n'existe pas on assigne une chaîne vide
         if (isset($data['email'])) {
@@ -89,7 +89,7 @@ class ContactController extends AbstractController
             $message = '';
         }
 
-        // Etape 2 — Validation de l'email
+        // Etape 2 - Validation de l'email
         // On appelle la fonction validerEmail avec l'email nettoyé
         // Si elle retourne une erreur on l'ajoute au tableau $erreurs
         $erreurEmail = $this->validerEmail($email);
@@ -97,13 +97,13 @@ class ContactController extends AbstractController
             $erreurs['email'] = $erreurEmail;
         }
 
-        // Etape 3 — Validation du sujet
+        // Etape 3 - Validation du sujet
         $erreurSujet = $this->validerSujet($sujet);
         if ($erreurSujet) {
             $erreurs['sujet'] = $erreurSujet;
         }
 
-        // Etape 4 — Validation du message
+        // Etape 4 - Validation du message
         $erreurMessage = $this->validerMessage($message);
         if ($erreurMessage) {
             $erreurs['message'] = $erreurMessage;
@@ -121,16 +121,16 @@ class ContactController extends AbstractController
      */
     private function sanitizer(string $valeur, string $type): string
     {
-        // Etape 1 — Supprime les espaces inutiles en début et fin de chaîne
+        // Etape 1 - Supprime les espaces inutiles en début et fin de chaîne
         $valeur = trim($valeur);
 
-        // Etape 2 — Supprime toutes les balises HTML et PHP
+        // Etape 2 - Supprime toutes les balises HTML et PHP
         $valeur = strip_tags($valeur);
 
-        // Etape 3 — Convertit les caractères spéciaux HTML en entités
+        // Etape 3 - Convertit les caractères spéciaux HTML en entités
         $valeur = htmlspecialchars($valeur, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-        // Etape 4 — Traitement spécifique selon le type de champ
+        // Etape 4 - Traitement spécifique selon le type de champ
         switch ($type) {
             case 'email':
                 // Supprime tous les caractères non autorisés dans un email
@@ -232,7 +232,7 @@ class ContactController extends AbstractController
      */
     private function verifierSecurite(Request $request, RateLimiterFactory $contactLimiter, ?array $data): ?JsonResponse
     {
-        // Protection 1 — Rate Limiting
+        // Protection 1 - Rate Limiting
         // Limite à 5 requêtes par heure par adresse IP
         $limiter = $contactLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {
@@ -242,7 +242,7 @@ class ContactController extends AbstractController
             ], 429);
         }
 
-        // Protection 2 — Vérifie que le Content-Type est bien du JSON
+        // Protection 2 - Vérifie que le Content-Type est bien du JSON
         if ($request->getContentTypeFormat() !== 'json') {
             return $this->json([
                 'status'  => 'error',
@@ -250,7 +250,7 @@ class ContactController extends AbstractController
             ], 415);
         }
 
-        // Protection 3 — Limite la taille du body à 10Ko
+        // Protection 3 - Limite la taille du body à 10Ko
         if (strlen($request->getContent()) > 10240) {
             return $this->json([
                 'status'  => 'error',
@@ -258,7 +258,7 @@ class ContactController extends AbstractController
             ], 413);
         }
 
-        // Protection 4 — Honeypot
+        // Protection 4 - Honeypot
         // Si le champ site_web est rempli c'est un bot
         if (!empty($data['site_web'])) {
             return $this->json(['status' => 'success', 'message' => 'Message envoyé avec succès'], 200);

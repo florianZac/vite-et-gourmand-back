@@ -14,10 +14,10 @@ class Avis
     #[ORM\Column(name: 'avis_id', type: 'integer')] // force le nom de la colonne à 'avis_id'
     private ?int $id = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'smallint')]
     private ?int $note = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 255)]
     private ?string $description = null;
 
     #[ORM\Column(length: 50)]
@@ -26,6 +26,10 @@ class Avis
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'utilisateur_id', nullable: false)]
     private ?Utilisateur $utilisateur = null;
+
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(name: 'commande_id', referencedColumnName: 'commande_id', nullable: false)]
+    private ?Commande $commande = null;
 
     public function getId(): ?int
     {
@@ -77,6 +81,17 @@ class Avis
     {
         $this->utilisateur = $utilisateur;
 
+        return $this;
+    }
+
+    public function getCommande(): ?Commande
+    {
+        return $this->commande;
+    }
+
+    public function setCommande(?Commande $commande): static
+    {
+        $this->commande = $commande;
         return $this;
     }
 }

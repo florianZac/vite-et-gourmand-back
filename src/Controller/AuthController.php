@@ -38,27 +38,27 @@ final class AuthController extends AbstractController
         RoleRepository $roleRepository               // service qui fait les SELECT sur role
     ): JsonResponse
     {
-        // Étape 1 — Récupère les données JSON envoyées par le client
+        // Étape 1 - Récupère les données JSON envoyées par le client
         $data = json_decode($request->getContent(), true);
         //dump($data); // version du printf affiche le tableau $data
 
-        // Étape 2 — Vérifie que les champs obligatoires sont présents
+        // Étape 2 - Vérifie que les champs obligatoires sont présents
         // il faudra que je fasse un regex pour vérifier que l'email est au bon format et que le mot de passe est assez fort, mais pour l'instant on se contente de vérifier qu'ils sont présents
         if (empty($data['email']) || empty($data['password']) || empty($data['prenom'])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Email, password et prénom obligatoires'], 400);
         }
 
-        // Étape 3 — Vérifie que l'email n'existe pas déjà en base de données
+        // Étape 3 - Vérifie que l'email n'existe pas déjà en base de données
         // équivalent de SELECT * FROM utilisateur WHERE email = :email
         if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
         }
 
-        // Étape 4 — Récupère le rôle ROLE_CLIENT par défaut
+        // Étape 4 - Récupère le rôle ROLE_CLIENT par défaut
         // équivalent de SELECT * FROM role WHERE libelle = 'ROLE_CLIENT'
         $role = $roleRepository->findOneBy(['libelle' => 'ROLE_CLIENT']);
 
-        // Étape 5 — Création et remplissage d'un objet nouvel utilisateur
+        // Étape 5 - Création et remplissage d'un objet nouvel utilisateur
         $utilisateur = new Utilisateur();
 
         // Rappel de la notion : value ?? "" signifie "si value existe et n'est pas null, 
@@ -72,18 +72,18 @@ final class AuthController extends AbstractController
         $utilisateur->setAdressePostale($data['adresse_postale'] ?? '');
         $utilisateur->setRole($role );
 
-        // Étape 6 — Hash le mot de passe avant de le stocker en base
+        // Étape 6 - Hash le mot de passe avant de le stocker en base
         // On ne stocke JAMAIS un mot de passe en clair
         $motDePasseHashe = $passwordHasher->hashPassword($utilisateur, $data['password']);
         $utilisateur->setPassword($motDePasseHashe);
 
-        // Étape 7 — Sauvegarde en base de données
+        // Étape 7 - Sauvegarde en base de données
         // persist() prépare l'insertion
         $em->persist($utilisateur);
         // flush() exécute réellement la requête SQL INSERT
         $em->flush();
 
-        // Étape 8 — Retourne une réponse de succès avec le code 201 Created
+        // Étape 8 - Retourne une réponse de succès avec le code 201 Created
         return $this->json([
             'status'  => 'Succès',
             'message' => 'Compte créé avec succès',

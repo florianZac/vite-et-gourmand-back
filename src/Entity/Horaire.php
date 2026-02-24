@@ -17,10 +17,10 @@ class Horaire
     #[ORM\Column(length: 50)]
     private ?string $jour = null;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
     private ?\DateTime $heure_ouverture = null;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
     private ?\DateTime $heure_fermeture = null;
 
     public function getId(): ?int

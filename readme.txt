@@ -233,3 +233,11 @@ cette reggex permet de supprimer tout les mots clefs dangereux SQL.
 taper dans le terminal  php bin/console debug:autowiring --all
 https://symfony.com/doc/current/reference/forms/types/entity.html
 https://symfony.com/doc/current/doctrine.html#fetching-objects-from-the-database
+
+
+5.7 vérification des routes après modification de UtilisateurController.php -> AdminController.php
+pour respecter la regle un controleur un niveau responsabilité unique que je respecter pas
+Commande pérmettant de vérifier que Symfony voit bien les nouvelles routes :
+php bin/console debug:router | Select-String "admin"
+Commande pérmettant de vérifier toutes les routes du projet :
+php bin/console debug:router | Select-String "api"

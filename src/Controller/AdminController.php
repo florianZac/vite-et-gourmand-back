@@ -25,8 +25,8 @@ use Symfony\Component\HttpFoundation\Request;
  *  Recherche (GET) pour le fun recherche d'un utilisateur par son email.
  */
 
-#[Route('/api')]
-final class UtilisateurController extends AbstractController
+#[Route('/api/admin')]
+final class AdminController extends AbstractController
 {
     #[Route('/utilisateurs', name: 'api_utilisateurs', methods: ['GET'])]
 
@@ -34,7 +34,15 @@ final class UtilisateurController extends AbstractController
     // équivalent de SELECT * FROM utilisateur
     public function getAllUsers(UtilisateurRepository $utilisateurRepository): JsonResponse
     {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer tous les utilisateurs
         $utilisateurs = $utilisateurRepository->findAll();
+        
+        // Étape 3 - Retourner la liste des utilisateurs en JSON
         return $this->json($utilisateurs);
     }
 
@@ -42,12 +50,19 @@ final class UtilisateurController extends AbstractController
     // Fonction qui sélectionne un utilisateur par son id meme chose que SELECT * FROM utilisateur WHERE utilisateur_id = :id
     public function getUserById(int $id, UtilisateurRepository $utilisateurRepository): JsonResponse
     {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur par son id
         $utilisateur = $utilisateurRepository->find($id);
         // Si l'utilisateur n'existe pas, on retourne une réponse JSON avec un message d'erreur et un code HTTP 404 correspondant à Not Found
         if (!$utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
         }
-        // Si l'utilisateur est trouvé, on le retourne en JSON
+        
+        // Étape 3 - Si l'utilisateur est trouvé, on le retourne en JSON
         return $this->json($utilisateur);
     }
 
@@ -56,7 +71,7 @@ final class UtilisateurController extends AbstractController
     // équivalent de DELETE FROM utilisateur WHERE utilisateur_id = :id
     public function deleteUserByID(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
     {
-        // Étape 1 — Vérifier le rôle ADMIN
+        // Étape 1 - Vérifier le rôle ADMIN
         // lit le token JWT de la requête pour vérifier si l'utilisateur a le rôle ADMIN
         // Si l'utilisateur n'a pas le rôle ADMIN, on retourne une réponse JSON avec un message d'erreur et un code HTTP 403
         // isGranted() retourne true ou false
@@ -65,23 +80,23 @@ final class UtilisateurController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 — Récupérer l'utilisateur à supprimer par son id
+        // Étape 2 - Récupérer l'utilisateur à supprimer par son id
         $utilisateur_rechercher = $utilisateurRepository->find($id);
         // Si l'utilisateur n'existe pas, on retourne une réponse JSON avec un message d'erreur et un code HTTP 404 correspondant à Not Found
         if (!$utilisateur_rechercher) {
             return $this->json(['status' => 'Erreur','message' => 'Utilisateur non trouvé'], 404);
         }
 
-        // Étape 3 — Empêcher l'admin de se supprimer lui-même
+        // Étape 3 - Empêcher l'admin de se supprimer lui-même
         if ($this->getUser() === $utilisateur_rechercher) {
             return $this->json(['status' => 'Erreur', 'message' => 'Vous ne pouvez pas supprimer votre propre compte'], 403);
         }
 
-        // Étape 4 — Supprimer l'utilisateur
+        // Étape 4 - Supprimer l'utilisateur
         $em->remove($utilisateur_rechercher);
         $em->flush();
 
-        // Étape 4 — Retourner un message de confirmation
+        // Étape 4 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur supprimé avec succès']);
     }
 
@@ -90,12 +105,12 @@ final class UtilisateurController extends AbstractController
     // équivalent de DELETE FROM utilisateur WHERE email = :email
     public function deleteUserByEmail(string $email, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
     {
-        // Étape 1 — Vérifier le rôle ADMIN
+        // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 — Chercher l'utilisateur par son email
+        // Étape 2 - Chercher l'utilisateur par son email
         // indice : $utilisateurRepository->findOneBy(...)
         $email_utilisateur = $utilisateurRepository->findOneBy(['email' => $email]);
         // Si l'utilisateur n'existe pas, on retourne une réponse JSON avec un message d'erreur 
@@ -104,16 +119,16 @@ final class UtilisateurController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404); 
         }
     
-        // Étape 3 — Empêcher l'admin de se supprimer lui-même
+        // Étape 3 - Empêcher l'admin de se supprimer lui-même
         if ($this->getUser() === $email_utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Vous ne pouvez pas supprimer votre propre compte'], 403);
         }
 
-        // Étape 4 — Supprimer l'utilisateur
+        // Étape 4 - Supprimer l'utilisateur
         $em->remove($email_utilisateur);
         $em->flush();
 
-        // Étape 5 — Retourner un message de confirmation
+        // Étape 5 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur supprimé avec succès']);
     }
 
@@ -142,21 +157,21 @@ final class UtilisateurController extends AbstractController
         MailerService $mailerService                  
     ): JsonResponse
     {
-        // Étape 1 — Vérifier le rôle ADMIN
+        // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 — Récupérer les données JSON
+        // Étape 2 - Récupérer les données JSON
         $data = json_decode($request->getContent(), true);
-        // Étape 3 — Chercher l'utilisateur par son id
+        // Étape 3 - Chercher l'utilisateur par son id
         $utilisateur = $utilisateurRepository->find($id);
-        // Étape 4 — Si non trouvé retourner 404
+        // Étape 4 - Si non trouvé retourner 404
         if (!$utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
         }
         
-        // Étape 5 — Mise à jour des champs
+        // Étape 5 - Mise à jour des champs
         
         // On vérifie que le nouvel email n'est pas déjà utilisé par un AUTRE utilisateur
         if (isset($data['email'])) {
@@ -213,10 +228,10 @@ final class UtilisateurController extends AbstractController
             $utilisateur->setRole($role);
         }
 
-        // Étape 6 — flush() uniquement, pas besoin de persist() pour une mise à jour
+        // Étape 6 - flush() uniquement, pas besoin de persist() pour une mise à jour
         $em->flush();
 
-        // Étape 7 — Retourner un message de confirmation
+        // Étape 7 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
 
@@ -244,21 +259,21 @@ final class UtilisateurController extends AbstractController
         MailerService $mailerService                  
     ): JsonResponse
     {
-        // Étape 1 — Vérifier le rôle ADMIN
+        // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 — Récupérer les données JSON
+        // Étape 2 - Récupérer les données JSON
         $data = json_decode($request->getContent(), true);
-        // Étape 3 — Chercher l'utilisateur par son email
+        // Étape 3 - Chercher l'utilisateur par son email
         $utilisateur = $utilisateurRepository->findOneBy(['email' => $email]);
-        // Étape 4 — Si non trouvé retourner 404
+        // Étape 4 - Si non trouvé retourner 404
         if (!$utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
         }
         
-        // Étape 5 — Mise à jour des champs        
+        // Étape 5 - Mise à jour des champs        
         // On vérifie que le nouvel email n'est pas déjà utilisé par un AUTRE utilisateur
         if (isset($data['email'])) {
 
@@ -314,10 +329,10 @@ final class UtilisateurController extends AbstractController
             $utilisateur->setRole($role);
         }
 
-        // Étape 6 — flush() uniquement, pas besoin de persist() pour une mise à jour
+        // Étape 6 - flush() uniquement, pas besoin de persist() pour une mise à jour
         $em->flush();
 
-        // Étape 7 — Retourner un message de confirmation
+        // Étape 7 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
 }

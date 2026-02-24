@@ -11,6 +11,8 @@ use Symfony\Component\Mime\Email;
 use Twig\Environment;
 // Importe la classe Utilisateur pour pouvoir l'utiliser dans la fonction de réinitialisation de mot de passe
 use App\Entity\Utilisateur;
+// Importe la classe Commande pour pouvoir l'utiliser dans la fonction d'annulation de commande
+use App\Entity\Commande;
 
 /**
  * @author      Florian Aizac
@@ -51,13 +53,14 @@ class MailerService
         $this->mailer->send($email);
     }
 
-    /*
-    * @description : envoie un email de réinitialisation de mot de passe à un utilisateur
-    *  Fonction appellée lors de la réinitialisation du mdp par l'admin
-    *  elle permet de générer un mot de passe temporaire aléatoire et d'envoyer un email au client.
-    * @param Utilisateur $utilisateur : l'utilisateur qui a demandé la réinitialisation de son mot de passe
-    * @param string $motDePasseTemporaire : le mot de passe temporaire généré pour l'utilisateur
-    */
+    /**
+     * @description Envoie un email de réinitialisation de mot de passe à un utilisateur
+     * Fonction appellée lors de la réinitialisation du mdp par l'admin
+     * elle permet de générer un mot de passe temporaire aléatoire et d'envoyer un email au client.
+     * @param Utilisateur $utilisateur l'utilisateur qui a demandé la réinitialisation de son mot de passe
+     * @param string $motDePasseTemporaire : le mot de passe temporaire généré pour l'utilisateur
+     * @return void retourne rien 
+     */
     public function sendPasswordResetEmail(Utilisateur $utilisateur, string $motDePasseTemporaire): void
     {
         // Génère le HTML à partir du template Twig
@@ -74,6 +77,37 @@ class MailerService
             ->html($html);
 
         // Envoie l'email
+        $this->mailer->send($email);
+    }
+
+    /**
+     * @description Envoie un email de confirmation d'annulation de commande au client
+     * @param Utilisateur $utilisateur Le client qui annule
+     * @param Commande $commande La commande annulée
+     * @param int $pourcentage Le pourcentage de remboursement
+     * @param float $montant Le montant remboursé au client
+     * @return void retourne rien 
+     */
+    public function sendAnnulationEmail(Utilisateur $utilisateur, Commande $commande, int $pourcentage, float $montant): void
+    {
+        // Génère le HTML à partir du template Twig
+        $html = $this->twig->render('emails/annulation_commande.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+            'motif'           => $commande->getMotifAnnulation(),
+            'pourcentage'     => $pourcentage,
+            'montant'         => $montant,
+        ]);
+
+        // Création de l'email
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Annulation de votre commande ' . $commande->getNumeroCommande())
+            ->html($html);
+
+        // Envoie de l'email
         $this->mailer->send($email);
     }
 

@@ -1,0 +1,19 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block content %}
+    <h2>Annulation de votre commande</h2>
+    <p>Bonjour {{ prenom }},</p>
+    <p>Votre commande <strong>{{ numero_commande }}</strong> prévue le <strong>{{ date_prestation }}</strong> a été annulée.</p>
+    <p>Motif : <strong>{{ motif }}</strong></p>
+    <hr>
+        {# Affichage du message de remboursement selon le pourcentage #}
+        {% if pourcentage == 100 %}
+            <p> Vous serez remboursé à <strong>100%</strong> soit <strong>{{ montant }}€</strong></p>
+        {% elseif pourcentage == 50 %}
+            <p> Vous serez remboursé à <strong>50%</strong> soit <strong>{{ montant }}€</strong></p>
+        {% else %}
+            <p> Votre annulation étant trop tardive, <strong>aucun remboursement</strong> ne sera effectué.</p>
+        {% endif %}
+    <hr>
+    <p>Cordialement,<br>L'équipe Vite et Gourmand</p>
+{% endblock %}
