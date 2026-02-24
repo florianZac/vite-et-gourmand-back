@@ -185,3 +185,46 @@ composer require twig
 
 5.3 Création d'un template d'email
 dans le dossier templates/emails/contact.html.twig
+
+5.4 création d'un compte mailtrap
+https://mailtrap.io/inboxes/4404595/messages/5352687463/html
+et récupération du MAILER_DSN
+mailtrap -> sandbox -> intégration -> symphony -> MAILER_DSN="smtp://6836c3cc28f364:****c337@sandbox.smtp.mailtrap.io:2525"
+ne pas oublié de régénerer les crédentiale il faut pas que le mdp soit masquer sa ma souler j'ai perdu 1 heure de débug.
+
+5.5 creation des fonctions sanitazier, validation reggex et rate limitation dans le controleur mail ContactController.php
+
+5.1 installation rate limiting 
+composer require symfony/rate-limiter
+composer require symfony/lock
+php bin/console cache:clear
+
+mise en place des différentes sécutité 
+Protection n°1 : Rate limiting
+permet de proteger un attaquant qui envoie des millies de requêtes par seconde pour surcharger le serveur ou spammer la boîte mail
+Solution proposer identifier l'adresse IP de l'utilisateur et lui accorde que 5 requêtes par heure.
+
+Protection n°2 : Content-Type
+Un bot peut envoyer des données dans le formulaire de type XML, formulaire HTML, fichier binaire pour provoquer des erreurs.
+Solution : vérifier le type des données de toutes les inputs ou textarea et ne traiter que les requetes ayant le bon format.
+
+Protection n°3 : Taille du body
+Un attaquant peut envoyer une requetes de plusssieurs mégaoctets pour saturer la mémoire du serveur.
+Solution : on limite la 10ko avant la gestion json
+
+Protection n°4 : Honeypot à vérifier je suis pas sur de mon coup .
+Les bots automatiques remplissent tous les champs d'un formulaire sans réfléchir pour surcharger le serveur
+Solution :Si ce champ est rempli c'est forcément un bot car un humain ne verra pas ce champs.
+
+Protection n°5 : sanitazier 
+un attaquant peut cree du code malvaillant avec des espaces du html ou php ou js ou des characteres speciaux
+Solution :
+trim -> supprime les espaces inutile
+strip_tags -> supprime les balise html, js et ,php
+htmlspecialchars -> évite les attaques XSS de script malvaillant
+
+Protection n°6 : Injection SQL
+Un attaquant peut tenter d'injecter des commandes SQL dans les champs texte pour manipuler la base de données
+Solution :
+preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i')
+cette reggex permet de supprimer tout les mots clefs dangereux SQL.

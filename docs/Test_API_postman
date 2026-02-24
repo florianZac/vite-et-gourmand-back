@@ -79,7 +79,8 @@ Body : aucun
 résultat : test 1.5 réussi, liste des horaires reçue avec gestion du cas null == Fermé
 
 /*------------------------------------------------------------------------*/
-test 1.6 :
+test 1.6 : plusieurs tests complémentaires pour la route POST /api/contact  
+           pour tester les différentes protections de sécurité mises en place dans le controller ContactController.php fonction contact()
 Méthode : POST
 URL : http://127.0.0.1:8000/api/contact
 Body : raw → JSON
