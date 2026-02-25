@@ -53,15 +53,14 @@ final class ClientController extends AbstractController
 
     #[Route('/profil', name: 'api_client_update_profil', methods: ['PUT'])]
     /**
-     * @description Cette fonction permet à un client connecté de mettre à jour les informations de son profil.
-     * L'utilisateur peut mettre à jour les champs suivants : email, prenom, telephone, ville, adresse_postale et mot de passe.
+     * @description Cette fonction permet à un client connecté de mettre à jour son profil.
+     *
      * @param Request $request la requête HTTP contenant les données à mettre à jour au format JSON
      * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
      * @param UserPasswordHasherInterface $passwordHasher le service pour hasher les mots de passe de l'utilisateur
      * @param UtilisateurRepository $utilisateurRepository le repository pour accéder aux données de l'utilisateurs
      * @return JsonResponse une réponse JSON indiquant le succès ou l'échec de l'opération de mise à jour
      */
-
     public function updateUserById(
         Request $request,
         EntityManagerInterface $em,
@@ -84,7 +83,6 @@ final class ClientController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         // Étape 4 - Mise à jour des champs
-
         // Vérification doublon email
         if (isset($data['email'])) {
             $emailExistant = $utilisateurRepository->findOneBy(['email' => $data['email']]);
@@ -93,11 +91,16 @@ final class ClientController extends AbstractController
             }
             $utilisateur->setEmail($data['email']);
         }
-
+        
         // Modification du mot de passe
         if (isset($data['password'])) {
             $motDePasseHashe = $passwordHasher->hashPassword($utilisateur, $data['password']);
             $utilisateur->setPassword($motDePasseHashe);
+        }
+
+        // Mise à jour du nom
+        if (isset($data['nom'])) {
+            $utilisateur->setNom($data['nom']);
         }
 
         // Mise à jour du prénom
@@ -119,9 +122,19 @@ final class ClientController extends AbstractController
             $utilisateur->setVille($data['ville']);
         }
 
+        // Mise à jour du code postal
+        if (isset($data['code_postal'])) {
+            $utilisateur->setCodePostal($data['code_postal']);
+        }
+
         // Mise à jour de l'adresse postale
         if (isset($data['adresse_postale'])) {
             $utilisateur->setAdressePostale($data['adresse_postale']);
+        }
+
+        // Mise à jour du pays
+        if (isset($data['pays'])) {
+            $utilisateur->setPays($data['pays']);
         }
 
         // Étape 5 - Sauvegarder en base
@@ -420,4 +433,47 @@ final class ClientController extends AbstractController
         ], 201);
     }
 
+    /**
+     * @description Cette fonction permet à un client de demander la désactivation de son compte.
+     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
+     * @param int $id l'id de la commande sur laquelle le client veut laisser un avis
+     * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse une réponse JSON indiquant le succès ou l'échec de l'opération.
+     */
+    #[Route('/compte/desactivation', name: 'api_client_compte_desactivation', methods: ['POST'])]
+    public function demandeDesactivation(EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle CLIENT
+        if (!$this->isGranted('ROLE_CLIENT')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur connecté
+        $utilisateur = $this->getUser();
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
+        }
+
+        // Étape 3 - Vérifier que le compte n'est pas déjà en attente de désactivation
+        if ($utilisateur->getStatutCompte() === 'en_attente_desactivation') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Demande de désactivation déjà en cours'], 400);
+        }
+
+        // Étape 4 - Vérifier que le compte n'est pas déjà inactif
+        if ($utilisateur->getStatutCompte() === 'inactif') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
+        }
+
+        // Étape 5 - modification du statut du compte
+        $utilisateur->setStatutCompte('en_attente_desactivation');
+
+        // Étape 6 - Sauvegarder en base de donnée
+        $em->flush();
+
+        // Étape 7 - Retourner un message de confirmation
+        return $this->json([
+            'status'  => 'Succès',
+            'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
+        ]);
+    }
 }

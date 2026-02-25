@@ -111,4 +111,75 @@ class MailerService
         $this->mailer->send($email);
     }
 
+    /**
+     * @description Envoie un email au client lorsque sa commande est acceptée
+     * @param Utilisateur $utilisateur Le client
+     * @param Commande $commande La commande acceptée
+     * @return void
+     */
+    public function sendCommandeAccepteeEmail(Utilisateur $utilisateur, Commande $commande): void
+    {
+        // Permet de remplir les données pour l'envoies de l'Email à travers le template
+        $html = $this->twig->render('emails/commande_acceptee.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+        ]);
+
+        // Création de l'email
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Votre commande ' . $commande->getNumeroCommande() . ' a été acceptée')
+            ->html($html);
+            
+        // Envoie de l'e-mail
+        $this->mailer->send($email);
+    }
+
+    /**
+     * @description Envoie un email au client lorsque sa commande est en livraison
+     * @param Utilisateur $utilisateur Le client
+     * @param Commande $commande La commande en livraison
+     * @return void
+     */
+    public function sendCommandeLivraisonEmail(Utilisateur $utilisateur, Commande $commande): void
+    {
+        $html = $this->twig->render('emails/commande_livraison.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+        ]);
+
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Votre commande ' . $commande->getNumeroCommande() . ' est en cours de livraison')
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
+
+    /**
+     * @description Envoie un email au client lorsque sa commande est terminée avec invitation à déposer un avis
+     * @param Utilisateur $utilisateur Le client
+     * @param Commande $commande La commande terminée
+     * @return void
+     */
+    public function sendCommandeTermineeEmail(Utilisateur $utilisateur, Commande $commande): void
+    {
+        $html = $this->twig->render('emails/commande_terminee.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+        ]);
+
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Votre commande ' . $commande->getNumeroCommande() . ' est terminée - Donnez votre avis !')
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
 }

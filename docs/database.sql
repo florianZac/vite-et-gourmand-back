@@ -27,12 +27,13 @@ CREATE TABLE `menu` (
 
 CREATE TABLE `utilisateur` (
   `utilisateur_id` INT NOT NULL AUTO_INCREMENT,
-  `email` VARCHAR(255) NOT NULL,    -- 50 n'est pas assez pour stocker une adresse email, passage à 255
-  `password` VARCHAR(255) NOT NULL, -- 50 n'est pas assez pour stocker un mot de passe hashé bcrypt, passage à 255
+  `nom` VARCHAR(50) NOT NULL,
   `prenom` VARCHAR(50) NOT NULL,
   `telephone` VARCHAR(50) NOT NULL,
-  `ville` VARCHAR(50) NOT NULL,
+  `email` VARCHAR(255) NOT NULL,    -- 50 n'est pas assez pour stocker une adresse email, passage à 255
+  `password` VARCHAR(255) NOT NULL, -- 50 n'est pas assez pour stocker un mot de passe hashé bcrypt, passage à 255
   `pays` VARCHAR(50) NOT NULL,
+  `ville` VARCHAR(50) NOT NULL,
   `adresse_postale` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`utilisateur_id`)
 );

@@ -44,8 +44,10 @@ final class AuthController extends AbstractController
 
         // Étape 2 - Vérifie que les champs obligatoires sont présents
         // il faudra que je fasse un regex pour vérifier que l'email est au bon format et que le mot de passe est assez fort, mais pour l'instant on se contente de vérifier qu'ils sont présents
-        if (empty($data['email']) || empty($data['password']) || empty($data['prenom'])) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Email, password et prénom obligatoires'], 400);
+        if ( empty($data['nom']) || empty($data['prenom']) || empty($data['telephone']) ||
+             empty($data['email']) || empty($data['password']) || empty($data['pays']) ||
+             empty($data['ville']) || empty($data['code_postal'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Toutes les données doivent etre remplis'], 400);
         }
 
         // Étape 3 - Vérifie que l'email n'existe pas déjà en base de données
@@ -63,13 +65,16 @@ final class AuthController extends AbstractController
 
         // Rappel de la notion : value ?? "" signifie "si value existe et n'est pas null, 
         // alors prends sa valeur, sinon prends une chaîne vide"
-        $utilisateur->setEmail($data['email']);
+
+        $utilisateur->setNom($data['nom']);
         $utilisateur->setPrenom($data['prenom']);
         $utilisateur->setTelephone($data['telephone'] ?? ''); // si le champ telephone n'est pas présent dans les données, on met une chaîne vide par défaut
-                                                                         //     
-        $utilisateur->setVille($data['ville'] ?? '');
+        $utilisateur->setEmail($data['email']);      
         $utilisateur->setPays($data['pays'] ?? '');
+        $utilisateur->setVille($data['ville'] ?? '');
         $utilisateur->setAdressePostale($data['adresse_postale'] ?? '');
+        $utilisateur->setCodePostal($data['code_postal'] ?? '');
+        $utilisateur->setStatutCompte('actif');     
         $utilisateur->setRole($role );
 
         // Étape 6 - Hash le mot de passe avant de le stocker en base

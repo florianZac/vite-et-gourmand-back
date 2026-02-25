@@ -50,12 +50,21 @@ test 1.20 -> POST /api/client/commandes/{id}/avis |  voir fichier ClientControll
 Un client authentifié peut laisser un avis si sa commande est en statut "terminée"
 
 ROLE_EMPLOYE :
-test 1.21 -> GET    /api/employe/commandes
-test 1.22 -> GET    /api/employe/commandes/{id}
-test 1.23 -> PUT    /api/employe/commandes/{id}
-test 1.24 -> DELETE /api/employe/commandes/{id}
-test 1.25 -> POST /api/employe/commandes/{id}/statut | voir fichier ClientController.php fonction getStatutCommande()
-test 1.26 -> PUT    /api/employe/avis/{id}
+test 1.21 -> Post /api/login | test le login d'un utilisateur ayant le ROLE_EMPLOYE
+test 1.22 -> GET  /api/employe/commandes | voir fichier EmployeController.php fonction getCommandes() affiche toutes les commandes en cours
+test 1.23 -> GET  /api/employe/commandes/recherche/{nom} | voir fichier EmployeController.php fonction rechercherCommande() recherche par nom de commande
+test 1.24 -> POST /api/employe/commandes/{id}/statut | voir fichier EmployeController.php fonction changerStatut() modifie le statut d'une commande
+test 1.25 -> GET  /api/employe/avis | voir fichier EmployeController.php fonction getAvisEnAttente() affiche les avis en attente
+test 1.26 ->PUT  /api/employe/avis/{id}/approuver   | voir fichier EmployeController.php fonction approuverAvis() approuve un avis
+
+test 1.27 -> GET  /api/employe/menus    | voir fichier EmployeController.php fonction X() affiche les menus
+test 1.28 -> GET  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction X() afficher un menu avec ses allergenes
+test 1.29 -> POST /api/employe/menus    | voir fichier EmployeController.php fonction X() ajoute un menu
+test 1.30 -> PUT  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction X() modifie un menu
+test 1.31 -> POST /api/employe/themes   | voir fichier EmployeController.php fonction X() ajoute un theme
+test 1.32 -> PUT  /api/employe/themes/{id}  | voir fichier EmployeController.php fonction X() modifie un theme
+test 1.33 -> POST /api/employe/regimes  | voir fichier EmployeController.php fonction X() ajoute un regime
+test 1.34 -> PUT  /api/employe/regimes/{id} | voir fichier EmployeController.php fonction X() modifie un élément de la table regime
 
 
 /*------------------------------------------------------------------------
@@ -177,13 +186,15 @@ Méthode : POST
 URL : http://127.0.0.1:8000/api/register
 Body : raw → JSON
 {
-    "email": "client@gmail.com",
-    "password": "123456789",
+    "nom": "Aizac",
     "prenom": "Florian",
     "telephone": "0600000000",
-    "ville": "Montpellier",
+    "email": "test@gmail.com",
+    "password": "password123",
     "pays": "France",
-    "adresse_postale": "1 rue de la gourmande"
+    "ville": "Montpellier",
+    "code_postal": "34000",
+    "adresse_postale": "1 rue de la Gourmandise"
 }
 résultat : test 1.7 réussi, utilisateur créé avec succès code 201 reçu
 {
@@ -198,6 +209,7 @@ résultat : test 1.7.1 réussi, erreur 409 + message "Email déjà utilisé" re�
     "status": "error",
     "message": "Cet email est déjà utilisé"
 }
+
 /*------------------------------------------------------------------------*/
 test 1.8 : test pour la connexion d'un utilisateur et la réception du token d'authentification
 Méthode : POST
@@ -383,20 +395,35 @@ Méthode : GET
 URL : http://127.0.0.1:8000/api/client/profil
 Headers : Authorization
 Résultat : test 1.15 réussi, données du profil du client reçu
+
 /*------------------------------------------------------------------------*/
 test 1.16 : test pour la mise à jour du profil d'un client authentifié
 Méthode : PUT
 URL : http://127.0.0.1:8000/api/client/profil
 Headers : Authorization
-Body : {
-    "prenom": "clientcontent"
+Body : 
+{
+    "nom": "Aizac",
+    "prenom": "Florian",
+    "code_postal": "34000"
 }
+
 Résultat : test 1.16 réussi, profil du client mis à jour avec succès et retourne le code 200
 {
     "status": "success",
     "message": "Profil mis à jour avec succès"
 }
 
+/*------------------------------------------------------------------------*/
+test 1.16.1 : test de demande de désactivation de compte par un client
+Méthode : POST
+URL : http://127.0.0.1:8000/api/client/compte/desactivation
+Headers : Authorization: Bearer TON_TOKEN_CLIENT
+Résultat : test 1.16.1 réussi, passage du statut_compte à en_attente_desactivation 
+{
+    'status'  => 'Succès',
+    'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
+}
 /*------------------------------------------------------------------------*/
 test 1.17 : test pour la récupération de la liste des commandes d'un client authentifié
 Méthode : GET
@@ -467,7 +494,7 @@ Résultat : test 1.19 réussi, retour du suivis retournée avec succès et retou
 test 1.20 : test pour publié un avis d'un client authentifié si la commande est en statut terminée.
 faire login recup token ensuite 
 Méthode : POST
-URL :POST http://127.0.0.1:8000/api/client/commandes/3/avis
+URL : http://127.0.0.1:8000/api/client/commandes/3/avis
 Headers : 
     Content-Type: application/json
     Authorization: Bearer TOKEN_CLIENT
@@ -486,7 +513,254 @@ Résultat : test 1.20 réussi,JSON retournée avec succès et retourne bien le c
 /*------------------------------------------------------------------------
 * Début des tests pour le Role : ROLE_EMPLOYE :
 ------------------------------------------------------------------------*/
- a faire
+
+test 1.21 : Test pérmétant de vérfier le login employé
+Méthode : POST
+URL : http://127.0.0.1:8000/api/login 
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{
+    "email": "employe@vite-et-gourmand.fr",
+    "password": "123"
+}  
+
+Résultat : test 1.21 réussi, renvoie bien 201
+
+/*------------------------------------------------------------------------*/
+
+test 1.22 : test permétant d'afficher toutes les commandes en cours pour le role employée
+Méthode : GET
+URL : http://127.0.0.1:8000/api/employe/commandes   
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{
+}  
+Résultat : test 1.22 réussi,
+
+/*------------------------------------------------------------------------*/
+test 1.23 : test de la fonction de rechercher par nom de commande exemple 'CMD-002' == nom
+Méthode : GET
+URL : http://127.0.0.1:8000/api/employe/commandes/recherche/CMD-002 
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{
+}  
+
+Résultat : test 1.23 réussi,
+{
+    "status": "Succès",
+    "commandes": [
+        {
+            "id": 2,
+            "numeroCommande": "CMD-002",
+            "dateCommande": "2026-02-24T11:00:00+00:00",
+            "datePrestation": "2026-02-26T00:00:00+00:00",
+            "heureLivraison": "1970-01-01T14:00:00+00:00",
+            "prixMenu": 200,
+            "nombrePersonne": 15,
+            "prixLivraison": 25,
+            "statut": "annulée",
+            "pretMateriel": true,
+            "restitutionMateriel": false,
+            "utilisateur": {
+                "id": 1,
+                "email": "admin@vite-et-gourmand.fr",
+                "password": "$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G",
+                "prenom": "Admin",
+                "telephone": "0123456789",
+                "ville": "Montpellier",
+                "pays": "France",
+                "adressePostale": "123 Rue de la Gourmandise",
+                "role": {
+                    "id": 7,
+                    "libelle": "ROLE_ADMIN"
+                },
+                "nom": "admin",
+                "codePostal": "34400",
+                "userIdentifier": "admin@vite-et-gourmand.fr",
+                "roles": [
+                    "ROLE_ADMIN"
+                ],
+                "statutCompte": "actif"
+            },
+            "menu": {
+                "id": 2,
+                "titre": "Réveillon Étoilé de Noël",
+                "nombrePersonneMinimum": 8,
+                "prixParPersonne": 40,
+                "description": "Un repas de Noël gastronomique digne des plus grandes tables, avec des produits d'exception sélectionnés par nos chefs.",
+                "quantiteRestante": 30,
+                "regime": {
+                    "id": 4,
+                    "libelle": "Vegan"
+                },
+                "theme": {
+                    "id": 6,
+                    "libelle": "Noêl"
+                },
+                "plats": []
+            },
+            "motifAnnulation": " J'peux pas, j'ai poney",
+            "montantRembourse": 0
+        }
+    ]
+}
+
+/*------------------------------------------------------------------------*/
+test 1.24 : test de modification du statut d'une commande
+Méthode : POST
+URL : http://127.0.0.1:8000/api/employe/commandes/1/statut
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{ "statut": "Acceptée" }
+
+Résultat : test 1.24 réussi, retourne 200 changement du statut
+
+
+/*------------------------------------------------------------------------*/
+
+test 1.25 : test affichage des avis en attente
+Méthode : GET
+URL : http://127.0.0.1:8000/api/employe/avis
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.25 réussi, retourne 200
+
+/*------------------------------------------------------------------------*/
+test 1.26 : test  pour approuver un avis
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/employe/avis/2/approuver
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.26 réussi, retourne 200
+{
+    "status": "Succès",
+    "message": "Avis approuvé avec succès"
+}
+/*------------------------------------------------------------------------*/
+
+test 1.27 : test de vérification de l'affichage des menus
+Méthode : GET
+URL : http://127.0.0.1:8000/api/employe/menus
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.27 réussi, retourne 200
+{
+
+}
+
+/*------------------------------------------------------------------------*/
+test 1.28 : test permétant d'afficher un menu avec ses allergenes
+Méthode : GET
+URL : http://127.0.0.1:8000/api/employe/menus/{id} 
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.28 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 1.29 : test permétant d'ajouter un menu
+Méthode : GET
+URL : /api/employe/menus
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.29 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 1.30 : test permétant de modifier un menu
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/employe/menus/{id}
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.30 réussi, retourne 200
+{
+
+} 
+
+/*------------------------------------------------------------------------*/
+test 1.31 : test permétant d'ajouter un theme
+Méthode : POST
+URL : http://127.0.0.1:8000/api/employe/themes
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.31 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 1.32 : test permétant de modifier un theme
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/employe/themes/{id}
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.32 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 1.33 : test permétant d'ajouter un regime
+Méthode : POST
+URL : http://127.0.0.1:8000/api/employe/regimes
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.33 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 1.34 : test permétant de modifier un élément de la table regime
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/employe/regimes/{id}
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 1.34 réussi, retourne 200
+{
+
+}
+
+/*------------------------------------------------------------------------*/
+
 /*------------------------------------------------------------------------
 * Début des tests pour le Role : ROLE_EMPLOYE :
 ------------------------------------------------------------------------*/

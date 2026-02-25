@@ -335,5 +335,46 @@ final class AdminController extends AbstractController
         // Étape 7 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
+
+        #[Route('/commandes/{id}', name: 'api_client_commande_delete', methods: ['DELETE'])]
+    /**
+     * @description Cette fonction permet à un client connecté de supprimer une commande.
+     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
+     * @param CommandeRepository $commandeRepository Le repository des commandes
+     * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse reponse JSON
+     */
+    public function deleteCommande(int $id, CommandeRepository $commandeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 — Vérifier le rôle CLIENT
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 — Récupérer l'utilisateur connecté
+        $utilisateur = $this->getUser();
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
+        }
+
+        // Étape 3 — Chercher la commande par son id
+        $commande = $commandeRepository->find($id);
+        // Étape 4 — Si non trouvée retourner 404
+        if (!$commande) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
+        }
+        // Étape 5 — Vérifier que la commande appartient bien à l'utilisateur connecté
+        if ($commande->getUtilisateur() !== $utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Commande non autorisée'], 403);
+        }
+
+        // Étape 6 — Supprimer la commande
+        $em->remove($commande);
+        $em->flush();
+
+        // Étape 7 — Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Commande supprimée avec succès']);
+    }
+    
 }
 

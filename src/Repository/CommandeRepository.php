@@ -47,6 +47,43 @@ class CommandeRepository extends ServiceEntityRepository
         ;
     }
 
+    /**
+     * Récupère toutes les commandes actuellement en cours.
+     * Sont exclues :
+     *  - les commandes avec le statut_compte == "Terminée"
+     *  - les commandes avec le statut_compte == "Annulée"
+     *
+     * Les commandes sont triées par date de commande les plus récentes en premier
+     * @return array Liste des commandes en cours
+     */
+    public function findCommandesEnCours(): array
+    {
+        return $this->createQueryBuilder('c')
+            // Exclut les commandes terminées ou annulées
+            ->where('c.statut_compte NOT IN (:statut_compte)')
+            ->setParameter('statut_compte', ['Terminée', 'Annulée'])
+            // Trie par date de commande décroissante
+            ->orderBy('c.date_commande', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Recherche des commandes par numéro de commande.
+     * sur le champ numero_commande (ex : CMD-001, CMD-002, etc.).
+     * @param string $nom Chaîne de caractères à rechercher dans le numéro de commande
+     * @return array Liste des commandes correspondant à la recherche
+     */
+    public function findByNumeroCommande(string $nom): array
+    {
+        return $this->createQueryBuilder('c')
+            // Recherche partielle sur le numéro de commande
+            ->where('c.numero_commande LIKE :nom')
+            ->setParameter('nom', '%' . $nom . '%')
+            ->getQuery()
+            ->getResult();
+    }
+
     //    /**
     //     * @return Commande[] Returns an array of Commande objects
     //     */

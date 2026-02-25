@@ -1,15 +1,18 @@
 USE vite_et_gourmand;
 
 
-INSERT INTO `utilisateur` (`email`, `password`, `prenom`, `telephone`, `ville`, `pays`, `adresse_postale`, `role_id`) 
+INSERT INTO `utilisateur` (`nom`, `prenom`, `telephone`, `email`, `password`, `pays`, `ville`, `adresse_postale`, `code_postale`, `role_id`) 
 VALUES(
+        'admin',
+        'admin',
+        '0123456789',
         'admin@vite-et-gourmand.fr', 
         '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G',
-        'Admin', 
-        '0123456789', 
+        'France', 
         'Montpellier', 
         'France', 
         '123 Rue de la Gourmandise',
+        '34400',
         '7'
     );
 

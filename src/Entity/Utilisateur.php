@@ -16,6 +16,15 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'utilisateur_id', type: 'integer')]
     private ?int $id = null;
 
+    #[ORM\Column(length: 50)]
+    private ?string $nom = null;
+
+    #[ORM\Column(length: 50)]
+    private ?string $prenom = null;    
+    
+    #[ORM\Column(length: 50)]
+    private ?string $telephone = null;
+
     #[ORM\Column(length: 255)]
     private ?string $email = null;
 
@@ -23,16 +32,10 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 50)]
-    private ?string $prenom = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $telephone = null;
-
+    private ?string $pays = null;
+    
     #[ORM\Column(length: 50)]
     private ?string $ville = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $pays = null;
 
     #[ORM\Column(length: 50)]
     private ?string $adresse_postale = null;
@@ -40,6 +43,12 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'role_id', referencedColumnName: 'role_id', nullable: false)]
     private ?Role $role = null;
+
+    #[ORM\Column(length: 50)]
+    private ?string $code_postal = null;
+
+    #[ORM\Column(length: 50)]
+    private ?string $statut_compte = null;
 
     public function getId(): ?int
     {
@@ -140,7 +149,31 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         $this->role = $role;
 
         return $this;
+    }    
+    
+    public function getNom(): ?string
+    {
+        return $this->nom;
     }
+
+    public function setNom(string $nom): static
+    {
+        $this->nom = $nom;
+
+        return $this;
+    }
+    public function getCodePostal(): ?string
+    {
+        return $this->code_postal;
+    }
+
+    public function setCodePostal(string $code_postal): static
+    {
+        $this->code_postal = $code_postal;
+
+        return $this;
+    }
+
     // --- Méthodes obligatoires de UserInterface pour l'authentification  ---
 
     /**
@@ -169,4 +202,19 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // Rien à effacer ici car on ne stocke pas de mot de passe en clair
     }
+
+    public function getStatutCompte(): ?string
+    {
+        return $this->statut_compte;
+    }
+
+    public function setStatutCompte(string $statut_compte): static
+    {
+        $this->statut_compte = $statut_compte;
+
+        return $this;
+    }
+
+
+
 }
