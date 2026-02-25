@@ -90,10 +90,20 @@ test 2.37 -> PUT /api/admin/menus/{id}  | voir fichier MenuControllerAdmin.php f
 modifie un menu
 test 2.38 -> DELETE /api/admin/menus/{id} | voir fichier MenuControllerAdmin.php fonction deleteMenu()
 supprime un menu
+test 2.39 -> PUT /api/admin/commandes/{id}/annuler | voir fichier CommandeController.php fonction annulerCommande()
+annule une commande avec remboursement 100%
+
+test 2.40 -> GET /api/admin/commandes | voir fichier CommandeController.php fonction getAllCommandes()
+liste de toutes les commandes
+
+test 2.41 -> GET /api/admin/commandes/{id} | voir fichier CommandeController.php fonction getCommandeById()
+Retourne une commande par son id
+
+
 
 /* Debut des test à écrire et réalisé avec postman */
 
-A lintérieur de ces braquet les codes pas encore tapé à fair
+A lintérieur de ces braquet les codes pas encore tapé à faire
 
 /* Fin des test à écrire et réalisé */
 
@@ -825,7 +835,7 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.28 
+Résulat : test 2.28 réussi 
 {
     "status": "Succès",
     "message": "Thème supprimé avec succès"
@@ -838,7 +848,7 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.29 
+Résulat : test 2.29 réussi 
 {
     "status": "Succès",
     "total": 0,
@@ -853,7 +863,7 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.30
+Résulat : test 2.30 réussi
 {
     "status": "Succès",
     "plat": {
@@ -873,7 +883,7 @@ Body :
     "titre_plat": "Une frite deux fois",
     "photo": "abc"
 }
-Résulat : test 2.31 
+Résulat : test 2.31 réussi 
 {
     "status": "Succès",
     "message": "Plat créé avec succès",
@@ -889,7 +899,7 @@ Body :
     "titre_plat": "Une frite trois fois",
     "photo": "abc"
 }
-Résulat : test 2.32 
+Résulat : test 2.32 réussi 
 {
     "status": "Succès",
     "message": "Plat mis à jour avec succès"
@@ -902,7 +912,7 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.33 
+Résulat : test 2.33 réussi 
 {
     "status": "Succès",
     "message": "Plat supprimé avec succès"
@@ -915,7 +925,7 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.34 
+Résulat : test 2.34 réussi 
 {
     "status": "Succès",
     "total": 3,
@@ -981,7 +991,7 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.35 
+Résulat : test 2.35 réussi 
 {
     "status": "Succès",
     "menu": {
@@ -1019,7 +1029,7 @@ Body :
     "theme_id": "1"
 
 }
-Résulat : test 2.36
+Résulat : test 2.36 réussi
 {
     "status": "Succès",
     "message": "Menu créé avec succès",
@@ -1042,7 +1052,7 @@ Body :
     "theme_id": "1"
 
 }
-Résulat : test 2.37
+Résulat : test 2.37 réussi
 {
     "status": "Succès",
     "message": "Menu mis à jour avec succès"
@@ -1056,10 +1066,51 @@ Headers : Authorization: Bearer TOKEN_ADMIN
 Body :
 {
 }
-Résulat : test 2.38 
+Résulat : test 2.38 réussi 
 {
     "status": "Succès",
     "message": "Menu supprimé avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+test 2.39 : Test : annule une commande avec remboursement 100%
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/commandes/2/annuler
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.39 réussi 
+{
+    "status": "Succès",
+    "message": "Commande annulée avec succès",
+    "numero_commande": "CMD-002",
+    "motif_annulation": "Annulée par l'administrateur",
+    "montant_rembourse": 225
+}
+
+/*------------------------------------------------------------------------*/
+test 2.40 : Test : liste de toutes les commandes
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/commandes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.40 réussi
+{
+}
+
+/*------------------------------------------------------------------------*/
+test 2.41 : Test : liste de toutes les commandes
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/commandes/2 
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.41 réussi
+{
 }
 
 /*------------------------------------------------------------------------
