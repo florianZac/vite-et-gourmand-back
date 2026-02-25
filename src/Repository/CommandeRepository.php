@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Commande;
+use App\Entity\Utilisateur;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -50,8 +51,8 @@ class CommandeRepository extends ServiceEntityRepository
     /**
      * Récupère toutes les commandes actuellement en cours.
      * Sont exclues :
-     *  - les commandes avec le statut_compte == "Terminée"
-     *  - les commandes avec le statut_compte == "Annulée"
+     *  - les commandes avec le statut == "Terminée"
+     *  - les commandes avec le statut == "Annulée"
      *
      * Les commandes sont triées par date de commande les plus récentes en premier
      * @return array Liste des commandes en cours
@@ -60,8 +61,8 @@ class CommandeRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('c')
             // Exclut les commandes terminées ou annulées
-            ->where('c.statut_compte NOT IN (:statut_compte)')
-            ->setParameter('statut_compte', ['Terminée', 'Annulée'])
+            ->where('c.statut NOT IN (:statut)')
+            ->setParameter('statut', ['Terminée', 'Annulée'])
             // Trie par date de commande décroissante
             ->orderBy('c.date_commande', 'DESC')
             ->getQuery()
@@ -83,6 +84,75 @@ class CommandeRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * Fonction de récupération des statistique pour l'affiche avec Chart.js en front
+     * @return array les données
+     */
+    public function getStatistiques(): array
+    {
+        // Récupère toutes les commandes terminées
+        $commandes = $this->createQueryBuilder('c')
+            ->where('c.statut = :statut')
+            ->setParameter('statut', 'Terminée')
+            ->getQuery()
+            ->getResult();
+
+        // Calcul chiffre d'affaire total
+        $chiffreAffaire = 0;
+        foreach ($commandes as $commande) {
+            $chiffreAffaire += $commande->getPrixMenu() + $commande->getPrixLivraison();
+        }
+
+        // Calcul nombre total commandes
+        $nombreCommandes = count($commandes);
+
+        // Calcul revenu moyen
+        $revenuMoyen = $nombreCommandes > 0 ? $chiffreAffaire / $nombreCommandes : 0;
+
+        // Calcul ventes par mois
+        $ventesParMois = [];
+        foreach ($commandes as $commande) {
+            $mois = $commande->getDateCommande()->format('m/Y');
+            
+            if (!isset($ventesParMois[$mois])) {
+                $ventesParMois[$mois] = [
+                    'mois'             => $mois,
+                    'total_commandes'  => 0,
+                    'chiffre_affaire'  => 0,
+                    'menus'            => []
+                ];
+            }
+
+            $ventesParMois[$mois]['total_commandes']++;
+            $ventesParMois[$mois]['chiffre_affaire'] += $commande->getPrixMenu() + $commande->getPrixLivraison();
+            
+            // Compte les menus pour trouver le plus prisé
+            $nomMenu = $commande->getMenu() ? $commande->getMenu()->getTitre() : 'Inconnu';
+            if (!isset($ventesParMois[$mois]['menus'][$nomMenu])) {
+                $ventesParMois[$mois]['menus'][$nomMenu] = 0;
+            }
+            $ventesParMois[$mois]['menus'][$nomMenu]++;
+        }
+
+        // Trouve le menu le plus prisé par mois
+        foreach ($ventesParMois as &$moisData) {
+            arsort($moisData['menus']);
+            $moisData['menu_plus_prise'] = array_key_first($moisData['menus']);
+            unset($moisData['menus']);
+        }
+
+        // Trie par mois
+        ksort($ventesParMois);
+
+        return [
+            'chiffre_affaire_total' => round($chiffreAffaire, 2),
+            'nombre_commandes'      => $nombreCommandes,
+            'revenu_moyen'          => round($revenuMoyen, 2),
+            'ventes_par_mois'       => array_values($ventesParMois)
+        ];
+    }
+
 
     //    /**
     //     * @return Commande[] Returns an array of Commande objects

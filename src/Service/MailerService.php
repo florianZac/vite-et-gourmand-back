@@ -182,4 +182,26 @@ class MailerService
 
         $this->mailer->send($email);
     }
+
+    /**
+     * @description Envoie un email à l'admin pour lui signaler une demande de désactivation de compte
+     * @param Utilisateur $utilisateur Le client qui demande la désactivation
+     * @return void
+     */
+    public function sendDemandeDesactivationEmail(Utilisateur $utilisateur): void
+    {
+        $html = $this->twig->render('emails/demande_desactivation.html.twig', [
+            'prenom' => $utilisateur->getPrenom(),
+            'nom'    => $utilisateur->getNom(),
+            'email'  => $utilisateur->getEmail(),
+        ]);
+
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to('admin@vite-et-gourmand.fr')
+            ->subject('Demande de désactivation de compte client ' . $utilisateur->getEmail())
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
 }

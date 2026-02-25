@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Repository\MenuRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -12,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * @create  : 23/02/2026
  * @description Contrôleur gérant les informations publics liés aux menus de l'application.
  * @param Request $request requête HTTP reçue
- * @param aucun
+ * @param 
  * @return JsonResponse retourne la réponse JSON ou 404 si le menu n'est pas trouvé 
 */
 #[Route('/api')]

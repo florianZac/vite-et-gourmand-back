@@ -9,7 +9,6 @@ use App\Service\MailerService;
 use App\Entity\Avis;
 use App\Repository\AvisRepository;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -23,11 +22,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/client')]
 
-final class ClientController extends AbstractController
+final class ClientController extends BaseController
 {
     /**
      * @description Cette fonction permet à un client connecté voir les informations de son profil..
-     * @param void auncun parametre requis
+     * @param '' auncun parametre requis
      * @return JsonResponse une réponse JSON avec les données de son profil
      */
     #[Route('/profil', name: 'api_client_profil', methods: ['GET'])]
@@ -434,14 +433,20 @@ final class ClientController extends AbstractController
     }
 
     /**
-     * @description Cette fonction permet à un client de demander la désactivation de son compte.
+     * @description Cette fonction permet à un client de demander la désactivation de son compte et d'envoyer un mail a l'admin
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
+     * Ensuite génére un mail à l'admin pour l'informer que le client souhaite désactiver son compte
      * @param int $id l'id de la commande sur laquelle le client veut laisser un avis
      * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
+     * @param MailerService $mailerService l'MailerService pour gérer les échange de mail
      * @return JsonResponse une réponse JSON indiquant le succès ou l'échec de l'opération.
      */
+
+    /**
+     *  A MODIFIER fonction qui fonctionne mais il faudrait générer un mail à l'admin pour l'informer que le client souhaite désactiver son compte
+     */
     #[Route('/compte/desactivation', name: 'api_client_compte_desactivation', methods: ['POST'])]
-    public function demandeDesactivation(EntityManagerInterface $em): JsonResponse
+    public function demandeDesactivation(EntityManagerInterface $em, MailerService $mailerService): JsonResponse
     {
         // Étape 1 - Vérifier le rôle CLIENT
         if (!$this->isGranted('ROLE_CLIENT')) {
@@ -469,6 +474,9 @@ final class ClientController extends AbstractController
 
         // Étape 6 - Sauvegarder en base de donnée
         $em->flush();
+
+        // Étape 7 - Envoyer un email à l'admin
+        $mailerService->sendDemandeDesactivationEmail($utilisateur);
 
         // Étape 7 - Retourner un message de confirmation
         return $this->json([

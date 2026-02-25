@@ -5,7 +5,9 @@ namespace App\Controller;
 use App\Repository\HoraireRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+
 
 /**
  * @author : florian Aizac
@@ -14,7 +16,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * index -> retourne tous les horaires sous forme de tableau JSON
  * show -> retourne un horaire d'ouverture de l'entreprise en fonction de son id sous forme de JSON ou une erreur 404 si l'horaire n'est pas trouvé
  * @param Request $request requête HTTP reçue
- * @param aucun
+ * @param 
  * @return JsonResponse retourne la réponse JSON ou 404 si le horaire n'est pas trouvé 
 */
 

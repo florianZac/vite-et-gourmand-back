@@ -7,6 +7,7 @@ use App\Repository\CommandeRepository;
 use App\Repository\SuiviCommandeRepository;
 use App\Service\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\AvisRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -161,7 +162,7 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/avis', name: 'api_employe_avis', methods: ['GET'])]
-    public function getAvisEnAttente(\App\Repository\AvisRepository $avisRepository): JsonResponse
+    public function getAvisEnAttente(AvisRepository $avisRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
@@ -183,7 +184,7 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/avis/{id}/approuver', name: 'api_employe_avis_approuver', methods: ['PUT'])]
-    public function approuverAvis(int $id, \App\Repository\AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
+    public function approuverAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {

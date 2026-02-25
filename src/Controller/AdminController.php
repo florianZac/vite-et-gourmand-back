@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
 use App\Repository\UtilisateurRepository;
+use App\Repository\CommandeRepository;
+use App\Repository\AvisRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
@@ -23,7 +25,7 @@ use Symfony\Component\HttpFoundation\Request;
  *  Delete (DELETE): suppression d'un utilisateur par id est par email
  *  
  *  Recherche (GET) pour le fun recherche d'un utilisateur par son email.
- */
+*/
 
 #[Route('/api/admin')]
 final class AdminController extends AbstractController
@@ -376,5 +378,215 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Commande supprimée avec succès']);
     }
     
+    /**
+     * @description Désactivation d'un compte d'un utilisateur
+     * @param int $id L'id de l'utilisateur à désactiver
+     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/utilisateurs/{id}/desactivation', name: 'api_admin_utilisateur_desactivation', methods: ['PUT'])]
+    public function desactiverCompte(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur
+        $utilisateur = $utilisateurRepository->find($id);
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que le compte n'est pas déjà inactif
+        if ($utilisateur->getStatutCompte() === 'inactif') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
+        }
+
+        // Étape 4 - Désactiver le compte
+        $utilisateur->setStatutCompte('inactif');
+
+        // Étape 5 - Sauvegarder en base
+        $em->flush();
+
+        // Étape 6 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Compte désactivé avec succès']);
+    }
+
+    /**
+     * @description Réactivation du compte d'un utilisateur
+     * @param int $id L'id de l'utilisateur à réactiver
+     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/utilisateurs/{id}/reactivation', name: 'api_admin_utilisateur_reactivation', methods: ['PUT'])]
+    public function reactiverCompte(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur
+        $utilisateur = $utilisateurRepository->find($id);
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que le compte est bien inactif
+        if ($utilisateur->getStatutCompte() === 'actif') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà actif'], 400);
+        }
+
+        // Étape 4 - Réactiver le compte
+        $utilisateur->setStatutCompte('actif');
+
+        // Étape 5 - Sauvegarder en base
+        $em->flush();
+
+        // Étape 6 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Compte réactivé avec succès']);
+    }
+
+    /**
+     * @description Affiche tous les avis en attente de validation
+     * @param AvisRepository $avisRepository Le repository des avis
+     * @return JsonResponse
+     */
+    #[Route('/avis', name: 'api_admin_avis', methods: ['GET'])]
+    public function getAvisEnAttente(AvisRepository $avisRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer tous les avis en attente
+        $avis = $avisRepository->findBy(['statut' => 'en_attente']);
+
+        // Étape 3 - Retourner les avis en JSON
+        return $this->json(['status' => 'Succès', 'total' => count($avis), 'avis' => $avis]);
+    }
+
+    /**
+     * @description Approuve un avis client
+     * @param int $id L'id de l'avis
+     * @param AvisRepository $avisRepository Le repository des avis
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/avis/{id}/approuver', name: 'api_admin_avis_approuver', methods: ['PUT'])]
+    public function approuverAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'avis
+        $avis = $avisRepository->find($id);
+        if (!$avis) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Avis non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que l'avis est en attente
+        if ($avis->getStatut() !== 'en_attente') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cet avis n\'est pas en attente'], 400);
+        }
+
+        // Étape 4 - Approuver l'avis
+        $avis->setStatut('validé');
+        $em->flush();
+
+        // Étape 5 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Avis approuvé avec succès']);
+    }
+
+    /**
+     * @description Refuse un avis client
+     * @param int $id L'id de l'avis
+     * @param AvisRepository $avisRepository Le repository des avis
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/avis/{id}/refuser', name: 'api_admin_avis_refuser', methods: ['PUT'])]
+    public function refuserAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'avis
+        $avis = $avisRepository->find($id);
+        if (!$avis) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Avis non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que l'avis est en attente
+        if ($avis->getStatut() !== 'en_attente') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cet avis n\'est pas en attente'], 400);
+        }
+
+        // Étape 4 - Refuser l'avis
+        $avis->setStatut('refusé');
+        $em->flush();
+
+        // Étape 5 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Avis refusé avec succès']);
+    }
+
+    /**
+     * @description Supprime un avis client
+     * @param int $id L'id de l'avis
+     * @param AvisRepository $avisRepository Le repository des avis
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/avis/{id}', name: 'api_admin_avis_delete', methods: ['DELETE'])]
+    public function supprimerAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'avis
+        $avis = $avisRepository->find($id);
+        if (!$avis) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Avis non trouvé'], 404);
+        }
+
+        // Étape 3 - Supprimer l'avis
+        $em->remove($avis);
+        $em->flush();
+
+        // Étape 4 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Avis supprimé avec succès']);
+    }
+
+    /**
+     * @description Retourne les statistiques de l'entreprise vite et gourmand
+     * @param CommandeRepository $commandeRepository Le repository des commandes
+     * @return JsonResponse
+     */
+    #[Route('/statistiques', name: 'api_admin_statistiques', methods: ['GET'])]
+    public function getStatistiques(CommandeRepository $commandeRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les statistiques
+        $statistiques = $commandeRepository->getStatistiques();
+
+        // Étape 3 - Retourner les statistiques en JSON
+        return $this->json(['status' => 'Succès', 'statistiques' => $statistiques]);
+    }
+
+
 }
 
