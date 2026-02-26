@@ -442,28 +442,18 @@ final class AdminController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 — Récupérer l'utilisateur connecté
-        $utilisateur = $this->getUser();
-        if (!$utilisateur) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
-        }
-
-        // Étape 3 — Chercher la commande par son id
+        // Étape 2 — Chercher la commande par son id
         $commande = $commandeRepository->find($id);
-        // Étape 4 — Si non trouvée retourner 404
+        // Étape 3 — Si non trouvée retourner 404
         if (!$commande) {
             return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
         }
-        // Étape 5 — Vérifier que la commande appartient bien à l'utilisateur connecté
-        if ($commande->getUtilisateur() !== $utilisateur) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Commande non autorisée'], 403);
-        }
 
-        // Étape 6 — Supprimer la commande
+        // Étape 4 — Supprimer la commande
         $em->remove($commande);
         $em->flush();
 
-        // Étape 7 — Retourner un message de confirmation
+        // Étape 5 — Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Commande supprimée avec succès']);
     }
     
@@ -594,25 +584,63 @@ final class AdminController extends AbstractController
     // =========================================================================
 
     /**
-     * @description Retourne les statistiques de l'entreprise vite et gourmand
+     * @description Retourne les statistiques complètes pour le tableau de bord admin de l'entreprise vite et gourmand
+     * Inclut : commandes, CA, remboursements, utilisateurs, avis, et données graphique par menu
      * @param CommandeRepository $commandeRepository Le repository des commandes
+     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
+     * @param AvisRepository $avisRepository Le repository des avis
      * @return JsonResponse
      */
     #[Route('/statistiques', name: 'api_admin_statistiques', methods: ['GET'])]
-    public function getStatistiques(CommandeRepository $commandeRepository): JsonResponse
-    {
+    public function getStatistiques(
+        CommandeRepository $commandeRepository,
+        UtilisateurRepository $utilisateurRepository,
+        AvisRepository $avisRepository
+    ): JsonResponse {
+
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 - Récupérer les statistiques
-        $statistiques = $commandeRepository->getStatistiques();
+        // Étape 2 - Stats commandes
+        $statsCommandes = $commandeRepository->getStatistiques();
 
-        // Étape 3 - Retourner les statistiques en JSON
-        return $this->json(['status' => 'Succès', 'statistiques' => $statistiques]);
+        // Étape 3 - Stats utilisateurs
+        $totalUtilisateurs  = count($utilisateurRepository->findAll());
+        $comptesActifs      = count($utilisateurRepository->findBy(['statut_compte' => 'actif']));
+        $comptesInactifs    = count($utilisateurRepository->findBy(['statut_compte' => 'inactif']));
+        $comptesEnAttente   = count($utilisateurRepository->findBy(['statut_compte' => 'en_attente_desactivation']));
+
+        // Étape 4 - Stats avis
+        $totalAvis          = count($avisRepository->findAll());
+        $avisEnAttente      = count($avisRepository->findBy(['statut' => 'en_attente']));
+        $avisValides        = count($avisRepository->findBy(['statut' => 'validé']));
+        $avisRefuses        = count($avisRepository->findBy(['statut' => 'refusé']));
+
+        // Étape 5 - Retourner toutes les statistiques
+        return $this->json([
+            'status' => 'Succès',
+            'statistiques' => array_merge($statsCommandes, [
+
+                // Stats utilisateurs
+                'utilisateurs' => [
+                    'total'        => $totalUtilisateurs,
+                    'actifs'       => $comptesActifs,
+                    'inactifs'     => $comptesInactifs,
+                    'en_attente'   => $comptesEnAttente,
+                ],
+
+                // Stats avis
+                'avis' => [
+                    'total'      => $totalAvis,
+                    'en_attente' => $avisEnAttente,
+                    'valides'    => $avisValides,
+                    'refuses'    => $avisRefuses,
+                ],
+            ])
+        ]);
     }
-
 
 }
 
