@@ -48,24 +48,54 @@ final class AuthController extends AbstractController
         //dump($data); // version du printf affiche le tableau $data
 
         // Étape 2 - Vérifie que les champs obligatoires sont présents
-        // il faudra que je fasse un regex pour vérifier que l'email est au bon format et que le mot de passe est assez fort, mais pour l'instant on se contente de vérifier qu'ils sont présents
         if ( empty($data['nom']) || empty($data['prenom']) || empty($data['telephone']) ||
-             empty($data['email']) || empty($data['password']) || empty($data['pays']) ||
-             empty($data['ville']) || empty($data['code_postal'])) {
+            empty($data['email']) || empty($data['password']) || empty($data['pays']) ||
+            empty($data['ville']) || empty($data['code_postal'])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Toutes les données doivent etre remplis'], 400);
         }
 
-        // Étape 3 - Vérifie que l'email n'existe pas déjà en base de données
+        // Étape 3 - Honeypot : si le champ site_web est rempli c'est un bot
+        // On retourne un faux succès pour tromper le bot sans traiter la demande
+        if (!empty($data['site_web'])) {
+            return $this->json(['status' => 'Succès', 'message' => 'Compte créé avec succès'], 201);
+        }
+
+        // Étape 4 - Validation de l'email (.com et .fr uniquement)
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || 
+            !preg_match('/\.(com|fr)$/i', $data['email'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Email invalide (extensions .com et .fr uniquement)'], 400);
+        }
+
+        // Étape 5 - Validation du téléphone (format français 06 ou 07)
+        if (!preg_match('/^(\+33|0)(6|7)[0-9]{8}$/', $data['telephone'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Téléphone invalide (format 06 ou 07 requis)'], 400);
+        }
+
+        // Étape 6 - Validation du mot de passe
+        // Règles : 10 caractères minimum, 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial
+        if (strlen($data['password']) < 10 ||
+            !preg_match('/[A-Z]/', $data['password']) ||
+            !preg_match('/[a-z]/', $data['password']) ||
+            !preg_match('/[0-9]/', $data['password']) ||
+            !preg_match('/[\W_]/', $data['password'])) {
+            return $this->json([
+                'status'  => 'Erreur',
+                'message' => 'Mot de passe invalide : 10 caractères minimum, 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial'
+            ], 400);
+        }
+        
+
+        // Étape 7 - Vérifie que l'email n'existe pas déjà en base de données
         // équivalent de SELECT * FROM utilisateur WHERE email = :email
         if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
         }
 
-        // Étape 4 - Récupère le rôle ROLE_CLIENT par défaut
+        // Étape 8 - Récupère le rôle ROLE_CLIENT par défaut
         // équivalent de SELECT * FROM role WHERE libelle = 'ROLE_CLIENT'
         $role = $roleRepository->findOneBy(['libelle' => 'ROLE_CLIENT']);
 
-        // Étape 5 - Création et remplissage d'un objet nouvel utilisateur
+        // Étape 9 - Création et remplissage d'un objet nouvel utilisateur
         $utilisateur = new Utilisateur();
 
         // Rappel de la notion : value ?? "" signifie "si value existe et n'est pas null, 
@@ -82,18 +112,18 @@ final class AuthController extends AbstractController
         $utilisateur->setStatutCompte('actif');     
         $utilisateur->setRole($role );
 
-        // Étape 6 - Hash le mot de passe avant de le stocker en base
+        // Étape 10 - Hash le mot de passe avant de le stocker en base
         // On ne stocke JAMAIS un mot de passe en clair
         $motDePasseHashe = $passwordHasher->hashPassword($utilisateur, $data['password']);
         $utilisateur->setPassword($motDePasseHashe);
 
-        // Étape 7 - Sauvegarde en base de données
+        // Étape 11 - Sauvegarde en base de données
         // persist() prépare l'insertion
         $em->persist($utilisateur);
         // flush() exécute réellement la requête SQL INSERT
         $em->flush();
 
-        // Étape 8 - Retourne une réponse de succès avec le code 201 Created
+        // Étape 12 - Retourne une réponse de succès avec le code 201 Created
         return $this->json([
             'status'  => 'Succès',
             'message' => 'Compte créé avec succès',

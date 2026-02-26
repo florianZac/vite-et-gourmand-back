@@ -241,3 +241,25 @@ Commande pérmettant de vérifier que Symfony voit bien les nouvelles routes :
 php bin/console debug:router | Select-String "admin"
 Commande pérmettant de vérifier toutes les routes du projet :
 php bin/console debug:router | Select-String "api"
+
+5.8 Installation des commandes  syfony pour utilisation de cron 
+
+Objectif : chaque jour, vérifier les commandes (pret_materiel=1, restitution_materiel=0) dont le statut est Livré
+
+5.9 Création du fichier de commande
+php bin/console make:command        
+Choose a command name ->CheckRetourMaterielCommand
+Crée automatiquement la commande -> src/Command/CheckRetourMaterielCommand.php
+
+5.9 Création de la command Symfony
+php bin/console app:check-retour-materiel
+
+6 Vérification de la commande 
+php bin/console list
+
+6.1 Utilisation de la command crée dans le terminal 
+php bin/console app:check-retour-materiel
+
+6.2 verification des propriétées et des methodes via symfony apres modification d'une entity
+6.2.1 : php bin/console doctrine:schema:update --force
+6.2.2 : php bin/console doctrine:schema:validate

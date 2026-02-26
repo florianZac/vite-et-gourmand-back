@@ -1,0 +1,33 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block content %}
+    <h2>Retour du matériel</h2>
+
+    <p>Bonjour {{ prenom }},</p>
+
+    <p>
+        Votre commande <strong>{{ numero_commande }}</strong>
+        prévue le <strong>{{ date_prestation }}</strong>
+        est désormais en attente du retour du matériel.
+    </p>
+
+    <p style="color: #c0392b;">
+        En l'absence de restitution du matériel sous
+        <strong>10 jours ouvrés</strong>,
+        des frais forfaitaires de <strong>600 €</strong>
+        pourront être appliqués.
+    </p>
+
+    <p>
+        Merci de restituer le matériel avant le <strong>{{ date_restitution }}</strong>.
+    </p>
+    <p>
+        <a href="mailto:contact@vite-et-gourmand.fr?subject=Restitution%20matériel%20commande%20{{ numero_commande }}" 
+        style="display:inline-block; padding:10px 20px; background:#27ae60; color:white; text-decoration:none; border-radius:5px;">
+        Contacter la société
+        </a>
+    </p>
+    <hr>
+    <p>Cordialement,<br>
+    L'équipe Vite et Gourmand</p>
+{% endblock %}

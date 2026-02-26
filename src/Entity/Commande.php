@@ -10,47 +10,81 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'commande')]
 class Commande
 {
+    // ==========================
+    // Identifiant et propriétés de base
+    // ==========================
+    
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(name: 'commande_id', type: 'integer')]
     private ?int $id = null;
 
+    /**
+    * Numéro unique de la commande
+    */
     #[ORM\Column(length: 50)]
     private ?string $numero_commande = null;
 
+    /**
+    * Date de création de la commande
+    */
     #[ORM\Column(type: Types::DATETIME_MUTABLE)] // DATETIME_MUTABLE pour stocker la date ET l'heure
     private ?\DateTime $date_commande = null;
 
+    /**
+    * Date de prestation de la commande
+    */
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTime $date_prestation = null; // correction de la faute de frappe date_prestattion -> date_prestation
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private ?\DateTime $heure_livraison = null;
-
-    #[ORM\Column]
-    private ?float $prix_menu = null;
-
-    #[ORM\Column]
-    private ?int $nombre_personne = null;
-
-    #[ORM\Column]
-    private ?float $prix_livraison = null;
-
+    /**
+    * Statut de la commande (ex: Livré, Terminée, etc.)
+    */   
     #[ORM\Column(length: 50)]
     private ?string $statut = null;
 
-    #[ORM\Column]
-    private ?bool $pret_materiel = null;
+    // ==========================
+    // Matériel
+    // ==========================
 
-    #[ORM\Column]
-    private ?bool $restitution_materiel = null;
+    /**
+    * Indique si le matériel a été prêté (true = prêté)
+    */   
+    #[ORM\Column(options: ['default' => false])]
+    private bool $pret_materiel = false;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $motif_annulation = null;
+    /**
+    * Indique si le matériel a été restitué (true = rendu)
+    */   
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $restitution_materiel = false;
 
-    #[ORM\Column(nullable: true)]
-    private ?float $montant_rembourse = null;
-    
+    /**
+     * Date à laquelle la commande est passée au statut "En attente du retour de matériel"
+     */
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $dateStatutRetourMateriel = null;
+
+    // ==========================
+    // Workflow pénalité
+    // ==========================
+
+    /**
+     * Date à laquelle la commande est passée au statut "Livré"
+    */
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $dateStatutLivree = null;
+
+    /**
+     * Indique si le mail de pénalité a déjà été envoyé
+    */   
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $mailPenaliteEnvoye = false;
+
+    // ==========================
+    // Relations ManyToOne
+    // ==========================
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'utilisateur_id', nullable: false)] // ajout du nom de la colonne
     private ?Utilisateur $utilisateur = null;
@@ -58,6 +92,64 @@ class Commande
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id', nullable: false)] // ajout du nom de la colonne
     private ?Menu $menu = null;
+
+    /**
+     * Indique si l'heure de livraison de la commande
+    */ 
+    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    private ?\DateTime $heure_livraison = null;
+
+    /**
+     * Indique le prix du menu de la commande
+    */
+    #[ORM\Column]
+    private ?float $prix_menu = null;
+
+    /**
+     * Indique le nombre_personne de la commande
+    */
+    #[ORM\Column]
+    private ?int $nombre_personne = null;
+
+    /**
+     * Indique le prix_livraison de la commande
+    */
+    #[ORM\Column]
+    private ?float $prix_livraison = null;
+
+    /**
+     * Indique le motif_annulation de la commande
+    */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $motif_annulation = null;
+
+    /**
+     * Indique le montant_rembourse de la commande
+    */
+    #[ORM\Column(nullable: true)]
+    private ?float $montant_rembourse = null;
+    
+    /**
+     * Indique le adresse_livraison de la commande
+    */
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $adresse_livraison = null;
+
+    /**
+     * Indique le ville_livraison de la commande
+    */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $ville_livraison = null;
+
+    /**
+     * Indique le montant_acompte de la commande
+    */
+    #[ORM\Column(nullable: true)]
+    private ?float $montant_acompte = null;
+
+    // ==========================
+    // Getters / Setters
+    // ==========================
 
     public function getId(): ?int
     {
@@ -83,6 +175,40 @@ class Commande
     public function setDateCommande(\DateTime $date_commande): static
     {
         $this->date_commande = $date_commande;
+        return $this;
+    }
+
+    public function getEtatMateriel(): string
+    {
+        // Cas impossible
+        if ($this->pret_materiel === false && $this->restitution_materiel === true) {
+            return 'INCOHERENT';
+        }
+
+        // (0,0) → terminé
+        if ($this->pret_materiel === false && $this->restitution_materiel === false) {
+            return 'TERMINEE';
+        }
+
+        // (1,1) → terminé
+        if ($this->pret_materiel === true && $this->restitution_materiel === true) {
+            return 'TERMINEE';
+        }
+
+        // (1,0) → attente retour
+        return 'ATTENTE_RESTITUTION';
+    }
+
+    // Getter DateStatutRetourMateriel
+    public function getDateStatutRetourMateriel(): ?\DateTimeInterface
+    {
+        return $this->dateStatutRetourMateriel;
+    }
+
+    // Setter DateStatutRetourMateriel
+    public function setDateStatutRetourMateriel(\DateTimeInterface $date): self
+    {
+        $this->dateStatutRetourMateriel = $date;
         return $this;
     }
 
@@ -196,6 +322,39 @@ class Commande
         return $this;
     }
 
+    public function getAdresseLivraison(): ?string
+    {
+        return $this->adresse_livraison;
+    }
+
+    public function setAdresseLivraison(?string $adresse_livraison): static
+    {
+        $this->adresse_livraison = $adresse_livraison;
+        return $this;
+    }
+
+    public function getVilleLivraison(): ?string
+    {
+        return $this->ville_livraison;
+    }
+
+    public function setVilleLivraison(?string $ville_livraison): static
+    {
+        $this->ville_livraison = $ville_livraison;
+        return $this;
+    }
+
+    public function getMontantAcompte(): ?float
+    {
+        return $this->montant_acompte;
+    }
+
+    public function setMontantAcompte(?float $montant_acompte): static
+    {
+        $this->montant_acompte = $montant_acompte;
+        return $this;
+    }
+
     // Récupération du motif d'annulation des commandes
     public function getMotifAnnulation(): ?string
     {
@@ -222,4 +381,37 @@ class Commande
         return $this;
     }
 
+    // ==========================
+    // Date statut livrée
+    // ==========================
+    // Récupération de la date de livraison pour les commandes
+    public function getDateStatutLivree(): ?\DateTimeInterface
+    {
+        return $this->dateStatutLivree;
+    }
+
+    // Mise à jour de la date de livraison pour les commandes
+    public function setDateStatutLivree(\DateTimeInterface $date): self
+    {
+        $this->dateStatutLivree = $date;
+        return $this;
+    }
+
+    // ==========================
+    // Mail pénalité
+    // ==========================
+
+    // Récupération du flag d'envois du mail de pénalité
+    // si mailPenaliteEnvoye==false -> mail pas encore envoyé
+    // si mailPenaliteEnvoye==true -> mail déjà envoyé
+    public function isMailPenaliteEnvoye(): bool
+    {
+        return $this->mailPenaliteEnvoye;
+    }
+    // Mise à jour du flag d'envois du mail de pénalité
+    public function setMailPenaliteEnvoye(bool $value): self
+    {
+        $this->mailPenaliteEnvoye = $value;
+        return $this;
+    }
 }

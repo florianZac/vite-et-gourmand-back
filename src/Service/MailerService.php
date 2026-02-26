@@ -21,7 +21,7 @@ use App\Entity\Commande;
  */
 class MailerService
 {
-    // Le constructeur de onnée du Mailer de Symfony
+    // Le constructeur du Mailer de Symfony
     public function __construct(
         private MailerInterface $mailer,
         private Environment $twig) {}
@@ -203,5 +203,79 @@ class MailerService
             ->html($html);
 
         $this->mailer->send($email);
+    }
+
+    /**
+     * @description Envoie un email au client lorsque le matériel doit être retourné
+     * @param Utilisateur $utilisateur
+     * @param Commande $commande
+     */
+    public function sendRetourMaterielEmail(Utilisateur $utilisateur, Commande $commande): void
+    {
+        $html = $this->twig->render('emails/retour_materiel.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+        ]);
+
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Retour du matériel – Commande ' . $commande->getNumeroCommande())
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
+
+   /**
+     * Envoie un email au client pour la restitution du matériel.
+     *
+     * - Utilise un template Twig pour le HTML
+     * - Permet d’injecter dynamiquement prénom, numéro de commande, date de prestation
+     * - Sujet dynamique incluant le numéro de commande
+     *
+     * @param Utilisateur $utilisateur Le client destinataire
+     * @param Commande $commande La commande concernée
+     * @param int $montant Pénalité fixe (600€)
+     * @param \DateTime|null $dateRestitution Date limite de restitution à afficher dans le mail
+     * @utiisation
+     * $dateRestitution = $this->dateService->addBusinessDays($commande->getDateStatutLivree(), 10);
+
+     * $this->mailerService->sendPenaliteMaterielEmail(
+     *     $commande->getUtilisateur(),
+     *     $commande,
+     *     600,
+     *     $dateRestitution
+     * );
+     */
+    
+    public function sendPenaliteMaterielEmail(
+        Utilisateur $utilisateur,
+        Commande $commande,
+        int $montant = 600,
+        ?\DateTime $dateRestitution = null
+    ): void
+    {
+        // Étape 1 - Préparer le rendu HTML via Twig
+        $html = $this->twig->render('emails/retour_materiel.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+            'montant'         => $montant,
+            'date_restitution'=> $dateRestitution ? $dateRestitution->format('d/m/Y') : null,
+        ]);
+
+        // Étape 2 - Construire l'objet email
+        $email = (new Email()) // TemplatedEmail permet l'utilisation des templates Twig
+            ->from('noreply@vite-et-gourmand.fr') // Expéditeur standard
+            ->to($utilisateur->getEmail())       // Destinataire dynamique
+            ->subject('Retour du matériel – Commande ' . $commande->getNumeroCommande()) // Sujet dynamique
+            ->html($html); // Contenu HTML injecté depuis le template Twig
+
+        // Étape 3 - Envoi du mail via le service MailerInterface
+        $this->mailer->send($email);
+
+        // Étape 4 - Optionnel : log ou retour pour suivi dans la Command
+        //logger->info("Mail envoyé pour la commande X");
     }
 }

@@ -37,15 +37,17 @@ use Symfony\Component\Routing\Attribute\Route;
  *  7. getAllMenus()        : Retourner la liste de tous les menus
  *  8. getMenuById()        : Retourner un menu par son id
  *  9. createMenu()         : Créer un nouveau menu
- *  10. updateMenu()         : Met à jour un menu par son id
- *  11. createTheme()       : Créer un nouveau thème
- *  12. updateTheme()       : Met à jour un thème par son id
- *  13. createRegime()      : Créer un nouveau régime
- *  14. updateRegime()      : Met à jour un régime par son id
- *  15. createAllergene()   : Créer un nouvel allergène
- *  16. updateAllergene()   : Met à jour un allergène par son id
- *  17. createPlat()        : Créer un nouveau plat
- *  18. updatePlat()        : Met à jour un plat par son id
+ *  10. updateMenu()        : Met à jour un menu par son id
+ *  11. deleteMenu()        : Supprimer un menu par son id
+ *  12. createTheme()       : Créer un nouveau thème
+ *  13. updateTheme()       : Met à jour un thème par son id
+ *  14. createRegime()      : Créer un nouveau régime
+ *  15. updateRegime()      : Met à jour un régime par son id
+ *  16. createAllergene()   : Créer un nouvel allergène
+ *  17. updateAllergene()   : Met à jour un allergène par son id
+ *  18. createPlat()        : Créer un nouveau plat
+ *  19. updatePlat()        : Met à jour un plat par son id
+ *  20. deletePlat()        : Supprimer un plat par son id
  */
 
 #[Route('/api/employe')]
@@ -143,11 +145,13 @@ final class EmployeController extends AbstractController
 
         // Étape 4 - Vérifier le cycle de vie strict
         $ordreStatuts = [
-            'En attente'      => 1,
-            'Acceptée'        => 2,
-            'En préparation'  => 3,
-            'En livraison'    => 4,
-            'Terminée'        => 5,
+            'En attente'                    => 1,
+            'Acceptée'                      => 2,
+            'En préparation'                => 3,
+            'En livraison'                  => 4,
+            'Livré'                         => 5,
+            'En attente du retour matériel' => 6,
+            'Terminée'                      => 7,
         ];
 
         // Vérifier que le nouveau statut existe
@@ -177,6 +181,9 @@ final class EmployeController extends AbstractController
             $mailerService->sendCommandeAccepteeEmail($client, $commande);
         } elseif ($nouveauStatut === 'En livraison') {
             $mailerService->sendCommandeLivraisonEmail($client, $commande);
+        } elseif ($nouveauStatut === 'En attente du retour matériel') {
+            $commande->setPretMateriel(true);
+            $mailerService->sendRetourMaterielEmail($client, $commande);
         } elseif ($nouveauStatut === 'Terminée') {
             $mailerService->sendCommandeTermineeEmail($client, $commande);
         }
@@ -520,6 +527,38 @@ final class EmployeController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Menu mis à jour avec succès']);
     }
 
+    /**
+     * @description Supprimer un menu par son id
+     * @param int $id L'id du menu à supprimer
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/menus/{id}', name: 'api_employe_menus_delete', methods: ['DELETE'])]
+    public function deleteMenu(int $id, MenuRepository $menuRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Chercher le menu à supprimer
+        $menu = $menuRepository->find($id);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 3 - suppression du menu
+        $em->remove($menu);
+
+        // Étape 4 - sauvegarder
+        $em->flush();
+
+        // Étape 5 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Menu supprimé avec succès']);
+    }
+
+  
     // =========================================================================
     // THEMES
     // =========================================================================
@@ -894,4 +933,37 @@ final class EmployeController extends AbstractController
         // Étape 9 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
     }
+
+      /**
+     * @description Supprimer un plat par son id
+     * @param int $id L'id du plat à supprimer
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param PlatRepository $platRepository Le repository des plats
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    // Dans la section PLATS
+    #[Route('/plats/{id}', name: 'api_employe_plats_delete', methods: ['DELETE'])]
+    public function deletePlat(int $id, PlatRepository $platRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Chercher le plat à supprimer
+        $plat = $platRepository->find($id);
+        if (!$plat) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
+        }
+        // Étape 3 - suppression
+        $em->remove($plat);
+
+        // Étape 4 - sauvegarder
+        $em->flush();
+
+        // Étape 5 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
+    }
+
 }

@@ -92,6 +92,50 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @description Recherche dans les commandes si il y as du materiel en court de pret
+     * si pretMateriel == False & restitutionMateriel ==
+     * sur le champ numero_commande (ex : CMD-001, CMD-002, etc.).
+     * @param string $nom Chaîne de caractères à rechercher dans le numéro de commande
+     * @return Commande[] correspondant à la recherche
+     */
+    public function findCommandesMaterielNonRendu(): array
+    {
+        $yesterday = new \DateTime('yesterday');
+
+        return $this->createQueryBuilder('c')
+            ->where('c.pretMateriel = true')
+            ->andWhere('c.restitutionMateriel = false')
+            ->andWhere('c.datePrestation = :yesterday')
+            ->setParameter('yesterday', $yesterday->format('Y-m-d'))
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @description fonction de récupération des commandes à relancer dans le cas d'un pret de matériel qui n'a pas été restitué
+     * 
+     * Récupère toutes les commandes où :
+     * (pret_materiel,restitution_materiel) 
+     * Cas (1,0) 
+     * - le matériel à été prêté -> pret_materiel == true &&
+     * - le matériel n'a pas été restitué -> restitution_materiel = false &&
+     * - le statut de la commande est Livré
+     * Si date passage au statut Livré > 10 jour ouvré l'envoi du mail de pénalité.
+     * Les autres cas (0,0), (0,1), (1,1) seront gérés par le listener
+     * @return Commande[] tableau d'entités Commande
+     */
+    public function findCommandesMaterielARelancer(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.pretMateriel = true')
+            ->andWhere('c.restitutionMateriel = false')
+            ->andWhere('c.status = :livre')
+            ->setParameter('livre', 'Livré')
+            ->getQuery()
+            ->getResult();
+    }
+
     // =========================================================================
     // STATISTIQUE POUR LE DOUBLE CHART BAR JS EN FRONT 
     // =========================================================================

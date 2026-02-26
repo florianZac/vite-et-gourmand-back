@@ -2,6 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Commande;
+use App\Entity\SuiviCommande;
+use App\Repository\MenuRepository;
+use App\Service\MailerService;
 use App\Repository\CommandeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,6 +16,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description Contrôleur gérant les opérations sur les commandes côté administrateur
+ *  1. createCommande         : Créer une nouvelle commande avec toutes les règles métier
  *  1. getAllCommandes        : Retourne la liste de toutes les commandes
  *  2. updateUserById         : Retourne une commande par son id par son id
  *  3. annulerCommande        : Annule une commande avec un remboursement de 100% du montant total (prix menu + livraison)
@@ -22,7 +27,151 @@ final class CommandeController extends BaseController
     // =========================================================================
     // COMMANDE
     // =========================================================================
-    
+
+    /**
+     * @description Créer une nouvelle commande avec toutes les règles métier :
+     *  - Délai minimum 3 jours ouvrables (14 jours si > 20 personnes)
+     *  - Acompte 30% (standard) ou 50% (événement)
+     *  - Livraison gratuite Bordeaux, sinon 5€ + 0,59€/km
+     *  - Réduction -10% si nombre de personnes > minimum + 5
+     * Corps JSON attendu :
+     * {
+     *   "menu_id": 1,
+     *   "date_prestation": "2026-04-01",
+     *   "nombre_personnes": 15,
+     *   "adresse_livraison": "12 rue des fleurs",
+     *   "ville_livraison": "Bordeaux",
+     *   "distance_km": 0
+     * }
+     */
+    #[Route('', name: 'api_admin_commandes_create', methods: ['POST'])]
+    public function createCommande(
+        Request $request,
+        CommandeRepository $commandeRepository,
+        MenuRepository $menuRepository,
+        EntityManagerInterface $em,
+        MailerService $mailerService
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier les champs obligatoires
+        $champsObligatoires = ['menu_id', 'date_prestation', 'nombre_personnes', 'ville_livraison'];
+        foreach ($champsObligatoires as $champ) {
+            if (empty($data[$champ])) {
+                return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
+            }
+        }
+
+        // Étape 4 - Récupérer le menu
+        $menu = $menuRepository->find($data['menu_id']);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 5 - Valider la date de prestation
+        try {
+            $datePrestation = new \DateTime($data['date_prestation']);
+        } catch (\Exception $e) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Date de prestation invalide'], 400);
+        }
+
+        // Étape 6 - Calculer le délai minimum en jours ouvrables
+        $nombrePersonnes = (int) $data['nombre_personnes'];
+        $delaiMinimum = $nombrePersonnes > 20 ? 14 : 3;
+
+        // Calcul des jours ouvrables entre aujourd'hui et la date de prestation
+        $aujourdhui = new \DateTime();
+        $joursOuvrables = 0;
+        $dateCourante = clone $aujourdhui;
+
+        while ($dateCourante < $datePrestation) {
+            $dateCourante->modify('+1 day');
+            // 1 = lundi ... 5 = vendredi (jours ouvrables)
+            if ((int) $dateCourante->format('N') <= 5) {
+                $joursOuvrables++;
+            }
+        }
+
+        if ($joursOuvrables < $delaiMinimum) {
+            return $this->json([
+                'status'  => 'Erreur',
+                'message' => "Délai minimum non respecté : $delaiMinimum jours ouvrables requis, seulement $joursOuvrables disponibles"
+            ], 400);
+        }
+
+        // Étape 7 - Calculer le prix de base
+        $prixParPersonne = $menu->getPrixParPersonne();
+        $prixMenu = $prixParPersonne * $nombrePersonnes;
+
+        // Étape 8 - Appliquer la réduction de -10%
+        // si le nombre de personnes dépasse le minimum requis de plus de 5
+        $minimumPersonnes = $menu->getNombrePersonneMinimum();
+        if ($nombrePersonnes > ($minimumPersonnes + 5)) {
+            $prixMenu = $prixMenu * 0.90;
+        }
+
+        // Étape 9 - Calculer le prix de livraison
+        // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
+        $villeLivraison = strtolower(trim($data['ville_livraison']));
+        $distanceKm = (float) ($data['distance_km'] ?? 0);
+
+        if ($villeLivraison === 'bordeaux') {
+            $prixLivraison = 0;
+        } else {
+            $prixLivraison = 5 + (0.59 * $distanceKm);
+        }
+
+        // Étape 10 - Calculer l'acompte
+        // 50% si thème Événement, 30% sinon
+        $libelleTheme = strtolower($menu->getTheme()->getLibelle());
+        $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
+        $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
+
+        // Étape 11 - Générer le numéro de commande unique
+        $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
+
+        // Étape 12 - Créer la commande
+        $commande = new Commande();
+        $commande->setNumeroCommande($numeroCommande);
+        $commande->setMenu($menu);
+        $commande->setDatePrestation($datePrestation);
+        $commande->setNombrePersonne($nombrePersonnes);
+        $commande->setAdresseLivraison($data['adresse_livraison'] ?? '');
+        $commande->setVilleLivraison($data['ville_livraison']);
+        $commande->setPrixMenu(round($prixMenu, 2));
+        $commande->setPrixLivraison(round($prixLivraison, 2));
+        $commande->setMontantAcompte(round($montantAcompte, 2));
+        $commande->setStatut('En attente');
+        $commande->setDateCommande(new \DateTime());
+
+        // Étape 13 - Créer le premier suivi
+        $suivi = new SuiviCommande();
+        $suivi->setStatut('En attente');
+        $suivi->setDateStatut(new \DateTime());
+        $suivi->setCommande($commande);
+
+        // Étape 14 - Persister et sauvegarder
+        $em->persist($commande);
+        $em->persist($suivi);
+        $em->flush();
+
+        // Étape 15 - Retourner la confirmation
+        return $this->json([
+            'status'           => 'Succès',
+            'message'          => 'Commande créée avec succès',
+            'numero_commande'  => $numeroCommande,
+            'prix_menu'        => round($prixMenu, 2),
+            'prix_livraison'   => round($prixLivraison, 2),
+            'montant_acompte'  => round($montantAcompte, 2),
+            'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
+        ], 201);
+    }
     /**
      * @description Retourne la liste de toutes les commandes
      * @param CommandeRepository $commandeRepository Le repository des commandes
