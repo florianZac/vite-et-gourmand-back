@@ -2,7 +2,7 @@ framework:
     rate_limiter:
         contact_limiter:
             policy: 'fixed_window'
-            limit: 50
+            limit: 25
             interval: '1 hour'
             lock_factory: 'lock.factory'
             storage_service: null

@@ -25,7 +25,8 @@ use Symfony\Component\Routing\Attribute\Route;
  *  4. getCommandes          : Retourne la liste de ses commandes
  *  5. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
  *  6. getSuiviCommande      : Afficher le suivis de commande du client
- *  7. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
+ *  7. getAvis               : Afficher la liste des avis d'un client connecté
+ *  8. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
  */
 
 
@@ -280,16 +281,21 @@ final class ClientController extends BaseController
             return $this->json(['status' => 'Erreur', 'message' => 'Commande déjà annulée'], 400);
         }
 
-        // Étape 7 - Récupérer la justification depuis le JSON
+        // Étape 7 - Vérifier que la commande est bien en statut "En attente"
+        if ($commande->getStatut() !== 'En attente') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Annulation impossible, la commande n\'est plus en attente'], 400);
+        }
+
+        // Étape 8 - Récupérer la justification depuis le JSON
         $data = json_decode($request->getContent(), true);
         $motifAnnulation = $data['motif_annulation'] ?? null;
 
-        // Étape 8 - Calculer le nombre de jours avant la prestation
-        // 8.1 : Récupérer la date de prestation de la commande
+        // Étape 9 - Calculer le nombre de jours avant la prestation
+        // 9.1 : Récupérer la date de prestation de la commande
         $datePrestation = $commande->getDatePrestation();
-        // 8.2 : Récupérer la date actuelle
+        // 9.2 : Récupérer la date actuelle
         $aujourdhui = new \DateTime();
-        // 8.3 : Calculer la différence en jours entre les deux dates
+        // 9.3 : Calculer la différence en jours entre les deux dates
         $diff = $aujourdhui->diff($datePrestation)->days;
 
         /*
@@ -299,7 +305,7 @@ final class ClientController extends BaseController
         - Si la prestation est dans moins de 3 jours, le client n'est pas remboursé
         */   
 
-        // Étape 9 Mise en place et calcul du montant remboursé selon les règles sitée ci-dessus
+        // Étape 10 Mise en place et calcul du montant remboursé selon les règles sitée ci-dessus
         $montantRembourse = 0;
         // variable pour spécifier la cas 50 100 ou 0 pour le message de confirmation
         $pourcentageRembourse = 0;
@@ -322,7 +328,7 @@ final class ClientController extends BaseController
             $pourcentageRembourse = 0;
         }   
 
-        // Étape 10 mise à jour de la commande
+        // Étape 11 mise à jour de la commande
         switch ($pourcentageRembourse) {
             case 100:
                     $messageRemboursement = 'Vous avez été remboursé à 100%';
@@ -338,13 +344,13 @@ final class ClientController extends BaseController
         $commande->setMotifAnnulation($motifAnnulation);
         $commande->setMontantRembourse($montantRembourse);
 
-        // Étape 11 - Sauvegarder en base de données
+        // Étape 12 - Sauvegarder en base de données
         $em->flush();
 
-        // Étape 12 - Envoyer un email de confirmation
+        // Étape 13 - Envoyer un email de confirmation
         $mailerService->sendAnnulationEmail($utilisateur, $commande, $pourcentageRembourse, $montantRembourse);
 
-        // Étape 13 - Retourner un message de confirmation avec le montant remboursé
+        // Étape 14 - Retourner un message de confirmation avec le montant remboursé
         return $this->json([
             'status' => 'Succès',
             'message' => $messageRemboursement,
@@ -421,6 +427,39 @@ final class ClientController extends BaseController
     // =========================================================================
 
     /**
+     * @description Afficher la liste des avis d'un client connecté, triés du plus récent au plus ancien
+     * @param AvisRepository $avisRepository Le repository des avis
+     * @return JsonResponse
+     */
+    #[Route('/avis', name: 'api_client_avis_list', methods: ['GET'])]
+    public function getAvis(AvisRepository $avisRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle CLIENT
+        if (!$this->isGranted('ROLE_CLIENT')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur connecté
+        $utilisateur = $this->getUser();
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
+        }
+
+        // Étape 3 - Récupérer ses avis triés du plus récent au plus ancien
+        $avis = $avisRepository->findBy(
+            ['utilisateur' => $utilisateur],
+            ['id' => 'DESC']
+        );
+
+        // Étape 4 - Retourner les avis en JSON
+        return $this->json([
+            'status' => 'Succès',
+            'total'  => count($avis),
+            'avis'   => $avis
+        ]);
+    }
+
+    /**
      * @description Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
      * @param int $id l'id de la commande sur laquelle le client veut laisser un avis
@@ -454,8 +493,8 @@ final class ClientController extends BaseController
         }
 
         // Étape 5 - Vérifier que la note est entre 0 et 5
-        if ($data['note'] < 0 || $data['note'] > 5) {
-            return $this->json(['status' => 'Erreur', 'message' => 'La note doit être entre 0 et 5'], 400);
+        if ($data['note'] < 1 || $data['note'] > 5) {
+            return $this->json(['status' => 'Erreur', 'message' => 'La note doit être entre 1 et 5'], 400);
         }
           
         // Étape 6 - Vérification de la taille de la description   
@@ -501,4 +540,5 @@ final class ClientController extends BaseController
             'commande' => $commande->getNumeroCommande()
         ], 201);
     }
+
 }

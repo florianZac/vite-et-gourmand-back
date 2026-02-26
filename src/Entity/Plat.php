@@ -22,6 +22,8 @@ class Plat
     #[ORM\Column(length: 255)]
     private ?string $photo = null;
 
+    #[ORM\Column(length: 50)]
+    private ?string $categorie = null;
     /**
      * @var Collection<int, Allergene>
      */
@@ -88,6 +90,16 @@ class Plat
     {
         $this->allergenes->removeElement($allergene);
 
+        return $this;
+    }
+    public function getCategorie(): ?string
+    {
+        return $this->categorie;
+    }
+
+    public function setCategorie(string $categorie): static
+    {
+        $this->categorie = $categorie;
         return $this;
     }
 }

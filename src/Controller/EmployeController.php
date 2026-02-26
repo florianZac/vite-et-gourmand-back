@@ -6,6 +6,9 @@ use App\Entity\Menu;
 use App\Entity\Regime;
 use App\Entity\SuiviCommande;
 use App\Entity\Theme;
+use App\Entity\Allergene;
+use App\Entity\Plat;
+use App\Repository\AllergeneRepository;
 use App\Repository\AvisRepository;
 use App\Repository\CommandeRepository;
 use App\Repository\MenuRepository;
@@ -29,15 +32,20 @@ use Symfony\Component\Routing\Attribute\Route;
  *  2. rechercherCommande() : Rechercher une commande par son numéro de commande
  *  3. changerStatut()      : Modifier le statut d'une commande en respectant le cycle de vie strict
  *  4. getAvisEnAttente()   : Afficher tous les avis en attente de validation
- *  5. approuverAvis        : Approuver un avis client
- *  6. getAllMenus()        : Retourner la liste de tous les menus
- *  7. getMenuById()        : Retourner un menu par son id
- *  8. createMenu()         : Créer un nouveau menu
- *  9. updateMenu()         : Met à jour un menu par son id
- *  10. createTheme()       : Créer un nouveau thème
- *  11. updateTheme()       : Met à jour un thème par son id
- *  12. createRegime()      : Créer un nouveau régime
- *  13. updateRegime()      : Met à jour un régime par son id
+ *  5. approuverAvis()      : Approuver un avis client
+ *  6. refuserAvis()        : Refuser un avis client
+ *  7. getAllMenus()        : Retourner la liste de tous les menus
+ *  8. getMenuById()        : Retourner un menu par son id
+ *  9. createMenu()         : Créer un nouveau menu
+ *  10. updateMenu()         : Met à jour un menu par son id
+ *  11. createTheme()       : Créer un nouveau thème
+ *  12. updateTheme()       : Met à jour un thème par son id
+ *  13. createRegime()      : Créer un nouveau régime
+ *  14. updateRegime()      : Met à jour un régime par son id
+ *  15. createAllergene()   : Créer un nouvel allergène
+ *  16. updateAllergene()   : Met à jour un allergène par son id
+ *  17. createPlat()        : Créer un nouveau plat
+ *  18. updatePlat()        : Met à jour un plat par son id
  */
 
 #[Route('/api/employe')]
@@ -241,6 +249,40 @@ final class EmployeController extends AbstractController
 
         // Étape 6 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Avis approuvé avec succès']);
+    }
+
+    /**
+     * @description Refuser un avis client
+     * @param int $id L'id de l'avis
+     * @param AvisRepository $avisRepository Le repository des avis
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/avis/{id}/refuser', name: 'api_employe_avis_refuser', methods: ['PUT'])]
+    public function refuserAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'avis
+        $avis = $avisRepository->find($id);
+        if (!$avis) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Avis non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que l'avis est en attente
+        if ($avis->getStatut() !== 'en_attente') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cet avis n\'est pas en attente'], 400);
+        }
+
+        // Étape 4 - Refuser l'avis
+        $avis->setStatut('refusé');
+        $em->flush();
+
+        // Étape 5 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Avis refusé avec succès']);
     }
 
     // =========================================================================
@@ -648,5 +690,208 @@ final class EmployeController extends AbstractController
 
         // Étape 6 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Régime mis à jour avec succès']);
+    }
+
+    // =========================================================================
+    // ALLERGENES
+    // =========================================================================
+
+    /**
+     * @description Créer un nouvel allergène
+     * Corps JSON attendu : { "libelle": "Gluten" }
+     */
+    #[Route('/allergenes', name: 'api_employe_allergenes_create', methods: ['POST'])]
+    public function createAllergene(Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier que le libellé est présent
+        if (empty($data['libelle'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
+        }
+
+        // Étape 4 - Vérifier que le libellé n'existe pas déjà
+        $existant = $allergeneRepository->findOneBy(['libelle' => $data['libelle']]);
+        if ($existant) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cet allergène existe déjà'], 409);
+        }
+
+        // Étape 5 - Créer et persister l'allergène
+        $allergene = new Allergene();
+        $allergene->setLibelle($data['libelle']);
+        $em->persist($allergene);
+        $em->flush();
+
+        // Étape 6 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Allergène créé avec succès', 'id' => $allergene->getId()], 201);
+    }
+
+    /**
+     * @description Met à jour un allergène par son id
+     * Corps JSON attendu : { "libelle": "Lactose" }
+     */
+    #[Route('/allergenes/{id}', name: 'api_employe_allergenes_update', methods: ['PUT'])]
+    public function updateAllergene(int $id, Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Chercher l'allergène à modifier
+        $allergene = $allergeneRepository->find($id);
+        if (!$allergene) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Allergène non trouvé'], 404);
+        }
+
+        // Étape 4 - Mettre à jour le libellé si fourni
+        if (isset($data['libelle'])) {
+            $existant = $allergeneRepository->findOneBy(['libelle' => $data['libelle']]);
+            if ($existant && $existant->getId() !== $allergene->getId()) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
+            }
+            $allergene->setLibelle($data['libelle']);
+        }
+
+        // Étape 5 - Sauvegarder
+        $em->flush();
+
+        // Étape 6 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Allergène mis à jour avec succès']);
+    }
+
+    // =========================================================================
+    // PLATS
+    // =========================================================================
+
+    /**
+     * @description Créer un nouveau plat
+     * Corps JSON attendu : { "titre_plat": "Bœuf bourguignon", "photo": "boeuf.jpg", "categorie": "Plat", "allergenes": [1, 2] }
+     */
+    #[Route('/plats', name: 'api_employe_plats_create', methods: ['POST'])]
+    public function createPlat(Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier les champs obligatoires
+        if (empty($data['titre_plat']) || empty($data['photo']) || empty($data['categorie'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Les champs titre_plat, photo et categorie sont obligatoires'], 400);
+        }
+
+        // Étape 4 - Vérifier que le titre n'existe pas déjà
+        $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
+        if ($existant) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
+        }
+
+        // Étape 5 - Vérifier que la catégorie est valide
+        $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
+        if (!in_array($data['categorie'], $categoriesValides)) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+        }
+
+        // Étape 6 - Créer le plat
+        $plat = new Plat();
+        $plat->setTitrePlat($data['titre_plat']);
+        $plat->setPhoto($data['photo']);
+        $plat->setCategorie($data['categorie']);
+
+        // Étape 7 - Associer les allergènes si fournis
+        if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
+            foreach ($data['allergenes'] as $allergeneId) {
+                $allergene = $allergeneRepository->find($allergeneId);
+                if (!$allergene) {
+                    return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
+                }
+                $plat->addAllergene($allergene);
+            }
+        }
+
+        // Étape 8 - Persister et sauvegarder
+        $em->persist($plat);
+        $em->flush();
+
+        // Étape 9 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Plat créé avec succès', 'id' => $plat->getId()], 201);
+    }
+
+    /**
+     * @description Met à jour un plat par son id
+     * Corps JSON attendu : { "titre_plat": "...", "photo": "...", "categorie": "...", "allergenes": [1, 2] }
+     */
+    #[Route('/plats/{id}', name: 'api_employe_plats_update', methods: ['PUT'])]
+    public function updatePlat(int $id, Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Chercher le plat à modifier
+        $plat = $platRepository->find($id);
+        if (!$plat) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
+        }
+
+        // Étape 4 - Mettre à jour le titre si fourni
+        if (isset($data['titre_plat'])) {
+            $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
+            if ($existant && $existant->getId() !== $plat->getId()) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
+            }
+            $plat->setTitrePlat($data['titre_plat']);
+        }
+
+        // Étape 5 - Mettre à jour la photo si fournie
+        if (isset($data['photo'])) {
+            $plat->setPhoto($data['photo']);
+        }
+
+        // Étape 6 - Mettre à jour la catégorie si fournie
+        if (isset($data['categorie'])) {
+            $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
+            if (!in_array($data['categorie'], $categoriesValides)) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+            }
+            $plat->setCategorie($data['categorie']);
+        }
+
+        // Étape 7 - Synchroniser les allergènes si fournis
+        if (isset($data['allergenes']) && is_array($data['allergenes'])) {
+            foreach ($plat->getAllergenes() as $allergeneExistant) {
+                $plat->removeAllergene($allergeneExistant);
+            }
+            foreach ($data['allergenes'] as $allergeneId) {
+                $allergene = $allergeneRepository->find($allergeneId);
+                if (!$allergene) {
+                    return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
+                }
+                $plat->addAllergene($allergene);
+            }
+        }
+
+        // Étape 8 - Sauvegarder
+        $em->flush();
+
+        // Étape 9 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
     }
 }

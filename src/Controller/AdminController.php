@@ -29,10 +29,11 @@ use Symfony\Component\HttpFoundation\Request;
  *  7. desactiverCompte         : Désactivation d'un compte utilisateur
  *  8. reactiverCompte          : Résactivation d'un compte utilisateur
  *  9. deleteCommande           : Supprimer une commande
- *  10. supprimerAvis           : Supprimer un avis client
- *  11. refuserAvis             : Refuser un avis client
- *  12. approuverAvis           : Approuver un avis client
- *  13. getAvisEnAttente        : Afficher tous les avis en attente de validation
+ *  10. rechercherCommande      : Rechercher une commande par son numéro de commande
+ *  11. supprimerAvis           : Supprimer un avis client
+ *  12. refuserAvis             : Refuser un avis client
+ *  13. approuverAvis           : Approuver un avis client
+ *  14. getAvisEnAttente        : Afficher tous les avis en attente de validation
 */
 
 #[Route('/api/admin')]
@@ -456,7 +457,32 @@ final class AdminController extends AbstractController
         // Étape 5 — Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Commande supprimée avec succès']);
     }
-    
+ 
+    /**
+     * @description Rechercher une commande par son numéro de commande
+     * @param string $nom Le numéro de commande à rechercher
+     * @param CommandeRepository $commandeRepository Le repository des commandes
+     * @return JsonResponse
+     */
+    #[Route('/commandes/recherche/{nom}', name: 'api_admin_commandes_recherche', methods: ['GET'])]
+    public function rechercherCommande(string $nom, CommandeRepository $commandeRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Rechercher la commande par son numéro
+        $commandes = $commandeRepository->findByNumeroCommande($nom);
+
+        // Étape 3 - Si aucune commande trouvée
+        if (empty($commandes)) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Aucune commande trouvée'], 404);
+        }
+
+        // Étape 4 - Retourner les commandes en JSON
+        return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
+    }
 
     // =========================================================================
     // AVIS

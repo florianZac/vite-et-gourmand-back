@@ -100,8 +100,8 @@ final class PlatController extends BaseController
         $data = json_decode($request->getContent(), true);
 
         // Étape 3 - Vérifier les champs obligatoires
-        if (empty($data['titre_plat']) || empty($data['photo'])) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Les champs titre_plat et photo sont obligatoires'], 400);
+        if (empty($data['titre_plat']) || empty($data['photo']) || empty($data['categorie'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'certains champs sont manquant'], 400);
         }
 
         // Étape 4 - Vérifier que le titre n'existe pas déjà
@@ -115,7 +115,15 @@ final class PlatController extends BaseController
         $plat->setTitrePlat($data['titre_plat']);
         $plat->setPhoto($data['photo']);
 
-        // Étape 6 - Associer les allergènes si fournis
+        // Étape 6 - Vérifier que la catégorie est valide
+        $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
+        if (!in_array($data['categorie'], $categoriesValides)) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+        }
+        $plat->setCategorie($data['categorie']);
+
+
+        // Étape 7 - Associer les allergènes si fournis
         if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
             foreach ($data['allergenes'] as $allergeneId) {
                 $allergene = $allergeneRepository->find($allergeneId);
@@ -126,11 +134,11 @@ final class PlatController extends BaseController
             }
         }
 
-        // Étape 7 - Persister et sauvegarder
+        // Étape 8 - Persister et sauvegarder
         $em->persist($plat);
         $em->flush();
 
-        // Étape 8 - Retourner une confirmation avec l'id créé
+        // Étape 9 - Retourner une confirmation avec l'id créé
         return $this->json(['status' => 'Succès', 'message' => 'Plat créé avec succès', 'id' => $plat->getId()], 201);
     }
 
@@ -181,7 +189,16 @@ final class PlatController extends BaseController
             $plat->setPhoto($data['photo']);
         }
 
-        // Étape 6 - Synchroniser les allergènes si fournis
+        // Étape 6 - Mettre à jour la categorie
+        if (isset($data['categorie'])) {
+            $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
+            if (!in_array($data['categorie'], $categoriesValides)) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+            }
+            $plat->setCategorie($data['categorie']);
+        }
+
+        // Étape 7 - Synchroniser les allergènes si fournis
         // On retire tous les anciens et on remet les nouveaux
         if (isset($data['allergenes']) && is_array($data['allergenes'])) {
             foreach ($plat->getAllergenes() as $allergeneExistant) {
@@ -196,10 +213,10 @@ final class PlatController extends BaseController
             }
         }
 
-        // Étape 7 - Sauvegarder (pas besoin de persist() pour une mise à jour)
+        // Étape 8 - Sauvegarder (pas besoin de persist() pour une mise à jour)
         $em->flush();
 
-        // Étape 8 - Retourner une confirmation
+        // Étape 9 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
     }
 
