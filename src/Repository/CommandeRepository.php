@@ -104,9 +104,9 @@ class CommandeRepository extends ServiceEntityRepository
         $yesterday = new \DateTime('yesterday');
 
         return $this->createQueryBuilder('c')
-            ->where('c.pretMateriel = true')
-            ->andWhere('c.restitutionMateriel = false')
-            ->andWhere('c.datePrestation = :yesterday')
+            ->where('c.pret_materiel = true')
+            ->andWhere('c.restitution_materiel = false')
+            ->andWhere('c.date_prestation = :yesterday')
             ->setParameter('yesterday', $yesterday->format('Y-m-d'))
             ->getQuery()
             ->getResult();
@@ -128,9 +128,9 @@ class CommandeRepository extends ServiceEntityRepository
     public function findCommandesMaterielARelancer(): array
     {
         return $this->createQueryBuilder('c')
-            ->where('c.pretMateriel = true')
-            ->andWhere('c.restitutionMateriel = false')
-            ->andWhere('c.status = :livre')
+            ->where('c.pret_materiel = true')
+            ->andWhere('c.restitution_materiel = false')
+            ->andWhere('c.statut = :livre')
             ->setParameter('livre', 'Livré')
             ->getQuery()
             ->getResult();
