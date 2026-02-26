@@ -5,10 +5,11 @@ namespace App\Controller;
 use App\Entity\Utilisateur;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-// Fonction utilisée redéfinir ou surcharger la méthode getUser()
+// Fonction utilisée  pour redéfinir la méthode getUser()
 // j'avait des érreurs avec la classe ClientController qui extend AbstractController 
-// le problème vennait de la déclaration de getUser() car il ne s'avait pas reconnaitre que UserInterface  récuperer l'utilisateur avec des classes custom
-// du coup en changeant le type de retour de ?UserInterface à ?Utilisateur cela corrige le problème
+// le problème vennait de la déclaration de getUser() car il ne s'avait pas reconnaitre que UserInterface récupere l'utilisateur avec des classes custom
+// du coup en changeant le type de retour de ?UserInterface à ?Utilisateur cela corrige le problème.
+// a creuser des que j'ai le temps.
 
 abstract class BaseController extends AbstractController
 {

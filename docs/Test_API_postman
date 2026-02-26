@@ -92,20 +92,10 @@ test 2.38 -> DELETE /api/admin/menus/{id} | voir fichier MenuControllerAdmin.php
 supprime un menu
 test 2.39 -> PUT /api/admin/commandes/{id}/annuler | voir fichier CommandeController.php fonction annulerCommande()
 annule une commande avec remboursement 100%
-
 test 2.40 -> GET /api/admin/commandes | voir fichier CommandeController.php fonction getAllCommandes()
 liste de toutes les commandes
-
 test 2.41 -> GET /api/admin/commandes/{id} | voir fichier CommandeController.php fonction getCommandeById()
 Retourne une commande par son id
-
-
-
-/* Debut des test à écrire et réalisé avec postman */
-
-A lintérieur de ces braquet les codes pas encore tapé à faire
-
-/* Fin des test à écrire et réalisé */
 
 ROLE_CLIENT :
 
@@ -132,25 +122,20 @@ Un client authentifié peut demander la désactivation de son commande
 ROLE_EMPLOYE :
 
 test 4.0 -> Post /api/login | test le login d'un utilisateur ayant le ROLE_EMPLOYE
-test 4.1 -> GET  /api/employe/commandes | voir fichier EmployeController.php fonction getCommandes() affiche toutes les commandes en cours
-test 4.2 -> GET  /api/employe/commandes/recherche/{nom} | voir fichier EmployeController.php fonction rechercherCommande() recherche par nom de commande
-test 4.3 -> POST /api/employe/commandes/{id}/statut | voir fichier EmployeController.php fonction changerStatut() modifie le statut d'une commande
-test 4.4 -> GET  /api/employe/avis | voir fichier EmployeController.php fonction getAvisEnAttente() affiche les avis en attente
-test 4.5 ->PUT  /api/employe/avis/{id}/approuver   | voir fichier EmployeController.php fonction approuverAvis() approuve un avis
+test 4.1 -> GET  /api/employe/commandes | voir fichier EmployeController.php fonction getCommandes() afficher toutes les commandes en cours
+test 4.2 -> GET  /api/employe/commandes/recherche/{nom} | voir fichier EmployeController.php fonction rechercherCommande() rechercher par numéro de commande
+test 4.3 -> POST /api/employe/commandes/{id}/statut | voir fichier EmployeController.php fonction changerStatut() modifier le statut d'une commande
+test 4.4 -> GET  /api/employe/avis | voir fichier EmployeController.php fonction getAvisEnAttente() afficher les avis en attente
+test 4.5 ->PUT  /api/employe/avis/{id}/approuver   | voir fichier EmployeController.php fonction approuverAvis() approuver un avis
 
-test 4.6 -> GET  /api/employe/menus    | voir fichier EmployeController.php fonction X() affiche les menus
-test 4.7 -> GET  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction X() afficher un menu avec ses allergenes
-test 4.8 -> POST /api/employe/menus    | voir fichier EmployeController.php fonction X() ajoute un menu
-test 4.9 -> PUT  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction X() modifie un menu
-test 4.10 -> POST /api/employe/themes   | voir fichier EmployeController.php fonction X() ajoute un theme
-test 4.11 -> PUT  /api/employe/themes/{id}  | voir fichier EmployeController.php fonction X() modifie un theme
-test 4.12 -> POST /api/employe/regimes  | voir fichier EmployeController.php fonction X() ajoute un regime
-test 4.13 -> PUT  /api/employe/regimes/{id} | voir fichier EmployeController.php fonction X() modifie un élément de la table regime
-
-/*------------------------------------------------------------------------
-* Début des tests de l'API avec Postman
-* Les tests sont organisés par route et par méthode HTTP
-------------------------------------------------------------------------*/
+test 4.6 -> GET  /api/employe/menus    | voir fichier EmployeController.php fonction getAllMenus() afficher les menus
+test 4.7 -> GET  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction getMenuById() afficher un menu par id
+test 4.8 -> POST /api/employe/menus    | voir fichier EmployeController.php fonction createMenu() créer un menu
+test 4.9 -> PUT  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction updateMenu() modifier un menu
+test 4.10 -> POST /api/employe/themes   | voir fichier EmployeController.php fonction createTheme() créer un theme
+test 4.11 -> PUT  /api/employe/themes/{id}  | voir fichier EmployeController.php fonction updateTheme() modifier un theme
+test 4.12 -> POST /api/employe/regimes  | voir fichier EmployeController.php fonction createRegime() créer un regime
+test 4.13 -> PUT  /api/employe/regimes/{id} | voir fichier EmployeController.php fonction updateRegime() modifier un élément de la table regime
 
 /*------------------------------------------------------------------------
 * Début des tests pour le Role : PUBLIC_ACCESS :

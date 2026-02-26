@@ -13,17 +13,18 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description CRUD des régimes alimentaires (réservé aux administrateurs)
- *  1. getAllRegimes : Retourne la liste de tous les régimes 
- *  2. getRegimeById : Retourne un régimes par son id
- *  3. createRegime :  création d'un régimes
- *  4. updateRegime : modifie un régimes en le ciblant par son id
- *  5. deleteRegime : supprime un régimes en le ciblant par son id 
+ * 
+ *  1. getAllRegimes : Retourner la liste de tous les régimes 
+ *  2. getRegimeById : Retourner un régimes par son id
+ *  3. createRegime : Création d'un régimes
+ *  4. updateRegime : Met à jour un régimes en le ciblant par son id
+ *  5. deleteRegime : Supprimer un régimes en le ciblant par son id 
  */
 #[Route('/api/admin/regimes')]
 final class RegimeController extends BaseController
 {
     /**
-     * @description Retourne la liste de tous les régimes alimentaires
+     * @description Retourner la liste de tous les régimes 
      * @param RegimeRepository $regimeRepository Le repository des régimes
      * @return JsonResponse
      */
@@ -43,7 +44,7 @@ final class RegimeController extends BaseController
     }
 
     /**
-     * @description Retourne un régime par son id
+     * @description Retourner un régimes par son id
      * @param int $id L'id du régime
      * @param RegimeRepository $regimeRepository Le repository des régimes
      * @return JsonResponse
@@ -67,7 +68,7 @@ final class RegimeController extends BaseController
     }
 
     /**
-     * @description Crée un nouveau régime alimentaire
+     * @description Création d'un régimes
      * Corps JSON attendu : { "libelle": "Végétarien" }
      * @param Request $request La requête HTTP contenant les données au format JSON
      * @param RegimeRepository $regimeRepository Le repository des régimes
@@ -107,7 +108,7 @@ final class RegimeController extends BaseController
     }
 
     /**
-     * @description Met à jour un régime par son id
+     * @description Met à jour un régimes en le ciblant par son id
      * Corps JSON attendu : { "libelle": "Vegan" }
      * @param int $id L'id du régime à modifier
      * @param Request $request La requête HTTP contenant les données au format JSON
@@ -149,7 +150,7 @@ final class RegimeController extends BaseController
     }
 
     /**
-     * @description Supprime un régime par son id
+     * @description Supprimer un régimes en le ciblant par son id 
      * @param int $id L'id du régime à supprimer
      * @param RegimeRepository $regimeRepository Le repository des régimes
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données

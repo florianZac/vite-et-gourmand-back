@@ -15,11 +15,11 @@ use Symfony\Component\Routing\Attribute\Route;
  * @created     25/02/2026
  * @description CRUD des plats (réservé aux administrateurs)
  * 
- *  1. getAllPlats : Retourne la liste de tous les allergènes 
- *  2. getPlatById : Retourne un allergène par son id
- *  3. createPlat :  Création d'un allergène
- *  4. updatePlat : Modifie un allergène en le ciblant par son id
- *  5. deletePlat : Supprime un allergène en le ciblant par son id 
+ *  1. getAllPlats : Retourner la liste de tous les plats avec ses allergènes associés
+ *  2. getPlatById : Retourner un plat par son id avec ses allergènes associés
+ *  3. createPlat : Créer un nouveau plat avec ses allergènes associés
+ *  4. updatePlat : Met à jour un allergène en le ciblant par son id avec ses allergènes associés
+ *  5. deletePlat : Supprimer un plat avec ses allergènes associés en le ciblant par son id 
  *  Corps JSON pour POST/PUT :
  *  {
  *      "titre_plat": "Bœuf bourguignon",
@@ -32,7 +32,7 @@ use Symfony\Component\Routing\Attribute\Route;
 final class PlatController extends BaseController
 {
     /**
-     * @description Retourne la liste de tous les plats avec leurs allergènes
+     * @description Retourner la liste de tous les plats avec ses allergènes associés
      * @param PlatRepository $platRepository Le repository des plats
      * @return JsonResponse
      */
@@ -52,7 +52,7 @@ final class PlatController extends BaseController
     }
 
     /**
-     * @description Retourne un plat par son id avec ses allergènes
+     * @description Retourner un plat par son id avec ses allergènes associés
      * @param int $id L'id du plat
      * @param PlatRepository $platRepository Le repository des plats
      * @return JsonResponse
@@ -76,7 +76,7 @@ final class PlatController extends BaseController
     }
 
     /**
-     * @description Crée un nouveau plat avec ses allergènes associés
+     * @description Créer un nouveau plat avec ses allergènes associés
      * Corps JSON attendu : { "titre_plat": "Bœuf bourguignon", "photo": "boeuf.jpg", "allergenes": [1, 2] }
      * @param Request $request La requête HTTP contenant les données au format JSON
      * @param PlatRepository $platRepository Le repository des plats
@@ -135,7 +135,7 @@ final class PlatController extends BaseController
     }
 
     /**
-     * @description Met à jour un plat par son id
+     * @description Met à jour un allergène en le ciblant par son id avec ses allergènes associés
      * Les allergènes envoyés REMPLACENT les anciens (synchronisation complète)
      * Corps JSON attendu : { "titre_plat": "Nouveau titre", "photo": "photo.jpg", "allergenes": [1, 2] }
      * @param int $id L'id du plat à modifier
@@ -204,7 +204,7 @@ final class PlatController extends BaseController
     }
 
     /**
-     * @description Supprime un plat par son id
+     * @description Supprimer un plat avec ses allergènes associés en le ciblant par son id
      * @param int $id L'id du plat à supprimer
      * @param PlatRepository $platRepository Le repository des plats
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données

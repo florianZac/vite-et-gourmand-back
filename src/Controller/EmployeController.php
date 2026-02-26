@@ -2,12 +2,19 @@
 
 namespace App\Controller;
 
+use App\Entity\Menu;
+use App\Entity\Regime;
 use App\Entity\SuiviCommande;
+use App\Entity\Theme;
+use App\Repository\AvisRepository;
 use App\Repository\CommandeRepository;
+use App\Repository\MenuRepository;
+use App\Repository\PlatRepository;
+use App\Repository\RegimeRepository;
 use App\Repository\SuiviCommandeRepository;
+use App\Repository\ThemeRepository;
 use App\Service\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
-use App\Repository\AvisRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,14 +23,32 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * @author      Florian Aizac
  * @created     25/02/2026
- * @description Contrôleur gérant les actions de l'employé connecté
+ * @description Gestions des actions d'un employé connecté
+ * 
+ *  1. getCommandes()       : Afficher toutes les commandes en cours
+ *  2. rechercherCommande() : Rechercher une commande par son numéro de commande
+ *  3. changerStatut()      : Modifier le statut d'une commande en respectant le cycle de vie strict
+ *  4. getAvisEnAttente()   : Afficher tous les avis en attente de validation
+ *  5. approuverAvis        : Approuver un avis client
+ *  6. getAllMenus()        : Retourner la liste de tous les menus
+ *  7. getMenuById()        : Retourner un menu par son id
+ *  8. createMenu()         : Créer un nouveau menu
+ *  9. updateMenu()         : Met à jour un menu par son id
+ *  10. createTheme()       : Créer un nouveau thème
+ *  11. updateTheme()       : Met à jour un thème par son id
+ *  12. createRegime()      : Créer un nouveau régime
+ *  13. updateRegime()      : Met à jour un régime par son id
  */
 
 #[Route('/api/employe')]
 final class EmployeController extends AbstractController
 {
+    // =========================================================================
+    // COMMANDES
+    // =========================================================================
+
     /**
-     * @description Affiche toutes les commandes en cours (tout statut sauf Terminée et Annulée)
+     * @description Afficher toutes les commandes en cours
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @return JsonResponse
      */
@@ -43,7 +68,7 @@ final class EmployeController extends AbstractController
     }
 
     /**
-     * @description Recherche une commande par son numéro de commande
+     * @description Rechercher une commande par son numéro de commande
      * @param string $nom Le numéro de commande à rechercher
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @return JsonResponse
@@ -69,7 +94,9 @@ final class EmployeController extends AbstractController
     }
 
     /**
-     * @description Modifie le statut d'une commande en respectant le cycle de vie strict
+     * @description Modifier le statut d'une commande en respectant le cycle de vie strict
+     * Cycle autorisé : En attente → Acceptée → En préparation → En livraison → Terminée
+     * Un retour en arrière est interdit.
      * @param int $id L'id de la commande
      * @param Request $request La requête HTTP contenant le nouveau statut
      * @param CommandeRepository $commandeRepository Le repository des commandes
@@ -156,8 +183,12 @@ final class EmployeController extends AbstractController
         ]);
     }
 
+    // =========================================================================
+    // AVIS
+    // =========================================================================
+
     /**
-     * @description Affiche tous les avis en attente de validation
+     * @description Afficher tous les avis en attente de validation
      * @param AvisRepository $avisRepository Le repository des avis
      * @return JsonResponse
      */
@@ -177,7 +208,7 @@ final class EmployeController extends AbstractController
     }
 
     /**
-     * @description Approuve un avis client
+     * @description Approuver un avis client
      * @param int $id L'id de l'avis
      * @param AvisRepository $avisRepository Le repository des avis
      * @param EntityManagerInterface $em L'EntityManager
@@ -210,5 +241,412 @@ final class EmployeController extends AbstractController
 
         // Étape 6 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Avis approuvé avec succès']);
+    }
+
+    // =========================================================================
+    // MENUS
+    // =========================================================================
+
+    /**
+     * @description Retourner la liste de tous les menus
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @return JsonResponse
+     */
+    #[Route('/menus', name: 'api_employe_menus_list', methods: ['GET'])]
+    public function getAllMenus(MenuRepository $menuRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer tous les menus
+        $menus = $menuRepository->findAll();
+
+        // Étape 3 - Retourner la liste en JSON
+        return $this->json(['status' => 'Succès', 'total' => count($menus), 'menus' => $menus]);
+    }
+
+    /**
+     * @description Retourner un menu par son id
+     * @param int $id L'id du menu
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @return JsonResponse
+     */
+    #[Route('/menus/{id}', name: 'api_employe_menus_show', methods: ['GET'])]
+    public function getMenuById(int $id, MenuRepository $menuRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer le menu par son id
+        $menu = $menuRepository->find($id);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 3 - Retourner le menu en JSON
+        return $this->json(['status' => 'Succès', 'menu' => $menu]);
+    }
+
+    /**
+     * @description Créer un nouveau menu
+     * Corps JSON attendu : { "titre": "...", "nombre_personne_minimum": 10, "prix_par_personne": 45.00,
+     *                        "description": "...", "quantite_restante": 50, "regime_id": 2, "theme_id": 3,
+     *                        "plats": [1, 4, 7] }
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param PlatRepository $platRepository Le repository des plats
+     * @param RegimeRepository $regimeRepository Le repository des régimes
+     * @param ThemeRepository $themeRepository Le repository des thèmes
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/menus', name: 'api_employe_menus_create', methods: ['POST'])]
+    public function createMenu(
+        Request $request,
+        MenuRepository $menuRepository,
+        PlatRepository $platRepository,
+        RegimeRepository $regimeRepository,
+        ThemeRepository $themeRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier les champs obligatoires
+        $champsObligatoires = ['titre', 'nombre_personne_minimum', 'prix_par_personne', 'description', 'quantite_restante', 'regime_id', 'theme_id'];
+        foreach ($champsObligatoires as $champ) {
+            if (!isset($data[$champ]) || $data[$champ] === '') {
+                return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
+            }
+        }
+
+        // Étape 4 - Vérifier que le titre n'existe pas déjà
+        $existant = $menuRepository->findOneBy(['titre' => $data['titre']]);
+        if ($existant) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Un menu avec ce titre existe déjà'], 409);
+        }
+
+        // Étape 5 - Récupérer le régime 
+        $regime = $regimeRepository->find($data['regime_id']);
+        if (!$regime) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Régime non trouvé'], 404);
+        }
+
+        // Étape 6 - Récupérer le thème
+        $theme = $themeRepository->find($data['theme_id']);
+        if (!$theme) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
+        }
+
+        // Étape 7 - Créer le menu
+        $menu = new Menu();
+        $menu->setTitre($data['titre']);
+        $menu->setNombrePersonneMinimum((int) $data['nombre_personne_minimum']);
+        $menu->setPrixParPersonne((float) $data['prix_par_personne']);
+        $menu->setDescription($data['description']);
+        $menu->setQuantiteRestante((int) $data['quantite_restante']);
+        $menu->setRegime($regime);
+        $menu->setTheme($theme);
+
+        // Étape 8 - Associer les plats si fournis
+        if (!empty($data['plats']) && is_array($data['plats'])) {
+            foreach ($data['plats'] as $platId) {
+                $plat = $platRepository->find($platId);
+                if (!$plat) {
+                    return $this->json(['status' => 'Erreur', 'message' => "Plat id $platId non trouvé"], 404);
+                }
+                $menu->addPlat($plat);
+            }
+        }
+
+        // Étape 9 - Persister le menu
+        $em->persist($menu);
+        
+        // Étape 10 - Sauvegarder
+        $em->flush();
+
+        // Étape 11 - Retourner une confirmation avec l'id créé
+        return $this->json(['status' => 'Succès', 'message' => 'Menu créé avec succès', 'id' => $menu->getId()], 201);
+    }
+
+    /**
+     * @description Met à jour un menu par son id
+     * Les plats envoyés REMPLACENT les anciens
+     * @param int $id L'id du menu à modifier
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param PlatRepository $platRepository Le repository des plats
+     * @param RegimeRepository $regimeRepository Le repository des régimes
+     * @param ThemeRepository $themeRepository Le repository des thèmes
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/menus/{id}', name: 'api_employe_menus_update', methods: ['PUT'])]
+    public function updateMenu(
+        int $id,
+        Request $request,
+        MenuRepository $menuRepository,
+        PlatRepository $platRepository,
+        RegimeRepository $regimeRepository,
+        ThemeRepository $themeRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Chercher le menu à modifier
+        $menu = $menuRepository->find($id);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 4 - Mise à jour des champs
+        if (isset($data['titre'])) {
+            $existant = $menuRepository->findOneBy(['titre' => $data['titre']]);
+            if ($existant && $existant->getId() !== $menu->getId()) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Un menu avec ce titre existe déjà'], 409);
+            }
+            $menu->setTitre($data['titre']);
+        }
+
+        if (isset($data['nombre_personne_minimum'])) {
+            $menu->setNombrePersonneMinimum((int) $data['nombre_personne_minimum']);
+        }
+
+        if (isset($data['prix_par_personne'])) {
+            $menu->setPrixParPersonne((float) $data['prix_par_personne']);
+        }
+
+        if (isset($data['description'])) {
+            $menu->setDescription($data['description']);
+        }
+
+        if (isset($data['quantite_restante'])) {
+            $menu->setQuantiteRestante((int) $data['quantite_restante']);
+        }
+
+        // Étape 5 - Mettre à jour le régime si fourni
+        if (isset($data['regime_id'])) {
+            $regime = $regimeRepository->find($data['regime_id']);
+            if (!$regime) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Régime non trouvé'], 404);
+            }
+            $menu->setRegime($regime);
+        }
+
+        // Étape 6 - Mettre à jour le thème si fourni
+        if (isset($data['theme_id'])) {
+            $theme = $themeRepository->find($data['theme_id']);
+            if (!$theme) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
+            }
+            $menu->setTheme($theme);
+        }
+
+        // Étape 7 - Synchroniser les plats
+        if (isset($data['plats']) && is_array($data['plats'])) {
+            foreach ($menu->getPlats() as $platExistant) {
+                $menu->removePlat($platExistant);
+            }
+            foreach ($data['plats'] as $platId) {
+                $plat = $platRepository->find($platId);
+                if (!$plat) {
+                    return $this->json(['status' => 'Erreur', 'message' => "Plat id $platId non trouvé"], 404);
+                }
+                $menu->addPlat($plat);
+            }
+        }
+
+        // Étape 8 - Sauvegarder
+        $em->flush();
+
+        // Étape 9 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Menu mis à jour avec succès']);
+    }
+
+    // =========================================================================
+    // THEMES
+    // =========================================================================
+
+    /**
+     * @description Créer un nouveau thème
+     * Corps JSON attendu : { "libelle": "Noël" }
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param ThemeRepository $themeRepository Le repository des thèmes
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/themes', name: 'api_employe_themes_create', methods: ['POST'])]
+    public function createTheme(Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier que le libellé est présent
+        if (empty($data['libelle'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
+        }
+
+        // Étape 4 - Vérifier que le libellé n'existe pas déjà
+        $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
+        if ($existant) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Ce thème existe déjà'], 409);
+        }
+
+        // Étape 5 - Créer et persister le nouveau thème
+        $theme = new Theme();
+        $theme->setLibelle($data['libelle']);
+        $em->persist($theme);
+        $em->flush();
+
+        // Étape 6 - Retourner une confirmation avec l'id créé
+        return $this->json(['status' => 'Succès', 'message' => 'Thème créé avec succès', 'id' => $theme->getId()], 201);
+    }
+
+    /**
+     * @description Met à jour un thème par son id
+     * Corps JSON attendu : { "libelle": "Mariage" }
+     * @param int $id L'id du thème à modifier
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param ThemeRepository $themeRepository Le repository des thèmes
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/themes/{id}', name: 'api_employe_themes_update', methods: ['PUT'])]
+    public function updateTheme(int $id, Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Chercher le thème à modifier
+        $theme = $themeRepository->find($id);
+        if (!$theme) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
+        }
+
+        // Étape 4 - Mettre à jour le libellé si fourni
+        if (isset($data['libelle'])) {
+            $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
+            if ($existant && $existant->getId() !== $theme->getId()) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
+            }
+            $theme->setLibelle($data['libelle']);
+        }
+
+        // Étape 5 - Sauvegarder
+        $em->flush();
+
+        // Étape 6 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Thème mis à jour avec succès']);
+    }
+
+    // =========================================================================
+    // REGIMES
+    // =========================================================================
+
+    /**
+     * @description Créer un nouveau régime
+     * Corps JSON attendu : { "libelle": "Végétarien" }
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param RegimeRepository $regimeRepository Le repository des régimes
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/regimes', name: 'api_employe_regimes_create', methods: ['POST'])]
+    public function createRegime(Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier que le libellé est présent
+        if (empty($data['libelle'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
+        }
+
+        // Étape 4 - Vérifier que le libellé n'existe pas déjà
+        $existant = $regimeRepository->findOneBy(['libelle' => $data['libelle']]);
+        if ($existant) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Ce régime existe déjà'], 409);
+        }
+
+        // Étape 5 - Créer le nouveau régime
+        $regime = new Regime();
+        $regime->setLibelle($data['libelle']);
+        $em->persist($regime);
+        $em->flush();
+
+        // Étape 6 - Retourner une confirmation avec l'id créé
+        return $this->json(['status' => 'Succès', 'message' => 'Régime créé avec succès', 'id' => $regime->getId()], 201);
+    }
+
+    /**
+     * @description Met à jour un régime par son id
+     * Corps JSON attendu : { "libelle": "Vegan" }
+     * @param int $id L'id du régime à modifier
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param RegimeRepository $regimeRepository Le repository des régimes
+     * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @return JsonResponse
+     */
+    #[Route('/regimes/{id}', name: 'api_employe_regimes_update', methods: ['PUT'])]
+    public function updateRegime(int $id, Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Chercher le régime à modifier
+        $regime = $regimeRepository->find($id);
+        if (!$regime) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Régime non trouvé'], 404);
+        }
+
+        // Étape 4 - Mettre à jour le libellé si fourni
+        if (isset($data['libelle'])) {
+            $existant = $regimeRepository->findOneBy(['libelle' => $data['libelle']]);
+            if ($existant && $existant->getId() !== $regime->getId()) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
+            }
+            $regime->setLibelle($data['libelle']);
+        }
+
+        // Étape 5 - Sauvegarder
+        $em->flush();
+
+        // Étape 6 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Régime mis à jour avec succès']);
     }
 }

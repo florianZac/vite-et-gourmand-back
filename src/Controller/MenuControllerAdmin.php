@@ -17,11 +17,11 @@ use Symfony\Component\Routing\Attribute\Route;
  * @created     25/02/2026
  * @description CRUD des menus (réservé aux administrateurs)
  * 
- *  1. getAllMenus : Retourne la liste de tous les menus 
- *  2. getMenuById : Retourne un menus par son id
- *  3. createMenu :  Création d'un menus
- *  4. updateMenu : Modifie un menus en le ciblant par son id
- *  5. deleteMenu : Supprime un menus en le ciblant par son id 
+ *  1. getAllMenus : Retourne la liste de tous les menus avec leurs plats, régime et thème 
+ *  2. getMenuById : Retourne un menu par son id avec ses plats, régime et thème
+ *  3. createMenu  : Crée un nouveau menu avec son régime, son thème et ses plats associés
+ *  4. updateMenu  : Met à jour un menu par son id
+ *  5. deleteMenu  : Supprime un menu par son id
  * Corps JSON pour POST/PUT :
  * {
  *   "titre": "Menu Noël Prestige",

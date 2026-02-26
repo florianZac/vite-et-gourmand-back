@@ -19,17 +19,30 @@ use Symfony\Component\HttpFoundation\Request;
  * @created     24/02/2026
  * @description Contrôleur gérant les utilisateurs 
  *  mise en place d'un CRUD de base pour les utilisateurs
- *  Create (POST) : un utilisateur (register) est géré dans AuthController.php, mais les autres opérations seront gérées ici
- *  Read  (GET): récuperation d'un utilisateur par son id fonction-> getUserById(), récuperation de la liste des utilisateurs fonction-> getAllUsers()
- *  Update (PUT): mise à jour des informations d'un utilisateur.
- *  Delete (DELETE): suppression d'un utilisateur par id est par email
- *  
- *  Recherche (GET) pour le fun recherche d'un utilisateur par son email.
+ * 
+ *  1. getAllUsers              : Retourne la liste de tous les utilisateurs
+ *  2. getUserById              : Retourne un utilisateurs par son id
+ *  3. deleteUserByID           : Supprime un utilisateurs par son id
+ *  4. deleteUserByEmail        : Supprime un utilisateurs par son e-mail
+ *  5. updateUserAdminById      : Modifie un utilisateurs en le ciblant par son id
+ *  6. updateUserAdminByEmail   : Modifie un utilisateurs en le ciblant par son e-mail
+ *  7. desactiverCompte         : Désactivation d'un compte utilisateur
+ *  8. reactiverCompte          : Résactivation d'un compte utilisateur
+ *  9. deleteCommande           : Supprimer une commande
+ *  10. supprimerAvis           : Supprimer un avis client
+ *  11. refuserAvis             : Refuser un avis client
+ *  12. approuverAvis           : Approuver un avis client
+ *  13. getAvisEnAttente        : Afficher tous les avis en attente de validation
 */
 
 #[Route('/api/admin')]
 final class AdminController extends AbstractController
 {
+    
+    // =========================================================================
+    // UTILISATEUR
+    // =========================================================================
+
     #[Route('/utilisateurs', name: 'api_utilisateurs', methods: ['GET'])]
 
     // Fonction qui récupère tous les utilisateurs
@@ -338,7 +351,83 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
 
-        #[Route('/commandes/{id}', name: 'api_client_commande_delete', methods: ['DELETE'])]
+    /**
+     * @description Désactivation d'un compte utilisateur
+     * @param int $id L'id de l'utilisateur à désactiver
+     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/utilisateurs/{id}/desactivation', name: 'api_admin_utilisateur_desactivation', methods: ['PUT'])]
+    public function desactiverCompte(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur
+        $utilisateur = $utilisateurRepository->find($id);
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que le compte n'est pas déjà inactif
+        if ($utilisateur->getStatutCompte() === 'inactif') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
+        }
+
+        // Étape 4 - Désactiver le compte
+        $utilisateur->setStatutCompte('inactif');
+
+        // Étape 5 - Sauvegarder en base
+        $em->flush();
+
+        // Étape 6 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Compte désactivé avec succès']);
+    }
+
+    /**
+     * @description Réactivation d'un compte utilisateur
+     * @param int $id L'id de l'utilisateur à réactiver
+     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/utilisateurs/{id}/reactivation', name: 'api_admin_utilisateur_reactivation', methods: ['PUT'])]
+    public function reactiverCompte(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur
+        $utilisateur = $utilisateurRepository->find($id);
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Étape 3 - Vérifier que le compte est bien inactif
+        if ($utilisateur->getStatutCompte() === 'actif') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà actif'], 400);
+        }
+
+        // Étape 4 - Réactiver le compte
+        $utilisateur->setStatutCompte('actif');
+
+        // Étape 5 - Sauvegarder en base
+        $em->flush();
+
+        // Étape 6 - Retourner un message de confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Compte réactivé avec succès']);
+    }
+
+    // =========================================================================
+    // COMMANDE
+    // =========================================================================
+
+    #[Route('/commandes/{id}', name: 'api_client_commande_delete', methods: ['DELETE'])]
     /**
      * @description Cette fonction permet à un client connecté de supprimer une commande.
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
@@ -378,77 +467,10 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Commande supprimée avec succès']);
     }
     
-    /**
-     * @description Désactivation d'un compte d'un utilisateur
-     * @param int $id L'id de l'utilisateur à désactiver
-     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
-     * @param EntityManagerInterface $em L'EntityManager
-     * @return JsonResponse
-     */
-    #[Route('/utilisateurs/{id}/desactivation', name: 'api_admin_utilisateur_desactivation', methods: ['PUT'])]
-    public function desactiverCompte(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
 
-        // Étape 2 - Récupérer l'utilisateur
-        $utilisateur = $utilisateurRepository->find($id);
-        if (!$utilisateur) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
-        }
-
-        // Étape 3 - Vérifier que le compte n'est pas déjà inactif
-        if ($utilisateur->getStatutCompte() === 'inactif') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
-        }
-
-        // Étape 4 - Désactiver le compte
-        $utilisateur->setStatutCompte('inactif');
-
-        // Étape 5 - Sauvegarder en base
-        $em->flush();
-
-        // Étape 6 - Retourner un message de confirmation
-        return $this->json(['status' => 'Succès', 'message' => 'Compte désactivé avec succès']);
-    }
-
-    /**
-     * @description Réactivation du compte d'un utilisateur
-     * @param int $id L'id de l'utilisateur à réactiver
-     * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
-     * @param EntityManagerInterface $em L'EntityManager
-     * @return JsonResponse
-     */
-    #[Route('/utilisateurs/{id}/reactivation', name: 'api_admin_utilisateur_reactivation', methods: ['PUT'])]
-    public function reactiverCompte(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer l'utilisateur
-        $utilisateur = $utilisateurRepository->find($id);
-        if (!$utilisateur) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
-        }
-
-        // Étape 3 - Vérifier que le compte est bien inactif
-        if ($utilisateur->getStatutCompte() === 'actif') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà actif'], 400);
-        }
-
-        // Étape 4 - Réactiver le compte
-        $utilisateur->setStatutCompte('actif');
-
-        // Étape 5 - Sauvegarder en base
-        $em->flush();
-
-        // Étape 6 - Retourner un message de confirmation
-        return $this->json(['status' => 'Succès', 'message' => 'Compte réactivé avec succès']);
-    }
+    // =========================================================================
+    // AVIS
+    // =========================================================================
 
     /**
      * @description Affiche tous les avis en attente de validation
@@ -566,6 +588,10 @@ final class AdminController extends AbstractController
         // Étape 4 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Avis supprimé avec succès']);
     }
+
+    // =========================================================================
+    // STATISTIQUE
+    // =========================================================================
 
     /**
      * @description Retourne les statistiques de l'entreprise vite et gourmand

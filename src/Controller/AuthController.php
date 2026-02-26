@@ -15,10 +15,14 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * @author      Florian Aizac
  * @created     24/02/2026
- * @description Contrôleur gérant l'authentification (login géré par Symfony, register géré ici)
+ * @description Contrôleur gérant l'authentification 
+ * utilisation : tous les rôle sont concerné.
+ *  1. login              : Log tous les utilisateurs
+ *  2. register           : Inscription de tous les utilisateurs
  */
 final class AuthController extends AbstractController
 {
+    // Fonction qui log tous les utilisateurs
     #[Route('/api/login', name: 'api_login', methods: ['POST'])]
     public function login(): JsonResponse
     {
@@ -27,6 +31,7 @@ final class AuthController extends AbstractController
         throw new \Exception('Ne devrait pas être appelé directement');
     }
 
+    // Fonction qui inscris de tous les utilisateurs
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     // utilisation de l'injection de dépendances pour récupérer les services nécessaires à la fonction register()
 

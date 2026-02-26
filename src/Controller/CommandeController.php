@@ -12,13 +12,17 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description Contrôleur gérant les opérations sur les commandes côté administrateur
- *  1. getAllAllergenes : Annule une commande avec remboursement 100%
- *  2. getAllergeneById : Lliste de toutes les commandes
- *  3. createAllergene :  Affiche une commande par son id
+ *  1. getAllCommandes        : Retourne la liste de toutes les commandes
+ *  2. updateUserById         : Retourne une commande par son id par son id
+ *  3. annulerCommande        : Annule une commande avec un remboursement de 100% du montant total (prix menu + livraison)
  */
 #[Route('/api/admin/commandes')]
 final class CommandeController extends BaseController
 {
+    // =========================================================================
+    // COMMANDE
+    // =========================================================================
+    
     /**
      * @description Retourne la liste de toutes les commandes
      * @param CommandeRepository $commandeRepository Le repository des commandes

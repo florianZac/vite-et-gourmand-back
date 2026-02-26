@@ -13,18 +13,19 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description CRUD des thèmes (réservé aux administrateurs)
- *  1. getAllThemes : Retourne la liste de tous les thèmes 
- *  2. getThemeById : Retourne un thèmes par son id
+ * 
+ *  1. getAllThemes : Retourner la liste de tous les thèmes 
+ *  2. getThemeById : Retourner un thèmes en le ciblant par son id
  *  3. createTheme  : Création d'un thèmes
- *  4. updateTheme : Modifie un thèmes en le ciblant par son id
- *  5. deleteTheme : Supprime un thèmes en le ciblant par son id 
+ *  4. updateTheme : Met à jour un thème en le ciblant par son id
+ *  5. deleteTheme : Supprimer un thèmes en le ciblant par son id 
  */
 
 #[Route('/api/admin/themes')]
 final class ThemeController extends BaseController
 {
     /**
-     * @description Retourne la liste de tous les thèmes
+     * @description Retourner la liste de tous les thèmes
      * @param ThemeRepository $themeRepository Le repository des thèmes
      * @return JsonResponse
      */
@@ -44,7 +45,7 @@ final class ThemeController extends BaseController
     }
 
     /**
-     * @description Retourne un thème par son id
+     * @description Retourner un thèmes en le ciblant par son id
      * @param int $id L'id du thème
      * @param ThemeRepository $themeRepository Le repository des thèmes
      * @return JsonResponse
@@ -68,7 +69,7 @@ final class ThemeController extends BaseController
     }
 
     /**
-     * @description Crée un nouveau thème
+     * @description Création d'un thèmes
      * Corps JSON attendu : { "libelle": "Noël" }
      * @param Request $request La requête HTTP contenant les données au format JSON
      * @param ThemeRepository $themeRepository Le repository des thèmes
@@ -108,7 +109,7 @@ final class ThemeController extends BaseController
     }
 
     /**
-     * @description Met à jour un thème par son id
+     * @description Met à jour un thème en le ciblant par son id
      * Corps JSON attendu : { "libelle": "Mariage" }
      * @param int $id L'id du thème à modifier
      * @param Request $request La requête HTTP contenant les données au format JSON
@@ -150,7 +151,7 @@ final class ThemeController extends BaseController
     }
 
     /**
-     * @description Supprime un thème par son id
+     * @description Supprimer un thèmes en le ciblant par son id 
      * @param int $id L'id du thème à supprimer
      * @param ThemeRepository $themeRepository Le repository des thèmes
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données

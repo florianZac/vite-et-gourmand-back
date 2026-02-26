@@ -18,14 +18,28 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     24/02/2026
  * @description Contrôleur gérant les actions du client connecté
+ * 
+ *  1. getProfil             : Retourne les informations du profil client connecté
+ *  2. updateUserById        : Met à jour les informations d'un client par son id
+ *  3. demandeDesactivation  : Demande de désactivation du compte client et envois d'un mail a l'admin
+ *  4. getCommandes          : Retourne la liste de ses commandes
+ *  5. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
+ *  6. getSuiviCommande      : Afficher le suivis de commande du client
+ *  7. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
  */
+
 
 #[Route('/api/client')]
 
 final class ClientController extends BaseController
 {
+
+    // =========================================================================
+    // UTILISATEUR
+    // =========================================================================
+
     /**
-     * @description Cette fonction permet à un client connecté voir les informations de son profil..
+     * @description Retourne les informations du profil client connecté
      * @param '' auncun parametre requis
      * @return JsonResponse une réponse JSON avec les données de son profil
      */
@@ -52,8 +66,7 @@ final class ClientController extends BaseController
 
     #[Route('/profil', name: 'api_client_update_profil', methods: ['PUT'])]
     /**
-     * @description Cette fonction permet à un client connecté de mettre à jour son profil.
-     *
+     * @description Met à jour les informations d'un client par son id
      * @param Request $request la requête HTTP contenant les données à mettre à jour au format JSON
      * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
      * @param UserPasswordHasherInterface $passwordHasher le service pour hasher les mots de passe de l'utilisateur
@@ -144,7 +157,64 @@ final class ClientController extends BaseController
     }
 
     /**
-     * @description Cette fonction permet à un client connecté de récupérer la liste de ses commandes passées.
+     * @description Demande de désactivation du compte client et envois d'un mail a l'admin
+     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
+     * Ensuite génére un mail à l'admin pour l'informer que le client souhaite désactiver son compte
+     * @param int $id l'id de la commande sur laquelle le client veut laisser un avis
+     * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
+     * @param MailerService $mailerService l'MailerService pour gérer les échange de mail
+     * @return JsonResponse une réponse JSON indiquant le succès ou l'échec de l'opération.
+     */
+
+    /**
+     *  A MODIFIER fonction qui fonctionne mais il faudrait générer un mail à l'admin pour l'informer que le client souhaite désactiver son compte
+     */
+    #[Route('/compte/desactivation', name: 'api_client_compte_desactivation', methods: ['POST'])]
+    public function demandeDesactivation(EntityManagerInterface $em, MailerService $mailerService): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle CLIENT
+        if (!$this->isGranted('ROLE_CLIENT')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur connecté
+        $utilisateur = $this->getUser();
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
+        }
+
+        // Étape 3 - Vérifier que le compte n'est pas déjà en attente de désactivation
+        if ($utilisateur->getStatutCompte() === 'en_attente_desactivation') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Demande de désactivation déjà en cours'], 400);
+        }
+
+        // Étape 4 - Vérifier que le compte n'est pas déjà inactif
+        if ($utilisateur->getStatutCompte() === 'inactif') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
+        }
+
+        // Étape 5 - modification du statut du compte
+        $utilisateur->setStatutCompte('en_attente_desactivation');
+
+        // Étape 6 - Sauvegarder en base de donnée
+        $em->flush();
+
+        // Étape 7 - Envoyer un email à l'admin
+        $mailerService->sendDemandeDesactivationEmail($utilisateur);
+
+        // Étape 7 - Retourner un message de confirmation
+        return $this->json([
+            'status'  => 'Succès',
+            'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
+        ]);
+    }
+
+    // =========================================================================
+    // COMMANDE
+    // =========================================================================
+
+    /**
+     * @description Retourne la liste de ses commandes
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @return JsonResponse reponse JSON
@@ -170,9 +240,9 @@ final class ClientController extends BaseController
     }
 
     /**
-     * @description Cette fonction permet à un client connecté d'annuler une commande passée en fournissant son ID.'
-     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
-     * @param int id  correspond à commande_id id de la commande à annuler
+     * @description Annule une commandes passée par le client en fournissant son ID
+     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route.      
+     * @param int id correspond à commande_id id de la commande à annuler
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @param EntityManagerInterface $em pour gérer les opérations de base de données
      * @param MailerService $mailerService pour envoyer un email de confirmation d'annulation
@@ -181,14 +251,6 @@ final class ClientController extends BaseController
     #[Route('/commandes/{id}/annuler', name: 'api_client_commande_annuler', methods: ['POST'])]
     public function annulerCommande(int $id, Request $request, CommandeRepository $commandeRepository, EntityManagerInterface $em, MailerService $mailerService): JsonResponse
     {
-        /*
-            - Vérifier que la commande appartient au client
-            - Récupérer la justification
-            - Calculer le remboursement selon la date
-            - Changer le statut à 'annulée'
-            - Envoyer un email de confirmation
-        */
-
         // Étape 1 - Vérifie le rôle CLIENT
         if (!$this->isGranted('ROLE_CLIENT')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -290,8 +352,12 @@ final class ClientController extends BaseController
         ]);
     }
 
+    // =========================================================================
+    // SUIVIS
+    // =========================================================================
+
     /**
-     * @description Cette fonction permet à un client connecté d'afficher le suivis de commande d'après son ID.'
+     * @description Afficher le suivis de commande du client
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
      * @param int id  correspond à commande_id id de la commande à annuler
      * @param CommandeRepository $commandeRepository Le repository des commandes
@@ -350,8 +416,12 @@ final class ClientController extends BaseController
         ]);
     }
 
+    // =========================================================================
+    // AVIS
+    // =========================================================================
+
     /**
-     * @description Cette fonction permet à un client de poster un avis lorsque sa commande est en statut terminée'
+     * @description Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
      * @param int $id l'id de la commande sur laquelle le client veut laisser un avis
      * @param Request $request la requête HTTP contenant note et description au format JSON
@@ -430,58 +500,5 @@ final class ClientController extends BaseController
             'message' => 'Avis soumis avec succès, il sera validé prochainement',
             'commande' => $commande->getNumeroCommande()
         ], 201);
-    }
-
-    /**
-     * @description Cette fonction permet à un client de demander la désactivation de son compte et d'envoyer un mail a l'admin
-     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
-     * Ensuite génére un mail à l'admin pour l'informer que le client souhaite désactiver son compte
-     * @param int $id l'id de la commande sur laquelle le client veut laisser un avis
-     * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
-     * @param MailerService $mailerService l'MailerService pour gérer les échange de mail
-     * @return JsonResponse une réponse JSON indiquant le succès ou l'échec de l'opération.
-     */
-
-    /**
-     *  A MODIFIER fonction qui fonctionne mais il faudrait générer un mail à l'admin pour l'informer que le client souhaite désactiver son compte
-     */
-    #[Route('/compte/desactivation', name: 'api_client_compte_desactivation', methods: ['POST'])]
-    public function demandeDesactivation(EntityManagerInterface $em, MailerService $mailerService): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle CLIENT
-        if (!$this->isGranted('ROLE_CLIENT')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer l'utilisateur connecté
-        $utilisateur = $this->getUser();
-        if (!$utilisateur) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
-        }
-
-        // Étape 3 - Vérifier que le compte n'est pas déjà en attente de désactivation
-        if ($utilisateur->getStatutCompte() === 'en_attente_desactivation') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Demande de désactivation déjà en cours'], 400);
-        }
-
-        // Étape 4 - Vérifier que le compte n'est pas déjà inactif
-        if ($utilisateur->getStatutCompte() === 'inactif') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
-        }
-
-        // Étape 5 - modification du statut du compte
-        $utilisateur->setStatutCompte('en_attente_desactivation');
-
-        // Étape 6 - Sauvegarder en base de donnée
-        $em->flush();
-
-        // Étape 7 - Envoyer un email à l'admin
-        $mailerService->sendDemandeDesactivationEmail($utilisateur);
-
-        // Étape 7 - Retourner un message de confirmation
-        return $this->json([
-            'status'  => 'Succès',
-            'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
-        ]);
     }
 }

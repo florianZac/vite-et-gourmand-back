@@ -11,6 +11,14 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
  * @author      Florian Aizac
  * @created     23/02/2026
  * @description Contrôleur gérant l'envoi de messages de contact
+ * 
+ *  1. contact                  : Récupere les données de contact d'un formulaire
+ *  2. validationDataContact    : Teste la validation de tous les champs du formulaire de contact
+ *  3. sanitizer                : Nettoie une valeur passé en parametre selon son type pour éviter les injections
+ *  4. validerEmail             : Vérifie que l'email correspond au regex
+ *  5. validerSujet             : Vérifie que le sujet correspond au regex
+ *  6. validerMessage           : Vérifie que le contenu du message est correct
+ *  7. verifierSecurite         : Vérifie toutes les protections de sécurité avant de traiter la requête 
  */
 
 #[Route('/api')]
@@ -18,7 +26,7 @@ class ContactController extends AbstractController
 {
     #[Route('/contact', name: 'api_contact', methods: ['POST'])]
     /**
-     * @description : Point d'entrée de la route POST /api/contact
+     * @description : Récupere les données de contact d'un formulaire
      * Reçoit un JSON avec le sujet, email et le message, valide et envoie un email à l'administrateur du site via le service MailerService
     */
     public function contact(
@@ -59,7 +67,7 @@ class ContactController extends AbstractController
     }
 
     /**
-     * @description Orchestre la validation de tous les champs du formulaire de contact
+     * @description Teste la validation de tous les champs du formulaire de contact
      * @param array $data Les données à valider
      * @return array Tableau contenant les erreurs de validation, vide si tout est valide
      */
@@ -114,7 +122,7 @@ class ContactController extends AbstractController
     }
         
     /**
-     * @description Nettoie une valeur selon son type pour éviter les injections
+     * @description Nettoie une valeur passé en parametre selon son type pour éviter les injections
      * @param string $valeur La valeur à nettoyer
      * @param string $type Le type de champ (email, texte, message)
      * @return string La valeur nettoyée
@@ -167,7 +175,7 @@ class ContactController extends AbstractController
     }
 
     /**
-     * @description Valide le format de l'email
+     * @description Vérifie que l'email correspond au regex
      * @param string $email L'email à valider
      * @return string|null Message d'erreur ou null si valide
      */
@@ -189,7 +197,7 @@ class ContactController extends AbstractController
     }
 
     /**
-     * @description Valide le sujet du message
+     * @description Vérifie que le sujet correspond au regex
      * @param string $sujet Le sujet à valider
      * @return string|null Message d'erreur ou null si valide
      */
@@ -207,7 +215,7 @@ class ContactController extends AbstractController
     }
 
     /**
-     * @description Valide le contenu du message
+     * @description Vérifie que le contenu du message est correct
      * @param string $message Le message à valider
      * @return string|null Message d'erreur ou null si valide
      */
