@@ -214,10 +214,8 @@ class MailerService
 
     /**
      * @description Envoie un email au client lorsque le matériel doit être retourné
-     * Envoyé automatiquement quand la commande passe au statut "En attente du retour matériel"
-     * @param Utilisateur $utilisateur Le client
-     * @param Commande $commande La commande concernée
-     * @return void
+     * @param Utilisateur $utilisateur
+     * @param Commande $commande
      */
     public function sendRetourMaterielEmail(Utilisateur $utilisateur, Commande $commande): void
     {
@@ -236,19 +234,20 @@ class MailerService
         $this->mailer->send($email);
     }
 
-    /**
-     * @description Envoie un email de pénalité au client lorsque le matériel n'a pas été rendu dans les 10 jours ouvrés
-     * Envoyé automatiquement par le cron job app:check-retour-materiel
-     * Utilise un template dédié distinct du mail de rappel de retour
+   /**
+     * Envoie un email au client pour la restitution du matériel.
+     *
+     * - Utilise un template Twig pour le HTML
+     * - Permet d’injecter dynamiquement prénom, numéro de commande, date de prestation
+     * - Sujet dynamique incluant le numéro de commande
      *
      * @param Utilisateur $utilisateur Le client destinataire
      * @param Commande $commande La commande concernée
      * @param int $montant Pénalité fixe (600€)
      * @param \DateTime|null $dateRestitution Date limite de restitution à afficher dans le mail
-     * @return void
-     *
-     * @usage
-     * $dateRestitution = $this->dateService->addOpenDay($commande->getDateStatutLivree(), 10);
+     * @utiisation
+     * $dateRestitution = $this->dateService->addBusinessDays($commande->getDateStatutLivree(), 10);
+
      * $this->mailerService->sendPenaliteMaterielEmail(
      *     $commande->getUtilisateur(),
      *     $commande,
@@ -256,6 +255,7 @@ class MailerService
      *     $dateRestitution
      * );
      */
+    
     public function sendPenaliteMaterielEmail(
         Utilisateur $utilisateur,
         Commande $commande,
@@ -263,24 +263,20 @@ class MailerService
         ?\DateTime $dateRestitution = null
     ): void
     {
-        // Étape 1 - Préparer le rendu HTML via le template dédié aux pénalités
-        // CORRECTION : utilise emails/penalite_materiel.html.twig et non retour_materiel.html.twig
-        // car les deux mails ont des contenus différents :
-        // - retour_materiel : simple rappel de retour
-        // - penalite_materiel : mail de pénalité avec montant et date limite
-        $html = $this->twig->render('emails/penalite_materiel.html.twig', [
-            'prenom'           => $utilisateur->getPrenom(),
-            'numero_commande'  => $commande->getNumeroCommande(),
-            'date_prestation'  => $commande->getDatePrestation()->format('d/m/Y'),
-            'montant'          => $montant,
-            'date_restitution' => $dateRestitution ? $dateRestitution->format('d/m/Y') : null,
+        // Étape 1 - Préparer le rendu HTML via Twig
+        $html = $this->twig->render('emails/retour_materiel.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+            'montant'         => $montant,
+            'date_restitution'=> $dateRestitution ? $dateRestitution->format('d/m/Y') : null,
         ]);
 
         // Étape 2 - Construire l'objet email
-        $email = (new Email())  // TemplatedEmail permet l'utilisation des templates Twig
+        $email = (new Email()) // TemplatedEmail permet l'utilisation des templates Twig
             ->from('noreply@vite-et-gourmand.fr') // Expéditeur standard
-            ->to($utilisateur->getEmail()) // Destinataire dynamique
-            ->subject('Pénalité de retard - Matériel non rendu : Commande ' . $commande->getNumeroCommande()) // Sujet dynamique
+            ->to($utilisateur->getEmail())       // Destinataire dynamique
+            ->subject('Retour du matériel – Commande ' . $commande->getNumeroCommande()) // Sujet dynamique
             ->html($html); // Contenu HTML injecté depuis le template Twig
 
         // Étape 3 - Envoi du mail via le service MailerInterface

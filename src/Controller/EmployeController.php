@@ -185,6 +185,8 @@ final class EmployeController extends AbstractController
         } elseif ($nouveauStatut === 'En livraison') {
             $mailerService->sendCommandeLivraisonEmail($client, $commande);
         } elseif ($nouveauStatut === 'Livré') {
+            // Enregistrement automatique de l'heure de livraison
+            $commande->setHeureLivraison(new \DateTime());
             // SI pret_materiel == true -> passage automatique en "En attente du retour matériel" + mail
             if ($commande->isPretMateriel() === true) {
                 $commande->setStatut('En attente du retour matériel');

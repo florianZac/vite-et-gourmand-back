@@ -96,7 +96,7 @@ class Commande
     /**
      * Indique si l'heure de livraison de la commande
     */ 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
+    #[ORM\Column(type: Types::TIME_MUTABLE, nullable: true)]
     private ?\DateTime $heure_livraison = null;
 
     /**
