@@ -1,6 +1,7 @@
 <?php
 namespace App\Controller;
 
+use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
 use App\Repository\CommandeRepository;
 use App\Repository\SuiviCommandeRepository;
@@ -55,8 +56,8 @@ final class ClientController extends BaseController
         // Récupère l'utilisateur connecté via le token JWT
         $utilisateur = $this->getUser();
 
-        // Vérifie que l'utilisateur est connecté
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur qui est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -87,7 +88,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur qui est connecté est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -179,7 +181,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -228,7 +231,8 @@ final class ClientController extends BaseController
         }
         // Étape 2 - Récupére l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -258,7 +262,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -379,7 +384,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupére  l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -440,7 +446,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
@@ -469,7 +476,6 @@ final class ClientController extends BaseController
      * @return JsonResponse une réponse JSON indiquant le succès ou l'échec de l'opération.
      */
     #[Route('/commandes/{id}/avis', name: 'api_client_avis', methods: ['POST'])]
-
     public function createAvis(int $id, Request $request, CommandeRepository $commandeRepository, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifie le rôle CLIENT
@@ -479,7 +485,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupére  l'utilisateur connecté
         $utilisateur = $this->getUser();
-        if (!$utilisateur) {
+        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
