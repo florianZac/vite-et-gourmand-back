@@ -17,6 +17,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class CheckRetourMaterielCommand extends Command
 {
+    protected static $defaultName = 'app:check-retour-materiel';
+
     /**
      * Injection des services nécessaires :
      * CommandeRepository : récupérer les commandes dans la base
@@ -44,14 +46,15 @@ class CheckRetourMaterielCommand extends Command
     /**
      * @description Méthode exécutée lorsque la commande est lancée
      * @param InputInterface $input paramètre d'entrée de la donnée à exécuter
-     * @param OutputInterface $input paramètre de sortie de la donnée à exécuter
-     * @return int retoune success ou erreur.
+     * @param OutputInterface $output paramètre de sortie de la donnée à exécuter
+     * @return int retourne success ou erreur.
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $output->writeln('===== Début du check des commandes matériel non restitué =====');
 
-        // Étape 1 - Récupérer toutes les commandes à relancer : pret_materiel=1, restitution_materiel=0, status=Livré
+        // Étape 1 - Récupérer toutes les commandes à relancer :
+        // pret_materiel=1, restitution_materiel=0, statut="En attente du retour matériel"
         $commandes = $this->commandeRepository->findCommandesMaterielARelancer();
 
         // Boucle sur chaque commande pour vérifier si on doit envoyer le mail
@@ -62,7 +65,7 @@ class CheckRetourMaterielCommand extends Command
                 $output->writeln("Commande {$commande->getNumeroCommande()} n'a pas de date de statut livrée !");
                 continue;
             }
-            
+
             // Étape 3 - Date de restitution = date_statut_livree + 10 jours ouvrés
             $dateRestitution = $this->dateService->addOpenDay($commande->getDateStatutLivree(), 10);
 
@@ -71,10 +74,11 @@ class CheckRetourMaterielCommand extends Command
                 $output->writeln("Mail déjà envoyé pour commande " . $commande->getNumeroCommande());
                 continue;
             }
-        
-            // Étape 4 - Comparer la date actuelle avec la date de restitution
+
+            // Étape 5 - Comparer la date actuelle avec la date de restitution
             if (new \DateTime() >= $dateRestitution) {
-                // Étape 5 - Envoyer le mail via le service MailerService
+
+                // Étape 6 - Envoyer le mail via le service MailerService
                 $this->mailerService->sendPenaliteMaterielEmail(
                     $commande->getUtilisateur(),
                     $commande,
@@ -82,7 +86,7 @@ class CheckRetourMaterielCommand extends Command
                     $dateRestitution // injection de la date limite dans le mail Twig
                 );
 
-                // Étape 6 - Marquer la commande comme ayant reçu le mail
+                // Étape 7 - Marquer la commande comme ayant reçu le mail
                 $commande->setMailPenaliteEnvoye(true);
                 $this->entityManager->flush();
 
@@ -90,6 +94,7 @@ class CheckRetourMaterielCommand extends Command
                 $output->writeln("Mail pénalité envoyé pour commande " . $commande->getNumeroCommande());
 
             } else {
+
                 // Si la date de restitution n'est pas encore atteinte
                 $output->writeln(
                     "Pas encore de mail pour commande " . $commande->getNumeroCommande() .

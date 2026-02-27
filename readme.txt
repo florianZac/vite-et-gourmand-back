@@ -262,4 +262,20 @@ php bin/console app:check-retour-materiel
 
 6.2 verification des propriétées et des methodes via symfony apres modification d'une entity
 6.2.1 : php bin/console doctrine:schema:update --force
-6.2.2 : php bin/console doctrine:schema:validate
+
+6.2.2 : Valide le mapping Doctrine 
+php bin/console doctrine:schema:validate
+
+6.2.3 : Génère le SQL théorique et inspecte les FK
+php bin/console doctrine:schema:create --dump-sql
+
+6.2.4 : Vérifie que ta BDD est synchronisée
+php bin/console doctrine:migrations:diff
+# → Si "No changes detected" c'est parfait
+
+6.3.5 : Apres création du cron et de la doctrine tester la commande dans le terminal :
+ Tester MANUELLEMENT check-retour-materiel
+-> php bin/console app:check-retour-materiel
+
+6.3.6 Voir la version de doctrine-bundle 
+composer show doctrine/doctrine-bundle | grep versions

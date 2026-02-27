@@ -29,7 +29,6 @@ use Symfony\Component\Routing\Attribute\Route;
  *  8. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
  */
 
-
 #[Route('/api/client')]
 
 final class ClientController extends BaseController

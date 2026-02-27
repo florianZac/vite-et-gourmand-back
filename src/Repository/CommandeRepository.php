@@ -94,6 +94,8 @@ class CommandeRepository extends ServiceEntityRepository
 
     /**
      * @description Recherche dans les commandes si il y as du materiel en court de pret
+     * détection immédiate : 
+     * Retourne les commandes dont la prestation était hier, où materiel prété n'a pas été rendu 
      * si pretMateriel == False & restitutionMateriel ==
      * sur le champ numero_commande (ex : CMD-001, CMD-002, etc.).
      * @param string $nom Chaîne de caractères à rechercher dans le numéro de commande
@@ -114,24 +116,38 @@ class CommandeRepository extends ServiceEntityRepository
 
     /**
      * @description fonction de récupération des commandes à relancer dans le cas d'un pret de matériel qui n'a pas été restitué
-     * 
+     * Liste de suivi continu pour relancer les clients
+     * Donne toutes les commandes au statut Livré où le matos n'a pas été rendu, peu importe quand pour envoyer les relances et ou pénalités)
      * Récupère toutes les commandes où :
      * (pret_materiel,restitution_materiel) 
      * Cas (1,0) 
-     * - le matériel à été prêté -> pret_materiel == true &&
-     * - le matériel n'a pas été restitué -> restitution_materiel = false &&
-     * - le statut de la commande est Livré
+     *  le matériel à été prêté -> pret_materiel == true &&
+     *  le matériel n'a pas été restitué -> restitution_materiel = false &&
+     *  le statut de la commande est "En attente du retour matériel"
      * Si date passage au statut Livré > 10 jour ouvré l'envoi du mail de pénalité.
      * Les autres cas (0,0), (0,1), (1,1) seront gérés par le listener
      * @return Commande[] tableau d'entités Commande
+     * Rappel Workflow complet 
+     * Employé change statut → "Livré"
+     *  ├── SI pret_materiel == false
+     *  │   └── statut reste "Livré" → prochaine étape = "Terminée"
+     *  │
+     *  └── SI pret_materiel == true
+     *      └── statut passe automatiquement à "En attente du retour matériel"
+     *          └── mail envoyé au client
+     *  Cron nuit
+     *  └── SI statut = "En attente du retour matériel" + restitution = false + > 10 jours
+     *      └── mail pénalité
+     *  Employé/Admin confirme retour + pénalité payée
+     *  └── statut passe à "Terminée"
      */
     public function findCommandesMaterielARelancer(): array
     {
         return $this->createQueryBuilder('c')
             ->where('c.pret_materiel = true')
             ->andWhere('c.restitution_materiel = false')
-            ->andWhere('c.statut = :livre')
-            ->setParameter('livre', 'Livré')
+            ->andWhere('c.statut = :statut')
+            ->setParameter('statut', 'En attente du retour matériel')
             ->getQuery()
             ->getResult();
     }

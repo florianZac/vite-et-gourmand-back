@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\UtilisateurRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -40,7 +42,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50)]
     private ?string $adresse_postale = null;
 
-    #[ORM\ManyToOne]
+    #[ORM\ManyToOne(targetEntity: Role::class, inversedBy: 'utilisateurs')]
     #[ORM\JoinColumn(name: 'role_id', referencedColumnName: 'role_id', nullable: false)]
     private ?Role $role = null;
 
@@ -49,7 +51,8 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 50)]
     private ?string $statut_compte = null;
-
+    
+    // --- LES AUTRES MÉTHODES EXISTANTES ---
     public function getId(): ?int
     {
         return $this->id;
@@ -126,7 +129,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-
     public function getAdressePostale(): ?string
     {
         return $this->adresse_postale;
@@ -162,6 +164,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
     public function getCodePostal(): ?string
     {
         return $this->code_postal;
@@ -174,33 +177,19 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // --- Méthodes obligatoires de UserInterface pour l'authentification  ---
-
-    /**
-     * Retourne l'identifiant unique de l'utilisateur (email)
-     * Utilisé par Symfony pour identifier l'utilisateur connecté
-     */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * Retourne les rôles de l'utilisateur
-     * Symfony s'attend à un tableau de chaînes ex: ['ROLE_ADMIN']
-     */
     public function getRoles(): array
     {
         return [$this->role?->getLibelle() ?? 'ROLE_VISITEUR'];
     }
 
-    /**
-     * Efface les données sensibles temporaires (ex: mot de passe en clair)
-     * Appelé par Symfony après authentification
-     */
     public function eraseCredentials(): void
     {
-        // Rien à effacer ici car on ne stocke pas de mot de passe en clair
+        // Rien à effacer ici
     }
 
     public function getStatutCompte(): ?string
@@ -214,6 +203,5 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-
 
 }

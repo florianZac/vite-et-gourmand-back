@@ -162,7 +162,10 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Statut invalide'], 400);
         }
 
-        // Étape 6 - Vérifier qu'on n'essaie pas de revenir en arrière
+        // Étape 6 -  Vérifier qu'on n'essaie pas de revenir en arrière
+        // PROBLEME DETECTER  il devrait etre impossible de changer de statut si le materiel n'est pas restituer
+        // mais du coup on doit creer une fonction get et set restitution pour employé et admin ? 
+        // a reflechir
         $statutActuel = $commande->getStatut();
         if (isset($ordreStatuts[$statutActuel]) && $ordreStatuts[$nouveauStatut] <= $ordreStatuts[$statutActuel]) {
             return $this->json(['status' => 'Erreur', 'message' => 'Retour en arrière interdit dans le cycle de vie'], 400);
@@ -185,7 +188,7 @@ final class EmployeController extends AbstractController
         } elseif ($nouveauStatut === 'En livraison') {
             $mailerService->sendCommandeLivraisonEmail($client, $commande);
         } elseif ($nouveauStatut === 'Livré') {
-            // SI pret_materiel == true -> passage automatique en "En attente du retour matériel" + mail
+            // SI pret_materiel == true "En attente du retour matériel" + mail
             if ($commande->isPretMateriel() === true) {
                 $commande->setStatut('En attente du retour matériel');
                 $mailerService->sendRetourMaterielEmail($client, $commande);
@@ -193,7 +196,6 @@ final class EmployeController extends AbstractController
         } elseif ($nouveauStatut === 'Terminée') {
             $mailerService->sendCommandeTermineeEmail($client, $commande);
         }
-
         // Étape 10 - Sauvegarder en base
         $em->flush();
 
@@ -647,9 +649,7 @@ final class EmployeController extends AbstractController
         // Étape 6 - Mettre à jour le thème si fourni
         if (isset($data['theme_id'])) {
             $theme = $themeRepository->find($data['theme_id']);
-
             if (!$theme) {
-                
                 return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
             }
             $menu->setTheme($theme);
@@ -657,18 +657,12 @@ final class EmployeController extends AbstractController
 
         // Étape 7 - Synchroniser les plats
         if (isset($data['plats']) && is_array($data['plats'])) {
-
             foreach ($menu->getPlats() as $platExistant) {
-
                 $menu->removePlat($platExistant);
             }
-
             foreach ($data['plats'] as $platId) {
-
                 $plat = $platRepository->find($platId);
-
                 if (!$plat) {
-
                     return $this->json(['status' => 'Erreur', 'message' => "Plat id $platId non trouvé"], 404);
                 }
                 $menu->addPlat($plat);
@@ -713,6 +707,7 @@ final class EmployeController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Menu supprimé avec succès']);
     }
 
+  
     // =========================================================================
     // THEMES
     // =========================================================================
@@ -1070,11 +1065,9 @@ final class EmployeController extends AbstractController
         // Étape 7 - Synchroniser les allergènes si fournis
         if (isset($data['allergenes']) && is_array($data['allergenes'])) {
             foreach ($plat->getAllergenes() as $allergeneExistant) {
-
                 $plat->removeAllergene($allergeneExistant);
             }
             foreach ($data['allergenes'] as $allergeneId) {
-
                 $allergene = $allergeneRepository->find($allergeneId);
                 if (!$allergene) {
                     return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
@@ -1089,10 +1082,11 @@ final class EmployeController extends AbstractController
         // Étape 9 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
     }
-    
-    /**
+
+      /**
      * @description Supprimer un plat par son id
      * @param int $id L'id du plat à supprimer
+     * @param MenuRepository $menuRepository Le repository des menus
      * @param PlatRepository $platRepository Le repository des plats
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse
@@ -1111,7 +1105,6 @@ final class EmployeController extends AbstractController
         if (!$plat) {
             return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
         }
-
         // Étape 3 - suppression
         $em->remove($plat);
 

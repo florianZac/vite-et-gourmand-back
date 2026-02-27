@@ -17,9 +17,9 @@ use Symfony\Component\Routing\Attribute\Route;
  * @created     25/02/2026
  * @description Contrôleur gérant les opérations sur les commandes côté administrateur
  *  1. createCommande         : Créer une nouvelle commande avec toutes les règles métier
- *  1. getAllCommandes        : Retourne la liste de toutes les commandes
- *  2. updateUserById         : Retourne une commande par son id par son id
- *  3. annulerCommande        : Annule une commande avec un remboursement de 100% du montant total (prix menu + livraison)
+ *  2. getAllCommandes        : Retourne la liste de toutes les commandes
+ *  3. getCommandeById       : Retourne une commande par son id
+ *  4. annulerCommande        : Annule une commande avec un remboursement de 100% du montant total (prix menu + livraison)
  */
 #[Route('/api/admin/commandes')]
 final class CommandeController extends BaseController
@@ -34,6 +34,7 @@ final class CommandeController extends BaseController
      *  - Acompte 30% (standard) ou 50% (événement)
      *  - Livraison gratuite Bordeaux, sinon 5€ + 0,59€/km
      *  - Réduction -10% si nombre de personnes > minimum + 5
+     *  - pret_materiel : true/false selon la checkbox front (défaut false)
      * Corps JSON attendu :
      * {
      *   "menu_id": 1,
@@ -41,7 +42,8 @@ final class CommandeController extends BaseController
      *   "nombre_personnes": 15,
      *   "adresse_livraison": "12 rue des fleurs",
      *   "ville_livraison": "Bordeaux",
-     *   "distance_km": 0
+     *   "distance_km": 0,
+     *   "pret_materiel": false
      * }
      */
     #[Route('', name: 'api_admin_commandes_create', methods: ['POST'])]
@@ -149,6 +151,7 @@ final class CommandeController extends BaseController
         $commande->setMontantAcompte(round($montantAcompte, 2));
         $commande->setStatut('En attente');
         $commande->setDateCommande(new \DateTime());
+        $commande->setPretMateriel((bool) ($data['pret_materiel'] ?? false)); // Enregistrer le pret_materiel défaut false
 
         // Étape 13 - Créer le premier suivi
         $suivi = new SuiviCommande();
@@ -163,15 +166,17 @@ final class CommandeController extends BaseController
 
         // Étape 15 - Retourner la confirmation
         return $this->json([
-            'status'           => 'Succès',
-            'message'          => 'Commande créée avec succès',
-            'numero_commande'  => $numeroCommande,
-            'prix_menu'        => round($prixMenu, 2),
-            'prix_livraison'   => round($prixLivraison, 2),
-            'montant_acompte'  => round($montantAcompte, 2),
+            'status'              => 'Succès',
+            'message'             => 'Commande créée avec succès',
+            'numero_commande'     => $numeroCommande,
+            'prix_menu'           => round($prixMenu, 2),
+            'prix_livraison'      => round($prixLivraison, 2),
+            'montant_acompte'     => round($montantAcompte, 2),
+            'pret_materiel'       => $commande->isPretMateriel(),
             'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
         ], 201);
     }
+
     /**
      * @description Retourne la liste de toutes les commandes
      * @param CommandeRepository $commandeRepository Le repository des commandes
@@ -266,10 +271,10 @@ final class CommandeController extends BaseController
 
         // Étape 8 - Retourner une confirmation avec le détail du remboursement
         return $this->json([
-            'status'           => 'Succès',
-            'message'          => 'Commande annulée avec succès',
-            'numero_commande'  => $commande->getNumeroCommande(),
-            'motif_annulation' => $commande->getMotifAnnulation(),
+            'status'            => 'Succès',
+            'message'           => 'Commande annulée avec succès',
+            'numero_commande'   => $commande->getNumeroCommande(),
+            'motif_annulation'  => $commande->getMotifAnnulation(),
             'montant_rembourse' => $montantRembourse,
         ]);
     }
