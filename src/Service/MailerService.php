@@ -278,4 +278,69 @@ class MailerService
         // Étape 4 - Optionnel : log ou retour pour suivi dans la Command
         //logger->info("Mail envoyé pour la commande X");
     }
+
+    /**
+     * @description Envoie un email de bienvenue à un nouvel utilisateur après son inscription
+     * 
+     * Cette fonction est appelée automatiquement lors de la création d'un compte utilisateur.
+     * Elle permet d'accueillir l'utilisateur
+     * 
+     * @param Utilisateur $utilisateur L'utilisateur qui vient de s'inscrire
+     * @return void retourne rien, envoie simplement un email
+     */
+    public function sendWelcomeEmail(Utilisateur $utilisateur): void
+    {
+        // Étape 1 - Générer le contenu HTML à partir du template Twig
+        // On récupere le prénom de l'utilisateur 
+        $html = $this->twig->render('emails/bienvenue.html.twig', [
+            'prenom' => $utilisateur->getPrenom(),
+        ]);
+
+        // Étape 2 - Créer un objet Email avec les paramètres standard 
+        $email = (new Email())
+            // Expéditeur : on utilise l'email générique de l'entreprise pour tous les mails automatiques
+            ->from('noreply@vite-et-gourmand.fr')
+            // Destinataire : l'email de l'utilisateur qui vient de s'inscrire
+            ->to($utilisateur->getEmail())
+            // Sujet du mail : clair et direct pour que l'utilisateur le retrouve facilement
+            ->subject('Bienvenue chez Vite & Gourmand')
+            // Contenu : le HTML généré depuis le template Twig
+            ->html($html);
+
+        // Étape 3 - Envoyer l'email via le service MailerInterface
+        // En développement, Mailtrap intercepte l'email et l'affiche dans la console
+        // En production, l'email est envoyé réellement au destinataire
+        $this->mailer->send($email);
+    }
+
+    /**
+     * @description Envoie un email avec le lien de réinitialisation de mot de passe
+     * 
+     * Cette fonction envoie à l'utilisateur un email contenant :
+     * 1. Un lien sécurisé avec token unique
+     * 2. Les conditions de la réinitialisation (délai expiration 4 heure, Reggex mot de passe)
+     * 3. Un rappel de sécurité au cas où ce ne serait pas lui qui a demandé la réinitialisation du mdp
+     * 
+     * @param Utilisateur $utilisateur L'utilisateur qui demande la réinitialisation
+     * @param string $resetLink Le lien complet avec token à envoyer par email
+     * @return void retourne rien
+     */
+    public function sendPasswordResetEmail(Utilisateur $utilisateur, string $resetLink): void
+    {
+        // Étape 1 - Générer le contenu HTML à partir du template avec le lien de reset
+        $html = $this->twig->render('emails/password_reset_link.html.twig', [
+            'prenom'      => $utilisateur->getPrenom(),
+            'reset_link'  => $resetLink,
+        ]);
+
+        // Étape 2 - Créer et configurer l'email
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Réinitialisation de votre mot de passe - Vite & Gourmand')
+            ->html($html);
+
+        // Étape 3 - Envoyer l'email
+        $this->mailer->send($email);
+    }
 }

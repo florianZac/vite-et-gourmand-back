@@ -1,10 +1,15 @@
 {% extends 'emails/base_email.html.twig' %}
 
 {% block content %}
-    <h1>Bonjour {{ prenom }},</h1>
+
+    <h2>Bonjour {{ prenom }},</h2>
+
     <p>Votre commande <strong>{{ numero_commande }}</strong> est terminée !</p>
+
     <p>Nous espérons que vous avez apprécié nos services.</p>
+
     <p>Vous pouvez maintenant <strong>déposer votre avis</strong> sur votre espace client.</p>
+
     <p>Merci de votre confiance !</p>
-    <p>Cordialement,<br>L'équipe Vite et Gourmand</p>
+
 {% endblock %}

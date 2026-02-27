@@ -1,6 +1,7 @@
 {% extends 'emails/base_email.html.twig' %}
 
 {% block content %}
+
     <h2>Retour du matériel</h2>
 
     <p>Bonjour {{ prenom }},</p>
@@ -12,10 +13,8 @@
     </p>
 
     <p style="color: #c0392b;">
-        En l'absence de restitution du matériel sous
-        <strong>10 jours ouvrés</strong>,
-        des frais forfaitaires de <strong>600 €</strong>
-        pourront être appliqués.
+        En l'absence de restitution du matériel sous <strong>10 jours ouvrés</strong>,
+        des frais forfaitaires de <strong>600 €</strong> pourront être appliqués.
     </p>
 
     <p>
@@ -28,6 +27,6 @@
         </a>
     </p>
     <hr>
-    <p>Cordialement,<br>
-    L'équipe Vite et Gourmand</p>
+
+    
 {% endblock %}
