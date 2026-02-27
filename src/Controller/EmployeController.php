@@ -171,7 +171,7 @@ final class EmployeController extends AbstractController
         // Étape 7 - Mettre à jour le statut de la commande
         $commande->setStatut($nouveauStatut);
 
-        // Étape 8 - Créer un suivi de commande
+        // Étape 8 - Créer un suivi de commande pour le statut demandé
         $suivi = new SuiviCommande();
         $suivi->setStatut($nouveauStatut);
         $suivi->setDateStatut(new \DateTime());
@@ -189,6 +189,13 @@ final class EmployeController extends AbstractController
             if ($commande->isPretMateriel() === true) {
                 $commande->setStatut('En attente du retour matériel');
                 $mailerService->sendRetourMaterielEmail($client, $commande);
+
+                // Créer un second suivi pour le vrai statut final
+                $suiviMateriel = new SuiviCommande();
+                $suiviMateriel->setStatut('En attente du retour matériel');
+                $suiviMateriel->setDateStatut(new \DateTime());
+                $suiviMateriel->setCommande($commande);
+                $em->persist($suiviMateriel);
             }
         } elseif ($nouveauStatut === 'Terminée') {
             $mailerService->sendCommandeTermineeEmail($client, $commande);
