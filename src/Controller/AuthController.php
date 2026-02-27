@@ -39,7 +39,6 @@ final class AuthController extends AbstractController
     // Fonction qui inscris de tous les utilisateurs
     #[Route('/api/register', name: 'api_register', methods: ['POST'])]
     // utilisation de l'injection de dépendances pour récupérer les services nécessaires à la fonction register()
-
     public function register(
         Request $request,                            // la requête HTTP entrante (contenant les données JSON du client)
         UserPasswordHasherInterface $passwordHasher, // service qui hashe les mots de passe

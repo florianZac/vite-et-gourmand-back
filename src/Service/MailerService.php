@@ -54,29 +54,36 @@ class MailerService
     }
 
     /**
-     * @description Envoie un email de réinitialisation de mot de passe à un utilisateur
-     * Fonction appellée lors de la réinitialisation du mdp par l'admin
-     * elle permet de générer un mot de passe temporaire aléatoire et d'envoyer un email au client.
-     * @param Utilisateur $utilisateur l'utilisateur qui a demandé la réinitialisation de son mot de passe
-     * @param string $motDePasseTemporaire : le mot de passe temporaire généré pour l'utilisateur
-     * @return void retourne rien 
+     * @description Envoie un email avec le lien de réinitialisation de mot de passe
+     *
+     * Cette fonction envoie à l'utilisateur un email contenant :
+     * 1. Un lien sécurisé avec token unique
+     * 2. Les conditions de la réinitialisation (délai expiration 4 heure, Reggex mot de passe)
+     * 3. Un rappel de sécurité au cas où ce ne serait pas lui qui a demandé la réinitialisation du mdp
+     * 
+     * @param Utilisateur $utilisateur L'utilisateur qui demande la réinitialisation
+     * @param string $resetLink Le lien complet avec token à envoyer par email
+     * @return void retourne rien
      */
-    public function sendPasswordResetEmail(Utilisateur $utilisateur, string $motDePasseTemporaire): void
+    //public function sendPasswordResetEmail(Utilisateur $utilisateur, string $motDePasseTemporaire): void
+    public function sendPasswordResetEmail(Utilisateur $utilisateur, string $resetLink): void
     {
-        // Génère le HTML à partir du template Twig
-        $html = $this->twig->render('emails/password_reset.html.twig', [
-            'prenom'     => $utilisateur->getPrenom(),
-            'motDePasse' => $motDePasseTemporaire,
+        // Étape 1 - Générer le contenu HTML à partir du template avec le lien de reset
+        // $html = $this->twig->render('emails/password_reset.html.twig', [
+        $html = $this->twig->render('emails/password_reset_link.html.twig', [
+            'prenom'      => $utilisateur->getPrenom(),
+            //'motDePasse' => $motDePasseTemporaire,
+            'reset_link'  => $resetLink,
         ]);
 
-        // Crée l'email
+        // Étape 2 - Créer et configurer l'email
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to($utilisateur->getEmail())
             ->subject('Réinitialisation de votre mot de passe')
             ->html($html);
 
-        // Envoie l'email
+        // Étape 3 - Envoyer l'email
         $this->mailer->send($email);
     }
 
@@ -313,34 +320,4 @@ class MailerService
         $this->mailer->send($email);
     }
 
-    /**
-     * @description Envoie un email avec le lien de réinitialisation de mot de passe
-     * 
-     * Cette fonction envoie à l'utilisateur un email contenant :
-     * 1. Un lien sécurisé avec token unique
-     * 2. Les conditions de la réinitialisation (délai expiration 4 heure, Reggex mot de passe)
-     * 3. Un rappel de sécurité au cas où ce ne serait pas lui qui a demandé la réinitialisation du mdp
-     * 
-     * @param Utilisateur $utilisateur L'utilisateur qui demande la réinitialisation
-     * @param string $resetLink Le lien complet avec token à envoyer par email
-     * @return void retourne rien
-     */
-    public function sendPasswordResetEmail(Utilisateur $utilisateur, string $resetLink): void
-    {
-        // Étape 1 - Générer le contenu HTML à partir du template avec le lien de reset
-        $html = $this->twig->render('emails/password_reset_link.html.twig', [
-            'prenom'      => $utilisateur->getPrenom(),
-            'reset_link'  => $resetLink,
-        ]);
-
-        // Étape 2 - Créer et configurer l'email
-        $email = (new Email())
-            ->from('noreply@vite-et-gourmand.fr')
-            ->to($utilisateur->getEmail())
-            ->subject('Réinitialisation de votre mot de passe - Vite & Gourmand')
-            ->html($html);
-
-        // Étape 3 - Envoyer l'email
-        $this->mailer->send($email);
-    }
 }
