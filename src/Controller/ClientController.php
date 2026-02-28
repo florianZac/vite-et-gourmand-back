@@ -24,10 +24,11 @@ use Symfony\Component\Routing\Attribute\Route;
  *  2. updateUserById        : Met à jour les informations d'un client par son id
  *  3. demandeDesactivation  : Demande de désactivation du compte client et envois d'un mail a l'admin
  *  4. getCommandes          : Retourne la liste de ses commandes
- *  5. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
- *  6. getSuiviCommande      : Afficher le suivis de commande du client
- *  7. getAvis               : Afficher la liste des avis d'un client connecté
- *  8. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
+ *  5. modifierCommande      : Modifier une commande en statut "En attente"
+ *  6. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
+ *  7. getSuiviCommande      : Afficher le suivis de commande du client
+ *  8. getAvis               : Afficher la liste des avis d'un client connecté
+ *  9. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
  */
 
 #[Route('/api/client')]
@@ -241,6 +242,138 @@ final class ClientController extends BaseController
         
         // Étape 4 - Retourne les commandes en JSON
         return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
+    }
+    /**
+     * @description Modifier une commande existante
+     * Modification possible uniquement si la commande est en statut "En attente"
+     * Si nombre_personnes ou ville_livraison change -> recalcul automatique des prix
+     * Champs modifiables : date_prestation, nombre_personnes, adresse_livraison, ville_livraison, distance_km
+     * Corps JSON attendu (tous optionnels) :
+     * {
+     *   "date_prestation": "2026-05-01",
+     *   "nombre_personnes": 20,
+     *   "adresse_livraison": "15 rue de la paix",
+     *   "ville_livraison": "Mérignac",
+     *   "distance_km": 8
+     * }
+     * @param int $id L'id de la commande à modifier
+     * @param Request $request La requête HTTP contenant les données au format JSON
+     * @param CommandeRepository $commandeRepository Le repository des commandes
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/commandes/{id}', name: 'api_client_commande_modifier', methods: ['PUT'])]
+    public function modifierCommande(
+        int $id,
+        Request $request,
+        CommandeRepository $commandeRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle CLIENT
+        if (!$this->isGranted('ROLE_CLIENT')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'utilisateur connecté
+        $utilisateur = $this->getUser();
+        if (!$utilisateur instanceof Utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
+        }
+
+        // Étape 3 - Récupérer la commande
+        $commande = $commandeRepository->find($id);
+        if (!$commande) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
+        }
+
+        // Étape 4 - Vérifier que la commande appartient au client connecté
+        if ($commande->getUtilisateur()->getId() !== $utilisateur->getId()) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Commande non autorisée'], 403);
+        }
+
+        // Étape 5 - Vérifier que la commande est bien en statut "En attente"
+        // La modification n'est possible que si la commande n'a pas encore été acceptée
+        if ($commande->getStatut() !== 'En attente') {
+            return $this->json(['status' => 'Erreur', 'message' => 'Modification impossible : la commande n\'est plus en attente'], 400);
+        }
+
+        // Étape 6 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 7 - Mettre à jour la date de prestation si fournie
+        if (isset($data['date_prestation'])) {
+            try {
+                $datePrestation = new \DateTime($data['date_prestation']);
+                $commande->setDatePrestation($datePrestation);
+            } catch (\Exception $e) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Date de prestation invalide'], 400);
+            }
+        }
+
+        // Étape 8 - Mettre à jour l'adresse de livraison si fournie
+        if (isset($data['adresse_livraison'])) {
+            $commande->setAdresseLivraison($data['adresse_livraison']);
+        }
+
+        // Étape 9 - Recalculer les prix si nombre_personnes ou ville_livraison change
+        // On récupère les valeurs actuelles ou les nouvelles selon ce qui est fourni
+        $nombrePersonnes = isset($data['nombre_personnes']) ? (int) $data['nombre_personnes'] : $commande->getNombrePersonne();
+        $villeLivraison  = isset($data['ville_livraison'])  ? strtolower(trim($data['ville_livraison'])) : strtolower(trim($commande->getVilleLivraison()));
+        $distanceKm      = isset($data['distance_km'])      ? (float) $data['distance_km'] : 0;
+
+        // Flag pour savoir si un recalcul est nécessaire
+        $recalcul = isset($data['nombre_personnes']) || isset($data['ville_livraison']);
+
+        if ($recalcul) {
+            // Récupérer le menu associé à la commande pour les calculs
+            $menu = $commande->getMenu();
+
+            // Recalcul du prix menu avec éventuelle réduction -10%
+            $prixMenu = $menu->getPrixParPersonne() * $nombrePersonnes;
+            if ($nombrePersonnes > ($menu->getNombrePersonneMinimum() + 5)) {
+                $prixMenu = $prixMenu * 0.90;
+            }
+
+            // Recalcul du prix de livraison
+            // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
+            if ($villeLivraison === 'bordeaux') {
+                $prixLivraison = 0;
+            } else {
+                $prixLivraison = 5 + (0.59 * $distanceKm);
+            }
+
+            // Recalcul de l'acompte
+            // 50% si thème Événement, 30% sinon
+            $libelleTheme = strtolower($menu->getTheme()->getLibelle());
+            $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
+            $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
+
+            // Mise à jour des champs recalculés
+            $commande->setNombrePersonne($nombrePersonnes);
+            $commande->setVilleLivraison($data['ville_livraison'] ?? $commande->getVilleLivraison());
+            $commande->setPrixMenu(round($prixMenu, 2));
+            $commande->setPrixLivraison(round($prixLivraison, 2));
+            $commande->setMontantAcompte(round($montantAcompte, 2));
+        }
+
+        // Étape 10 - Sauvegarder en base
+        $em->flush();
+
+        // Étape 11 - Retourner une confirmation avec les nouveaux prix si recalcul
+        $reponse = [
+            'status'  => 'Succès',
+            'message' => 'Commande modifiée avec succès',
+        ];
+
+        // Si recalcul effectué → afficher les nouveaux prix dans la réponse
+        if ($recalcul) {
+            $reponse['prix_menu']           = $commande->getPrixMenu();
+            $reponse['prix_livraison']      = $commande->getPrixLivraison();
+            $reponse['montant_acompte']     = $commande->getMontantAcompte();
+            $reponse['reduction_appliquee'] = $nombrePersonnes > ($commande->getMenu()->getNombrePersonneMinimum() + 5) ? '-10%' : 'aucune';
+        }
+
+        return $this->json($reponse);
     }
 
     /**
