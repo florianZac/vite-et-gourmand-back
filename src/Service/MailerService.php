@@ -88,6 +88,37 @@ class MailerService
     }
 
     /**
+     * @description Envoie un email de confirmation de création de commande au client
+     * Envoyé automatiquement après la création d'une commande par l'admin
+     * @param Utilisateur $utilisateur Le client
+     * @param Commande $commande La commande créée
+     * @return void
+     */
+    public function sendCommandeCreeeEmail(Utilisateur $utilisateur, Commande $commande): void
+    {
+        // Étape 1 - Générer le contenu HTML à partir du template Twig
+        $html = $this->twig->render('emails/confirmation_commande.html.twig', [
+            'prenom'           => $utilisateur->getPrenom(),
+            'numero_commande'  => $commande->getNumeroCommande(),
+            'date_prestation'  => $commande->getDatePrestation()->format('d/m/Y'),
+            'prix_menu'        => $commande->getPrixMenu(),
+            'prix_livraison'   => $commande->getPrixLivraison(),
+            'montant_acompte'  => $commande->getMontantAcompte(),
+            'ville_livraison'  => $commande->getVilleLivraison(),
+        ]);
+
+        // Étape 2 - Créer et configurer l'email
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Confirmation de votre commande ' . $commande->getNumeroCommande())
+            ->html($html);
+
+        // Étape 3 - Envoyer l'email
+        $this->mailer->send($email);
+    }
+
+    /**
      * @description Envoie un email de confirmation d'annulation de commande au client
      * @param Utilisateur $utilisateur Le client qui annule
      * @param Commande $commande La commande annulée

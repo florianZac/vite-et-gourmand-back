@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Commande;
 use App\Entity\SuiviCommande;
 use App\Repository\MenuRepository;
+use App\Repository\UtilisateurRepository;
 use App\Service\MailerService;
 use App\Repository\CommandeRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,6 +38,7 @@ final class CommandeController extends BaseController
      *  - pret_materiel : true/false selon la checkbox front (défaut false)
      * Corps JSON attendu :
      * {
+     *   "utilisateur_id": 3,
      *   "menu_id": 1,
      *   "date_prestation": "2026-04-01",
      *   "nombre_personnes": 15,
@@ -51,6 +53,7 @@ final class CommandeController extends BaseController
         Request $request,
         CommandeRepository $commandeRepository,
         MenuRepository $menuRepository,
+        UtilisateurRepository $utilisateurRepository,
         EntityManagerInterface $em,
         MailerService $mailerService
     ): JsonResponse {
@@ -63,27 +66,35 @@ final class CommandeController extends BaseController
         $data = json_decode($request->getContent(), true);
 
         // Étape 3 - Vérifier les champs obligatoires
-        $champsObligatoires = ['menu_id', 'date_prestation', 'nombre_personnes', 'ville_livraison'];
+        // utilisateur_id ajouté aux champs obligatoires
+        $champsObligatoires = ['utilisateur_id', 'menu_id', 'date_prestation', 'nombre_personnes', 'ville_livraison'];
         foreach ($champsObligatoires as $champ) {
             if (empty($data[$champ])) {
                 return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
             }
         }
 
-        // Étape 4 - Récupérer le menu
+        // Étape 4 - Récupérer l'utilisateur
+        // $utilisateur doit être récupéré depuis le repository avant de l'associer à la commande
+        $utilisateur = $utilisateurRepository->find($data['utilisateur_id']);
+        if (!$utilisateur) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
+        }
+
+        // Étape 5 - Récupérer le menu
         $menu = $menuRepository->find($data['menu_id']);
         if (!$menu) {
             return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
         }
 
-        // Étape 5 - Valider la date de prestation
+        // Étape 6 - Valider la date de prestation
         try {
             $datePrestation = new \DateTime($data['date_prestation']);
         } catch (\Exception $e) {
             return $this->json(['status' => 'Erreur', 'message' => 'Date de prestation invalide'], 400);
         }
 
-        // Étape 6 - Calculer le délai minimum en jours ouvrables
+        // Étape 7 - Calculer le délai minimum en jours ouvrables
         $nombrePersonnes = (int) $data['nombre_personnes'];
         $delaiMinimum = $nombrePersonnes > 20 ? 14 : 3;
 
@@ -107,18 +118,18 @@ final class CommandeController extends BaseController
             ], 400);
         }
 
-        // Étape 7 - Calculer le prix de base
+        // Étape 8 - Calculer le prix de base
         $prixParPersonne = $menu->getPrixParPersonne();
         $prixMenu = $prixParPersonne * $nombrePersonnes;
 
-        // Étape 8 - Appliquer la réduction de -10%
+        // Étape 9 - Appliquer la réduction de -10%
         // si le nombre de personnes dépasse le minimum requis de plus de 5
         $minimumPersonnes = $menu->getNombrePersonneMinimum();
         if ($nombrePersonnes > ($minimumPersonnes + 5)) {
             $prixMenu = $prixMenu * 0.90;
         }
 
-        // Étape 9 - Calculer le prix de livraison
+        // Étape 10 - Calculer le prix de livraison
         // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
         $villeLivraison = strtolower(trim($data['ville_livraison']));
         $distanceKm = (float) ($data['distance_km'] ?? 0);
@@ -129,18 +140,19 @@ final class CommandeController extends BaseController
             $prixLivraison = 5 + (0.59 * $distanceKm);
         }
 
-        // Étape 10 - Calculer l'acompte
+        // Étape 11 - Calculer l'acompte
         // 50% si thème Événement, 30% sinon
         $libelleTheme = strtolower($menu->getTheme()->getLibelle());
         $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
         $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
 
-        // Étape 11 - Générer le numéro de commande unique
+        // Étape 12 - Générer le numéro de commande unique
         $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
 
-        // Étape 12 - Créer la commande
+        // Étape 13 - Créer la commande
         $commande = new Commande();
         $commande->setNumeroCommande($numeroCommande);
+        $commande->setUtilisateur($utilisateur); // CORRECTION : association de l'utilisateur à la commande
         $commande->setMenu($menu);
         $commande->setDatePrestation($datePrestation);
         $commande->setNombrePersonne($nombrePersonnes);
@@ -151,20 +163,25 @@ final class CommandeController extends BaseController
         $commande->setMontantAcompte(round($montantAcompte, 2));
         $commande->setStatut('En attente');
         $commande->setDateCommande(new \DateTime());
-        $commande->setPretMateriel((bool) ($data['pret_materiel'] ?? false)); // Enregistrer le pret_materiel défaut false
+        // Enregistrer le pret_materiel depuis la checkbox front (défaut false)
+        $commande->setPretMateriel((bool) ($data['pret_materiel'] ?? false));
 
-        // Étape 13 - Créer le premier suivi
+        // Étape 14 - Créer le premier suivi
         $suivi = new SuiviCommande();
         $suivi->setStatut('En attente');
         $suivi->setDateStatut(new \DateTime());
         $suivi->setCommande($commande);
 
-        // Étape 14 - Persister et sauvegarder
+        // Étape 15 - Persister et sauvegarder
         $em->persist($commande);
         $em->persist($suivi);
         $em->flush();
 
-        // Étape 15 - Retourner la confirmation
+        // Étape 16 - Envoyer un mail de confirmation de commande au client
+        // CORRECTION : $utilisateur est maintenant correctement défini via UtilisateurRepository
+        $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
+
+        // Étape 17 - Retourner la confirmation
         return $this->json([
             'status'              => 'Succès',
             'message'             => 'Commande créée avec succès',
