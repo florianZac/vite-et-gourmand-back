@@ -293,5 +293,126 @@ composer show | grep mongodb sur linux
 6.4.2 Installation de MongoDB
 composer require doctrine/mongodb-odm-bundle
 
-6.4.2
+6.4.2 Vérification de la version mongodb
+mongod --version n'exite pas okay 
 
+6.4.2.1 
+php -m dans visual code la reponse contient MongoDB oui ou non si non continue 
+
+6.4.2.2 ouvrir le bon dossier PHP pour savoir lequel est installer php-v
+réponse -> PHP 8.4.15
+du coup le bon dossier -> D:\wamp64\bin\php\php8.4.15\ext\
+Lance cette commande :
+if (Test-Path "D:\wamp64\bin\php\php8.4.15\ext\php_mongodb.dll") { echo "php_mongodb.dll EST PRESENT" } else { echo "php_mongodb.dll N'EST PAS PRESENT" }
+
+Bon pas de dll disponible passage en docker 
+6.4.5 docker --version
+pas de version de docker T_T 
+
+6.4.6 Installation de docker
+https://www.docker.com/products/docker-desktop/
+https://docs.docker.com/desktop/setup/install/windows-install/
+
+6.5 Fermer tous les processus Docker existants
+# Liste tous les processus Docker
+Get-Process *docker* | Select-Object Id, ProcessName
+
+# Termine tous les processus Docker bloqués
+Get-Process *docker* | Stop-Process -Force
+
+6.6 Redémarrer les services Docker
+# Arrêter le service Docker Desktop
+Stop-Service com.docker.service -Force
+
+# Démarrer le service Docker Desktop
+Start-Service com.docker.service
+
+6.7 Supprimer les anciens containers ou images corrompus
+docker container prune -f -> supprime tous les containers arrêtés
+docker image prune -a -f -> supprime toutes les images inutilisées
+
+6.8 ENFIN on part sur quelque chose de property  (POWERSHELL avec droit admin )
+Lancer MongoDB via docker 
+mkdir D:\DockerData\MongoDB
+docker run -d --name mongodb -p 27017:27017 -v D:\DockerData\MongoDB:/data/db mongo:6
+Explications :
+-d -> mode détaché (arrière-plan)
+--name mongodb -> nom du container
+-p 27017:27017 -> accessible depuis ton PC sur localhost
+-v D:\DockerData\MongoDB:/data/db -> MongoDB stocke les données sur D:, pas dans Docker interne
+mongo:6 -> version officielle MongoDB 6
+
+Vérification que MongoDB tourne 
+PS C:\WINDOWS\system32> docker ps
+
+résultat : sa tourne bien  Ports -> 0.0.0.0:27017->27017/tcp 
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS              PORTS                                             NAMES
+dab15d72eb7e   mongo:6   "docker-entrypoint.s…"   2 minutes ago   Up About a minute   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp   mongodb
+PS C:\WINDOWS\system32>
+
+Faire la connection entre MongoDB <-> Docker
+$client = new MongoDB\Client("mongodb://127.0.0.1:27017");
+
+$client -> tu crées un objet client MongoDB.
+new MongoDB\Client(...) -> tu dis à PHP : « Je veux me connecter à MongoDB »
+"mongodb://127.0.0.1:27017"-> c’est l’adresse du serveur MongoDB :
+127.0.0.1-> ton PC local (localhost)
+27017->le port où MongoDB écoute
+
+
+Créer un projet test pour MongoDB
+    cd D:\wamp64\www\vite-et-gourmand-back
+    mkdir test_mongo
+    cd test_mongo
+
+Créer un composer.json minimal
+    composer install --ignore-platform-req=ext-mongodb
+
+Supprimer l’ancien container MongoDB
+    docker rm -f mongodb
+
+création :
+docker run -d --name mongodb_symphony -p 27017:27017 -v D:\docker-data\mongodb_symphony:/data/db mongo:6
+
+Installer la librairie PHP (option test) 
+composer require mongodb/mongodb --ignore-platform-req=ext-mongodb
+    Le --ignore-platform-req=ext-mongodb permet d’installer les fichiers PHP même si ext-mongodb est absent
+
+php --ini -> affiche ou se lance ton php 
+résultat : D:\wamp64\bin\php\php8.4.15\php.ini
+
+php -i | findstr "Thread"
+résulat :
+    Thread Safety => enabled
+    Thread API => Windows Threads
+
+Du coup il me faut -> PHP 8.4 / Thread Safe / x64
+https://pecl.php.net/package/mongodb
+Clique la dernière version de la DLL :  à côté de la version 2.2.1 est choisie 8.4 Thread Safe (TS) x64 
+On extrait le dossier php_mongodb-2.2.1-8.4-ts-vs17-x64.zip
+Ensuite on copie le fichier php_mongodb.dll dans D:\wamp64\bin\php\php8.4.15\ext
+Trouve php.init avec la commande php --ini dans un cmd
+D:\wamp64\bin\php\php8.4.15\php.ini
+ouvre le CRTL F " extension=" il faut que ton fichier dll soit dans \ext
+écris dans le fichier -> extension=php_mongodb.dll
+Sauvegarde et ferme le fichier
+
+Ferme et relance wamp  -> pour recharger le php.ini
+
+Test pour vérifier si sa fonctionne :
+    php -m | findstr mongodb 
+    si le résultat de la commande ci-dessus est mongodb le fichier est bien présent dans ext et le fichier php.ini est bien configuré .
+
+installer MongoDB
+composer require api-platform/doctrine-odm
+
+
+met a jour le .env 
+
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB=mongodb_symfony
+
+test si sa fonctionne :
+C:\Users\USUARIO>docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                             NAMES
+7d471ae11e68   mongo:6   "docker-entrypoint.s…"   4 minutes ago   Up 4 minutes   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp   mongodb_symphony
