@@ -403,8 +403,8 @@ Test pour vérifier si sa fonctionne :
     php -m | findstr mongodb 
     si le résultat de la commande ci-dessus est mongodb le fichier est bien présent dans ext et le fichier php.ini est bien configuré .
 
-installer MongoDB
-composer require api-platform/doctrine-odm
+installer MongoDB pour symfony
+composer require doctrine/mongodb-odm-bundle
 
 
 met a jour le .env 
@@ -416,3 +416,8 @@ test si sa fonctionne :
 C:\Users\USUARIO>docker ps
 CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                             NAMES
 7d471ae11e68   mongo:6   "docker-entrypoint.s…"   4 minutes ago   Up 4 minutes   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp   mongodb_symphony
+
+Test de la connection 
+docker exec -it mongodb_symphony mongosh --eval "db.runCommand({ping:1})"
+
+if (php -m | findstr mongodb) { Write-Host "MongoDB PRESENT" } else { Write-Host "MongoDB N'EST PAS PRESENT" }
