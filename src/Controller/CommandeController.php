@@ -7,6 +7,7 @@ use App\Entity\SuiviCommande;
 use App\Repository\MenuRepository;
 use App\Repository\UtilisateurRepository;
 use App\Service\MailerService;
+use App\Service\LogService; // import du LogService MongoDB
 use App\Repository\CommandeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -55,7 +56,8 @@ final class CommandeController extends BaseController
         MenuRepository $menuRepository,
         UtilisateurRepository $utilisateurRepository,
         EntityManagerInterface $em,
-        MailerService $mailerService
+        MailerService $mailerService,
+        LogService $logService              // AJOUT : injection du LogService MongoDB
     ): JsonResponse {
 
         // Étape 1 - Vérifier le rôle ADMIN
@@ -105,7 +107,6 @@ final class CommandeController extends BaseController
         $dateCourante = clone $aujourdhui;
 
         // Étape 9 - Calcul tant que la date courante est inférieur à la date de presation
-
         while ($dateCourante < $datePrestation) {
             $dateCourante->modify('+1 day');
             // 1 = lundi ... 5 = vendredi (jours ouvrables)
@@ -185,7 +186,21 @@ final class CommandeController extends BaseController
         // Étape 18 - Envoyer un mail de confirmation de commande au client
         $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-        // Étape 19 - Retourner la confirmation
+        // Étape 19 - AJOUT : Enregistrer le log de création de commande dans MongoDB
+        $logService->log(
+            'commande_creee',               // type de l'action
+            $utilisateur->getEmail(),        // email du client concerné
+            'ROLE_ADMIN',                    // c'est l'admin qui crée la commande
+            [
+                'numero_commande' => $numeroCommande,
+                'montant'         => round($prixMenu + $prixLivraison, 2),
+                'menu'            => $menu->getTitre(),
+                'ville_livraison' => $data['ville_livraison'],
+                'pret_materiel'   => $commande->isPretMateriel(),
+            ]
+        );
+
+        // Étape 20 - Retourner la confirmation
         return $this->json([
             'status'              => 'Succès',
             'message'             => 'Commande créée avec succès',
@@ -250,6 +265,7 @@ final class CommandeController extends BaseController
      * @param Request $request La requête HTTP contenant le motif d'annulation
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+     * @param LogService $logService pour enregistrer le log d'annulation dans MongoDB
      * @return JsonResponse
      */
     #[Route('/{id}/annuler', name: 'api_admin_commandes_annuler', methods: ['PUT'])]
@@ -257,7 +273,8 @@ final class CommandeController extends BaseController
         int $id,
         Request $request,
         CommandeRepository $commandeRepository,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        LogService $logService              // injection du LogService MongoDB
     ): JsonResponse {
         
         // Étape 1 - Vérifier le rôle ADMIN
@@ -291,7 +308,22 @@ final class CommandeController extends BaseController
         // Étape 7 - Sauvegarder en base
         $em->flush();
 
-        // Étape 8 - Retourner une confirmation avec le détail du remboursement
+        // Étape 8 - AJOUT : Enregistrer le log d'annulation dans MongoDB
+        // Récupère l'admin connecté pour l'email du log
+        $admin = $this->getUser();
+        $logService->log(
+            'commande_annulee',                                             // type de l'action
+            $admin ? $admin->getUserIdentifier() : 'admin_inconnu',         // email de l'admin qui annule
+            'ROLE_ADMIN',                                                    // c'est l'admin qui annule
+            [                                                               // contexte libre pour l'audit
+                'numero_commande'   => $commande->getNumeroCommande(),
+                'motif'             => $motif,
+                'montant_rembourse' => $montantRembourse,
+                'client_email'      => $commande->getUtilisateur()->getEmail(),
+            ]
+        );
+
+        // Étape 9 - Retourner une confirmation avec le détail du remboursement
         return $this->json([
             'status'            => 'Succès',
             'message'           => 'Commande annulée avec succès',

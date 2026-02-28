@@ -7,6 +7,7 @@ use App\Repository\CommandeRepository;
 use App\Repository\SuiviCommandeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Service\MailerService;
+use App\Service\LogService; // import du LogService MongoDB
 use App\Entity\Avis;
 use App\Repository\AvisRepository;
 
@@ -388,10 +389,18 @@ final class ClientController extends BaseController
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @param EntityManagerInterface $em pour gérer les opérations de base de données
      * @param MailerService $mailerService pour envoyer un email de confirmation d'annulation
+     * @param LogService $logService pour enregistrer le log d'annulation dans MongoDB
      * @return JsonResponse reponse JSON
      */
     #[Route('/commandes/{id}/annuler', name: 'api_client_commande_annuler', methods: ['POST'])]
-    public function annulerCommande(int $id, Request $request, CommandeRepository $commandeRepository, EntityManagerInterface $em, MailerService $mailerService): JsonResponse
+    public function annulerCommande(
+        int $id,
+        Request $request,
+        CommandeRepository $commandeRepository,
+        EntityManagerInterface $em,
+        MailerService $mailerService,
+        LogService $logService              // AJOUT : injection du LogService MongoDB
+    ): JsonResponse
     {
         // Étape 1 - Vérifie le rôle CLIENT
         if (!$this->isGranted('ROLE_CLIENT')) {
@@ -499,7 +508,21 @@ final class ClientController extends BaseController
         // Étape 13 - Envoyer un email de confirmation
         $mailerService->sendAnnulationEmail($utilisateur, $commande, $pourcentageRembourse, $montantRembourse);
 
-        // Étape 14 - Retourner un message de confirmation avec le montant remboursé
+        // Étape 14 - Enregistrer le log d'annulation dans MongoDB
+        // Après le flush() pour garantir que la commande est bien mise à jour en MySQL avant de logger
+        $logService->log(
+            'commande_annulee',             // type de l'action
+            $utilisateur->getEmail(),        // email du client qui annule
+            'ROLE_CLIENT',                   // c'est le client qui annule
+            [                               // contexte libre : infos clés pour l'audit
+                'numero_commande'      => $commande->getNumeroCommande(),
+                'motif'                => $motifAnnulation ?? 'non renseigné',
+                'montant_rembourse'    => $montantRembourse,
+                'pourcentage_rembourse'=> $pourcentageRembourse,
+            ]
+        );
+
+        // Étape 15 - Retourner un message de confirmation avec le montant remboursé
         return $this->json([
             'status' => 'Succès',
             'message' => $messageRemboursement,
