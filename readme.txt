@@ -372,7 +372,8 @@ Supprimer l’ancien container MongoDB
     docker rm -f mongodb
 
 création :
-docker run -d --name mongodb_symphony -p 27017:27017 -v D:\docker-data\mongodb_symphony:/data/db mongo:6
+
+docker run -d --name vite_et_gourmand_logs -p 27017:27017 -v D:\docker-data\vite_et_gourmand_logs:/data/db mongo:6
 
 Installer la librairie PHP (option test) 
 composer require mongodb/mongodb --ignore-platform-req=ext-mongodb
@@ -450,5 +451,61 @@ date -> DateTime -> Date et heure du log
 création du fichier LogService.php dans src/Service
 
 6.8.3 Ajout des logs à chaque controleur 
-1. AdminController
-2. AuthController
+
+6.9 test
+
+php bin/console cache:clear
+php bin/console debug:container mongodb
+
+On test 
+7.1 Liste des conatiner
+docker ps -a
+
+7.2 Redémarrage du container
+docker start vite_et_gourmand_logs
+
+7.3 On revérifie son état 
+docker ps
+
+7.4 On test son accès en ligne de cmd à travers mongosh
+docker exec -it vite_et_gourmand_logs mongosh
+
+7.5 Affiche les logs
+docker logs vite_et_gourmand_logs
+
+test dans mongosh :
+docker exec -it vite_et_gourmand_logs mongosh
+use vite_et_gourmand_logs
+show collections
+
+Ensuite :
+db.test.insertOne({
+  message: "hello mongo test Insertion données",
+  createdAt: new Date()
+})
+
+show collections
+
+résultat :
+test
+
+Affichage : 
+db.test.find().pretty()
+résultat :
+[
+  {
+    _id: ObjectId('69a32a02a35cdf85528de666'),
+    message: 'hello mongo',
+    createdAt: ISODate('2026-02-28T17:46:42.808Z')
+  }
+]
+
+exit
+
+résultat : Coté mongodb Tout fonctionne 
+
+Maintenant test du coté Symfony :
+
+création des collections
+php bin/console doctrine:mongodb:schema:create
+

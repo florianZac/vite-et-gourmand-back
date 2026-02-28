@@ -8,6 +8,8 @@ use App\Entity\SuiviCommande;
 use App\Entity\Theme;
 use App\Entity\Allergene;
 use App\Entity\Plat;
+use App\Entity\Horaire;
+
 use App\Repository\AllergeneRepository;
 use App\Repository\AvisRepository;
 use App\Repository\CommandeRepository;
@@ -16,8 +18,12 @@ use App\Repository\PlatRepository;
 use App\Repository\RegimeRepository;
 use App\Repository\SuiviCommandeRepository;
 use App\Repository\ThemeRepository;
+use App\Repository\HoraireRepository;
+
 use App\Service\MailerService;
+
 use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,6 +57,10 @@ use Symfony\Component\Routing\Attribute\Route;
  *  21. createPlat()         : Créer un nouveau plat
  *  22. updatePlat()         : Met à jour un plat par son id
  *  23. deletePlat()         : Supprimer un plat par son id
+ *  24. getHoraires()        : Retourne la liste de tous les horaires
+ *  25. createHoraire()      : Créer un nouvel horaire
+ *  26. updateHoraire()      : Met à jour un horaire par son id
+ *  27. deleteHoraire()      : Supprime un horaire par son id
  */
 
 #[Route('/api/employe')]
@@ -1133,4 +1143,178 @@ final class EmployeController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
     }
 
+    // =========================================================================
+    // HORAIRES
+    // =========================================================================
+
+    /**
+     * @description Retourne la liste de tous les horaires
+     * @param HoraireRepository $horaireRepository Le repository des horaires
+     * @return JsonResponse
+     */
+    #[Route('/horaires', name: 'api_employe_horaires_list', methods: ['GET'])]
+    public function getHoraires(HoraireRepository $horaireRepository): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Retourne les horraire
+        $horaires = $horaireRepository->findAll();
+
+        // Étape 3 - Formate les horraires : on convertit heure_ouverture et heure_fermeture en string lisible
+        $horaireFormates = [];
+        foreach ($horaires as $horaire) {
+            $horaireFormates[] = [
+                'id'               => $horaire->getId(),
+                'jour'             => $horaire->getJour(),
+                'heure_ouverture'  => $horaire->getHeureOuverture()?->format('H:i'),
+                'heure_fermeture'  => $horaire->getHeureFermeture()?->format('H:i'),
+            ];
+        }
+        // Étape 4 - Retourne le résultat
+        return $this->json(['status' => 'Succès', 'total' => count($horaireFormates), 'horaires' => $horaireFormates]);
+    }
+
+    /**
+     * @description Créer un nouvel horaire
+     * Corps JSON attendu : { "jour": "Lundi", "heure_ouverture": "09:00", "heure_fermeture": "18:00" }
+     * @param Request $request La requête HTTP
+     * @param HoraireRepository $horaireRepository Le repository des horaires
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/horaires', name: 'api_employe_horaires_create', methods: ['POST'])]
+    public function createHoraire(
+        Request $request,
+        HoraireRepository $horaireRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+        // Étape 2 - Récupère les donnée de la table horraire
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - La valeur est elle vide  ?
+        if (empty($data['jour'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Le champ jour est obligatoire'], 400);
+        }
+
+        // Étape 4 - Vérifier qu'un horaire pour ce jour n'existe pas déjà
+        $existant = $horaireRepository->findOneBy(['jour' => $data['jour']]);
+        if ($existant) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Un horaire pour ce jour existe déjà'], 409);
+        }
+
+        // Étape 5 - Créer l'objet horaire et remplis sa donnée
+        $horaire = new Horaire();
+        $horaire->setJour($data['jour']);
+
+        // Étape 6 - heure_ouverture et heure_fermeture sont optionnelles car jour fermé possible
+        // voir comment le traiter autrement 
+        if (!empty($data['heure_ouverture'])) {
+            $horaire->setHeureOuverture(new \DateTime($data['heure_ouverture']));
+        }
+        if (!empty($data['heure_fermeture'])) {
+            $horaire->setHeureFermeture(new \DateTime($data['heure_fermeture']));
+        }
+
+        // Étape 7 - Persister et Sauvegarder la donnée
+        $em->persist($horaire);
+        $em->flush();
+
+        // Étape 8 - Retourne le résultat 
+        return $this->json(['status' => 'Succès', 'message' => 'Horaire créé avec succès', 'id' => $horaire->getId()], 201);
+    }
+
+    /**
+     * @description Met à jour un horaire par son id
+     * Corps JSON attendu (tous optionnels) : { "jour": "Mardi", "heure_ouverture": "10:00", "heure_fermeture": "19:00" }
+     * @param int $id L'id de l'horaire
+     * @param Request $request La requête HTTP
+     * @param HoraireRepository $horaireRepository Le repository des horaires
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/horaires/{id}', name: 'api_employe_horaires_update', methods: ['PUT'])]
+    public function updateHoraire(
+        int $id,
+        Request $request,
+        HoraireRepository $horaireRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'horaire
+        $horaire = $horaireRepository->find($id);
+        if (!$horaire) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Horaire non trouvé'], 404);
+        }
+        // Étape 3 - Récupére le contenue
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 4 - Mise à jour du jour et vérification doublon
+        if (isset($data['jour'])) {
+            $existant = $horaireRepository->findOneBy(['jour' => $data['jour']]);
+            if ($existant && $existant->getId() !== $horaire->getId()) {
+                return $this->json(['status' => 'Erreur', 'message' => 'Un horaire pour ce jour existe déjà'], 409);
+            }
+            $horaire->setJour($data['jour']);
+        }
+
+        // Étape 5 - Mise à jour heure_ouverture
+        if (isset($data['heure_ouverture'])) {
+            $horaire->setHeureOuverture(new \DateTime($data['heure_ouverture']));
+        }
+
+        // Étape 6 - Mise à jour heure_fermeture
+        if (isset($data['heure_fermeture'])) {
+            $horaire->setHeureFermeture(new \DateTime($data['heure_fermeture']));
+        }
+
+        // Étape 7 - Sauvegarder
+        $em->flush();
+
+        // Étape 8 - Retourne le résultat
+        return $this->json(['status' => 'Succès', 'message' => 'Horaire mis à jour avec succès']);
+    }
+
+    /**
+     * @description Supprime un horaire par son id
+     * @param int $id L'id de l'horaire
+     * @param HoraireRepository $horaireRepository Le repository des horaires
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/horaires/{id}', name: 'api_employe_horaires_delete', methods: ['DELETE'])]
+    public function deleteHoraire(
+        int $id,
+        HoraireRepository $horaireRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer l'horaire
+        $horaire = $horaireRepository->find($id);
+        if (!$horaire) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Horaire non trouvé'], 404);
+        }
+
+        // Étape 3 - Supprimer
+        $em->remove($horaire);
+        $em->flush();
+
+        // Étape 4 - Retourne le résultat       
+        return $this->json(['status' => 'Succès', 'message' => 'Horaire supprimé avec succès']);
+    }
 }
