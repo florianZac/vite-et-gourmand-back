@@ -1,0 +1,23 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block content %}
+
+  <h2>Bienvenue {{ employe.prenom }} {{ employe.nom }},</h2>
+
+    <p>Un compte employé vient d'être créé pour vous sur la plateforme <strong>Vite et Gourmand</strong>.</p>
+
+    <p>Vos identifiants de connexion :</p>
+    <ul>
+        <li><strong>Email :</strong> {{ employe.email }}</li>
+        <li><strong>Mot de passe temporaire :</strong> {{ mot_de_passe }}</li>
+    </ul>
+
+    <p>
+        <a href="{{ lien_connexion }}">Se connecter</a>
+    </p>
+
+    <p><strong>Pensez à changer votre mot de passe après votre première connexion.</strong></p>
+
+    <p>L'équipe Vite et Gourmand</p>
+
+{% endblock %}

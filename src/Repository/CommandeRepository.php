@@ -152,6 +152,38 @@ class CommandeRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * @description Recherche des commandes avec filtres optionnels par statut et/ou par client
+     * Utilisé par l'employé pour filtrer les commandes dans son tableau de bord
+     * @param string|null $statut   Le statut à filtrer (ex: "En attente", "Acceptée"...)
+     * @param int|null $utilisateurId  L'id du client à filtrer
+     * @return array
+     */
+    public function findByFiltres(?string $statut = null, ?int $utilisateurId = null): array
+    {
+        
+        // Étape 1 - Crée une requête SQL dynamique
+        // 'c' est l'alias pour la table commande (comme "SELECT c FROM commande c")
+        $qb = $this->createQueryBuilder('c')
+            ->orderBy('c.date_commande', 'DESC'); // plus récente en premier
+
+        // Étape 2 - Filtre par statut si fourni
+        if ($statut !== null) {
+            $qb->andWhere('c.statut = :statut')
+            ->setParameter('statut', $statut);
+        }
+
+        // Étape 3 - Filtre par client si fourni
+        if ($utilisateurId !== null) {
+            $qb->andWhere('c.utilisateur = :utilisateurId')
+            ->setParameter('utilisateurId', $utilisateurId);
+        }
+
+        // Étape 4 - Retourne le résultat
+        return $qb->getQuery()->getResult();
+    }
+
+
     // =========================================================================
     // STATISTIQUE POUR LE DOUBLE CHART BAR JS EN FRONT 
     // =========================================================================

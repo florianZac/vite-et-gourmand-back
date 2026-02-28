@@ -20,6 +20,7 @@ use App\Repository\HoraireRepository;
 use App\Document\LogActivite;             // import du Document MongoDB
 use App\Service\MailerService;
 
+use App\Entity\Utilisateur;
 use App\Entity\Horaire;
 use App\Entity\Menu;
 use App\Entity\Regime;
@@ -40,25 +41,26 @@ use Symfony\Component\HttpFoundation\Request;
  * @description Contrôleur gérant les utilisateurs 
  *  mise en place d'un CRUD de base pour les utilisateurs
  * 
- *  1. getAllUsers              : Retourne la liste de tous les utilisateurs
- *  2. getUserById              : Retourne un utilisateurs par son id
- *  3. deleteUserByID           : Supprime un utilisateurs par son id
- *  4. deleteUserByEmail        : Supprime un utilisateurs par son e-mail
- *  5. updateUserAdminById      : Modifie un utilisateurs en le ciblant par son id
- *  6. updateUserAdminByEmail   : Modifie un utilisateurs en le ciblant par son e-mail
- *  7. desactiverCompte         : Désactivation d'un compte utilisateur
- *  8. reactiverCompte          : Résactivation d'un compte utilisateur
- *  9. deleteCommande           : Supprimer une commande
- *  10. rechercherCommande      : Rechercher une commande par son numéro de commande
- *  11. supprimerAvis           : Supprimer un avis client
- *  12. refuserAvis             : Refuser un avis client
- *  13. approuverAvis           : Approuver un avis client
- *  14. getAvisEnAttente        : Afficher tous les avis en attente de validation
- *  15. getStatistiques         : Retourne les statistiques complètes vennant de MySQl
- *  16. getLogs                 : Retourne les logs d'activité vennant de MongoDB - NoSQL
- *  25. createHoraireAdmin()    : Créer un nouvel horaire
- *  26. updateHoraireAdmin()    : Met à jour un horaire par son id
- *  27. deleteHoraireAdmin()    : Supprime un horaire par son id
+ *  1. getAllUsers()            : Retourne la liste de tous les utilisateurs
+ *  2. getUserById()            : Retourne un utilisateurs par son id
+ *  3. deleteUserByID()         : Supprime un utilisateurs par son id
+ *  4. deleteUserByEmail()      : Supprime un utilisateurs par son e-mail
+ *  5. updateUserAdminById()    : Modifie un utilisateurs en le ciblant par son id
+ *  6. updateUserAdminByEmail() : Modifie un utilisateurs en le ciblant par son e-mail
+ *  7. desactiverCompte()       : Désactivation d'un compte utilisateur
+ *  8. reactiverCompte()        : Résactivation d'un compte utilisateur
+ *  9. createEmploye()          : Création d'un compte employé par l'administrateur
+ *  10. deleteCommande()        : Supprimer une commande
+ *  11. rechercherCommande()    : Rechercher une commande par son numéro de commande
+ *  12. supprimerAvis()         : Supprimer un avis client
+ *  13. refuserAvis()           : Refuser un avis client
+ *  14. approuverAvis()         : Approuver un avis client
+ *  15. getAvisEnAttente()      : Afficher tous les avis en attente de validation
+ *  16. getStatistiques()       : Retourne les statistiques complètes vennant de MySQl 
+ *  17. getLogs()               : Retourne les logs d'activité vennant de MongoDB -> NoSQL
+ *  18. createHoraireAdmin()    : Créer un nouvel horaire
+ *  19. updateHoraireAdmin()    : Met à jour un horaire par son id
+ *  20. deleteHoraireAdmin()    : Supprime un horaire par son id
 */
 
 #[Route('/api/admin')]
@@ -455,6 +457,102 @@ final class AdminController extends AbstractController
 
         // Étape 6 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Compte réactivé avec succès']);
+    }
+
+    /**
+     * @description Création d'un compte employé par l'administrateur
+     * Génère un mot de passe temporaire aléatoire et l'envoie par email à l'employé
+     * L'employé devra changer son mot de passe à sa première connexion
+     * Corps JSON attendu :
+     * {
+     *   "nom": "Dupont",
+     *   "prenom": "Jean",
+     *   "email": "jean.dupont@vite-et-gourmand.fr",
+     *   "telephone": "0612345678",
+     *   "ville": "Bordeaux"
+     * }
+     * @param Request $request La requête HTTP contenant les données de l'employé
+     * @param UtilisateurRepository $utilisateurRepository Pour vérifier les doublons
+     * @param RoleRepository $roleRepository Pour récupérer le rôle ROLE_EMPLOYE
+     * @param UserPasswordHasherInterface $passwordHasher Pour hasher le mot de passe temporaire
+     * @param EntityManagerInterface $em Pour sauvegarder en base
+     * @param MailerService $mailerService Pour envoyer les identifiants à l'employé
+     * @return JsonResponse
+     */
+    #[Route('/employes', name: 'api_admin_employes_create', methods: ['POST'])]
+    public function createEmploye(
+        Request $request,
+        UtilisateurRepository $utilisateurRepository,
+        RoleRepository $roleRepository,
+        UserPasswordHasherInterface $passwordHasher,
+        EntityManagerInterface $em,
+        MailerService $mailerService
+    ): JsonResponse {
+
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 3 - Vérifier les champs obligatoires
+        if (empty($data['nom']) || empty($data['prenom']) || empty($data['email']) || empty($data['telephone'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Les champs nom, prenom, email et telephone sont obligatoires'], 400);
+        }
+
+        // Étape 4 - Vérifier que l'email n'existe pas déjà
+        if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
+        }
+
+        // Étape 5 - Récupérer le rôle ROLE_EMPLOYE
+        $role = $roleRepository->findOneBy(['libelle' => 'ROLE_EMPLOYE']);
+        if (!$role) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Rôle ROLE_EMPLOYE introuvable en base'], 500);
+        }
+
+        // Étape 6 - Générer un mot de passe temporaire aléatoire
+        // L'employé devra le changer à sa première connexion
+        $motDePasseTemporaire = bin2hex(random_bytes(8));
+
+        // Étape 7 - Créer le compte employé
+        $employe = new Utilisateur();
+        $employe->setNom($data['nom']);
+        $employe->setPrenom($data['prenom']);
+        $employe->setEmail($data['email']);
+        $employe->setTelephone($data['telephone']);
+        $employe->setVille($data['ville'] ?? '');
+        $employe->setAdressePostale($data['adresse_postale'] ?? '');
+        $employe->setCodePostal($data['code_postal'] ?? '');
+        $employe->setPays($data['pays'] ?? 'France');
+        $employe->setStatutCompte('actif');
+        $employe->setRole($role);
+
+        // Étape 8 - Hasher le mot de passe temporaire
+        $motDePasseHashe = $passwordHasher->hashPassword($employe, $motDePasseTemporaire);
+        $employe->setPassword($motDePasseHashe);
+
+        // Étape 9 - Sauvegarder en base
+        $em->persist($employe);
+        $em->flush();
+
+        // Étape 10 - Envoyer les identifiants par email à l'employé
+        // L'email contient le mot de passe temporaire en clair lors du premier envoi, jamais stocké en clair
+        $mailerService->sendBienvenueEmployeEmail($employe, $motDePasseTemporaire);
+
+        // Étape 11 - Retourner une confirmation (sans le mot de passe)
+        return $this->json([
+            'status'  => 'Succès',
+            'message' => 'Compte employé créé avec succès. Les identifiants ont été envoyés par email.',
+            'employe' => [
+                'id'     => $employe->getId(),
+                'nom'    => $employe->getNom(),
+                'prenom' => $employe->getPrenom(),
+                'email'  => $employe->getEmail(),
+            ]
+        ], 201);
     }
 
     // =========================================================================

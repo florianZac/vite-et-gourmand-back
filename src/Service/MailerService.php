@@ -24,32 +24,33 @@ class MailerService
     // Le constructeur du Mailer de Symfony
     public function __construct(
         private MailerInterface $mailer,
-        private Environment $twig) {}
+        private Environment $twig,
+        private string $appUrl  // URL de l'application depuis .env
+        ) {}
 
     // Fonction email qui envoie un email de contact à l'administrateur du site lorsque le client remplis le formulaire de contact
     // reçoit un tableau $data contenant les données du formulaire (nom, email, message)
     public function sendContactEmail(array $data): void
     {
-        // Génère le HTML à partir du template Twig en lui passant les variables
+        // Étape 1 - Génère le HTML à partir du template Twig en lui passant les variables
         $html = $this->twig->render('emails/contact.html.twig', [
             'sujet'   => $data['sujet'],
             'email'   => $data['email'],
             'message' => $data['message'],
         ]);
 
-        // Crée et envoie l'email avec le HTML généré à partir du template Twig
+        // Étape 2 - Crée et envoie l'email avec le HTML généré à partir du template Twig
         $email = (new Email())
-            // Définit l'expéditeur de l'email
+            // Étape 2.1 - Définit l'expéditeur de l'email
             ->from('noreply@vite-et-gourmand.fr')
-            // Définit le destinataire (ici l'admin qui reçoit les messages de contact)
+            // Étape 2.2 - Définit le destinataire (ici l'admin qui reçoit les messages de contact)
             ->to('admin@vite-et-gourmand.fr')
-            // Définit le sujet de l'email
+            // Étape 2.3 - Définit le sujet de l'email
             ->subject('Nouveau message de contact')
-            // Définit le contenu HTML de l'email
+            // Étape 2.4 - Définit le contenu HTML de l'email
             ->html($html);
 
-        // Envoie l'email via le Mailer de Symfony
-        // C'est ici que Mailtrap intercepte l'email en développement
+        // Étape 3 - Envoie l'email via le Mailer de Symfony
         $this->mailer->send($email);
     }
 
@@ -348,20 +349,46 @@ class MailerService
             'prenom' => $utilisateur->getPrenom(),
         ]);
 
-        // Étape 2 - Créer un objet Email avec les paramètres standard 
+        // Étape 2 - Créer un objet Email avec les paramètres standard  
         $email = (new Email())
-            // Expéditeur : on utilise l'email générique de l'entreprise pour tous les mails automatiques
             ->from('noreply@vite-et-gourmand.fr')
-            // Destinataire : l'email de l'utilisateur qui vient de s'inscrire
-            ->to($utilisateur->getEmail())
-            // Sujet du mail : clair et direct pour que l'utilisateur le retrouve facilement
+            ->to($utilisateur->getEmail())    
             ->subject('Bienvenue chez Vite & Gourmand')
-            // Contenu : le HTML généré depuis le template Twig
             ->html($html);
 
         // Étape 3 - Envoyer l'email via le service MailerInterface
         // En développement, Mailtrap intercepte l'email et l'affiche dans la console
         // En production, l'email est envoyé réellement au destinataire
+        $this->mailer->send($email);
+    }
+
+    /**
+     * @description Envoie les identifiants de connexion à un nouvel employé
+     * Contient le mot de passe temporaire en clair → envoi unique, jamais stocké
+     * @param Utilisateur $employe Le nouvel employé
+     * @param string $motDePasseTemporaire Le mot de passe temporaire généré
+     */
+    public function sendBienvenueEmployeEmail(Utilisateur $employe, string $motDePasseTemporaire): void
+    {
+        // Étape 1 - Générer le contenu HTML à partir du template Twig
+        $html = $this->twig->render('emails/bienvenue_employe.html.twig', [
+            'prenom'          => $employe->getPrenom(),
+            'nom'             => $employe->getNom(),
+            'email'           => $employe->getEmail(),
+            'mot_de_passe'    => $motDePasseTemporaire,
+            'lien_connexion'  => ($_ENV['APP_URL'] ?? 'http://localhost:3000') . '/login',
+        ]);
+
+        // Étape 2 - Créer un objet Email avec les paramètres standard 
+        $email = (new Email())
+            // Expéditeur : on utilise l'email générique de l'entreprise pour tous les mails automatiques
+            ->from('noreply@vite-et-gourmand.fr')
+            // Destinataire : l'email de l'utilisateur qui vient de s'inscrire
+            ->to($employe->getEmail())
+            // subject : Sujet de l'email
+            ->subject('Vos identifiants de connexion - Vite et Gourmand')
+            ->html($html);
+        // Étape 3 - Envoyer l'email via le service MailerInterface
         $this->mailer->send($email);
     }
 

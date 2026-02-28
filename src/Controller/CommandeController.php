@@ -37,6 +37,8 @@ final class CommandeController extends BaseController
      *  - Livraison gratuite Bordeaux, sinon 5€ + 0,59€/km
      *  - Réduction -10% si nombre de personnes > minimum + 5
      *  - pret_materiel : true/false selon la checkbox front (défaut false)
+     *  - Vérification stock (quantite_restante > 0) avant création
+     *  - Vérification nombre minimum de personnes (nombre_personnes >= nombrePersonneMinimum)
      * Corps JSON attendu :
      * {
      *   "utilisateur_id": 3,
@@ -57,7 +59,7 @@ final class CommandeController extends BaseController
         UtilisateurRepository $utilisateurRepository,
         EntityManagerInterface $em,
         MailerService $mailerService,
-        LogService $logService              // AJOUT : injection du LogService MongoDB
+        LogService $logService
     ): JsonResponse {
 
         // Étape 1 - Vérifier le rôle ADMIN
@@ -69,7 +71,6 @@ final class CommandeController extends BaseController
         $data = json_decode($request->getContent(), true);
 
         // Étape 3 - Vérifier les champs obligatoires
-        // utilisateur_id ajouté aux champs obligatoires
         $champsObligatoires = ['utilisateur_id', 'menu_id', 'date_prestation', 'nombre_personnes', 'ville_livraison'];
         foreach ($champsObligatoires as $champ) {
             if (empty($data[$champ])) {
@@ -90,6 +91,27 @@ final class CommandeController extends BaseController
             return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
         }
 
+        // Étape 5.1 - Vérifier que le menu est disponible (quantite_restante > 0)
+        // Si le stock est épuisé, on refuse la commande avant tout calcul
+        if ($menu->getQuantiteRestante() <= 0) {
+            return $this->json([
+                'status'  => 'Erreur',
+                'message' => 'Ce menu n\'est plus disponible (stock épuisé)'
+            ], 400);
+        }
+
+        // Étape 5.2 - Vérifier le nombre minimum de personnes requis par le menu
+        // Ex: si le menu requiert minimum 10 personnes, on ne peut pas commander pour 5
+        $nombrePersonnes  = (int) $data['nombre_personnes'];
+        $minimumPersonnes = $menu->getNombrePersonneMinimum();
+
+        if ($nombrePersonnes < $minimumPersonnes) {
+            return $this->json([
+                'status'  => 'Erreur',
+                'message' => "Nombre de personnes insuffisant : ce menu requiert un minimum de $minimumPersonnes personnes (demandé : $nombrePersonnes)"
+            ], 400);
+        }
+
         // Étape 6 - Valider la date de prestation
         try {
             $datePrestation = new \DateTime($data['date_prestation']);
@@ -106,7 +128,7 @@ final class CommandeController extends BaseController
         $joursOuvrables = 0;
         $dateCourante = clone $aujourdhui;
 
-        // Étape 9 - Calcul tant que la date courante est inférieur à la date de presation
+        // Étape 9 - Calcul tant que la date courante est inférieur à la date de prestation
         while ($dateCourante < $datePrestation) {
             $dateCourante->modify('+1 day');
             // 1 = lundi ... 5 = vendredi (jours ouvrables)
@@ -115,7 +137,7 @@ final class CommandeController extends BaseController
             }
         }
 
-        // Étape 10 - Vérifie que le delais n'est pas dépassé
+        // Étape 10 - Vérifie que le délai n'est pas dépassé
         if ($joursOuvrables < $delaiMinimum) {
             return $this->json([
                 'status'  => 'Erreur',
@@ -123,18 +145,18 @@ final class CommandeController extends BaseController
             ], 400);
         }
 
-        // Étape 10 - Calcule le prix de base
+        // Étape 11 - Calcule le prix de base
         $prixParPersonne = $menu->getPrixParPersonne();
         $prixMenu = $prixParPersonne * $nombrePersonnes;
 
-        // Étape 11 - Applique la réduction de -10% si nécessaire
+        // Étape 12 - Applique la réduction de -10% si nécessaire
         // si le nombre de personnes dépasse le minimum requis de plus de 5
         $minimumPersonnes = $menu->getNombrePersonneMinimum();
         if ($nombrePersonnes > ($minimumPersonnes + 5)) {
             $prixMenu = $prixMenu * 0.90;
         }
 
-        // Étape 12 - Calculer le prix de livraison
+        // Étape 13 - Calculer le prix de livraison
         // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
         $villeLivraison = strtolower(trim($data['ville_livraison']));
         $distanceKm = (float) ($data['distance_km'] ?? 0);
@@ -145,19 +167,19 @@ final class CommandeController extends BaseController
             $prixLivraison = 5 + (0.59 * $distanceKm);
         }
 
-        // Étape 13 - Calculer l'acompte
+        // Étape 14 - Calculer l'acompte
         // 50% si thème Événement, 30% sinon
         $libelleTheme = strtolower($menu->getTheme()->getLibelle());
         $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
         $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
 
-        // Étape 14 - Générer le numéro de commande unique
+        // Étape 15 - Générer le numéro de commande unique
         $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
 
-        // Étape 15 - Créer la commande
+        // Étape 16 - Créer la commande
         $commande = new Commande();
         $commande->setNumeroCommande($numeroCommande);
-        $commande->setUtilisateur($utilisateur); // CORRECTION : association de l'utilisateur à la commande
+        $commande->setUtilisateur($utilisateur);
         $commande->setMenu($menu);
         $commande->setDatePrestation($datePrestation);
         $commande->setNombrePersonne($nombrePersonnes);
@@ -168,39 +190,44 @@ final class CommandeController extends BaseController
         $commande->setMontantAcompte(round($montantAcompte, 2));
         $commande->setStatut('En attente');
         $commande->setDateCommande(new \DateTime());
-
-        // Étape 15 - met à jour la variable de pret de matériel 
         $commande->setPretMateriel((bool) ($data['pret_materiel'] ?? false));
 
-        // Étape 16 - Créer le suivi
+        // Étape 17 - Créer le suivi
         $suivi = new SuiviCommande();
         $suivi->setStatut('En attente');
         $suivi->setDateStatut(new \DateTime());
         $suivi->setCommande($commande);
 
-        // Étape 17 - Persister et sauvegarder
+        // Étape 18 - Persister et sauvegarder la commande en base
         $em->persist($commande);
         $em->persist($suivi);
         $em->flush();
 
-        // Étape 18 - Envoyer un mail de confirmation de commande au client
+        // Étape 18.1 - Décrémenter le stock du menu
+        // Fait après le premier flush() pour garantir que la commande est bien sauvegardée
+        // avant de toucher au stock → cohérence des données en cas d'erreur
+        $menu->setQuantiteRestante($menu->getQuantiteRestante() - 1);
+        $em->flush();
+
+        // Étape 19 - Envoyer un mail de confirmation de commande au client
         $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-        // Étape 19 - AJOUT : Enregistrer le log de création de commande dans MongoDB
+        // Étape 20 - Enregistrer le log de création de commande dans MongoDB
         $logService->log(
-            'commande_creee',               // type de l'action
-            $utilisateur->getEmail(),        // email du client concerné
-            'ROLE_ADMIN',                    // c'est l'admin qui crée la commande
+            'commande_creee',
+            $utilisateur->getEmail(),
+            'ROLE_ADMIN',
             [
-                'numero_commande' => $numeroCommande,
-                'montant'         => round($prixMenu + $prixLivraison, 2),
-                'menu'            => $menu->getTitre(),
-                'ville_livraison' => $data['ville_livraison'],
-                'pret_materiel'   => $commande->isPretMateriel(),
+                'numero_commande'   => $numeroCommande,
+                'montant'           => round($prixMenu + $prixLivraison, 2),
+                'menu'              => $menu->getTitre(),
+                'ville_livraison'   => $data['ville_livraison'],
+                'pret_materiel'     => $commande->isPretMateriel(),
+                'stock_restant'     => $menu->getQuantiteRestante(), // stock après décrémentation
             ]
         );
 
-        // Étape 20 - Retourner la confirmation
+        // Étape 21 - Retourner la confirmation
         return $this->json([
             'status'              => 'Succès',
             'message'             => 'Commande créée avec succès',
@@ -210,6 +237,7 @@ final class CommandeController extends BaseController
             'montant_acompte'     => round($montantAcompte, 2),
             'pret_materiel'       => $commande->isPretMateriel(),
             'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
+            'stock_restant'       => $menu->getQuantiteRestante(),
         ], 201);
     }
 
@@ -260,7 +288,7 @@ final class CommandeController extends BaseController
     /**
      * @description Annule une commande avec un remboursement de 100% du montant total (prix menu + livraison)
      * Peu importe la date de prestation, le remboursement est toujours intégral.
-     * Corps JSON attendu  : { "motif_annulation": "Rupture de stock " }
+     * Corps JSON attendu  : { "motif_annulation": "Rupture de stock" }
      * @param int $id L'id de la commande à annuler
      * @param Request $request La requête HTTP contenant le motif d'annulation
      * @param CommandeRepository $commandeRepository Le repository des commandes
@@ -274,7 +302,7 @@ final class CommandeController extends BaseController
         Request $request,
         CommandeRepository $commandeRepository,
         EntityManagerInterface $em,
-        LogService $logService              // injection du LogService MongoDB
+        LogService $logService
     ): JsonResponse {
         
         // Étape 1 - Vérifier le rôle ADMIN
@@ -308,14 +336,13 @@ final class CommandeController extends BaseController
         // Étape 7 - Sauvegarder en base
         $em->flush();
 
-        // Étape 8 - AJOUT : Enregistrer le log d'annulation dans MongoDB
-        // Récupère l'admin connecté pour l'email du log
+        // Étape 8 - Enregistrer le log d'annulation dans MongoDB
         $admin = $this->getUser();
         $logService->log(
-            'commande_annulee',                                             // type de l'action
-            $admin ? $admin->getUserIdentifier() : 'admin_inconnu',         // email de l'admin qui annule
-            'ROLE_ADMIN',                                                    // c'est l'admin qui annule
-            [                                                               // contexte libre pour l'audit
+            'commande_annulee',
+            $admin ? $admin->getUserIdentifier() : 'admin_inconnu',
+            'ROLE_ADMIN',
+            [
                 'numero_commande'   => $commande->getNumeroCommande(),
                 'motif'             => $motif,
                 'montant_rembourse' => $montantRembourse,

@@ -19,6 +19,7 @@ use App\Repository\RegimeRepository;
 use App\Repository\SuiviCommandeRepository;
 use App\Repository\ThemeRepository;
 use App\Repository\HoraireRepository;
+use App\Repository\UtilisateurRepository;
 
 use App\Service\MailerService;
 
@@ -40,27 +41,28 @@ use Symfony\Component\Routing\Attribute\Route;
  *  4. getMaterialEnCours()  : Retourne toutes les commandes avec matériel non rendu
  *  5. getMaterielCommande() : Retourne l'état du matériel d'une commande ciblée
  *  6. confirmerRestitution(): Confirme le retour du matériel et le paiement de la pénalité
- *  7. getAvisEnAttente()    : Afficher tous les avis en attente de validation
- *  8. approuverAvis()       : Approuver un avis client
- *  9. refuserAvis()         : Refuser un avis client
- *  10. getAllMenus()        : Retourner la liste de tous les menus
- *  11. getMenuById()        : Retourner un menu par son id
- *  12. createMenu()         : Créer un nouveau menu
- *  13. updateMenu()         : Met à jour un menu par son id
- *  14. deleteMenu()         : Supprimer un menu par son id
- *  15. createTheme()        : Créer un nouveau thème
- *  16. updateTheme()        : Met à jour un thème par son id
- *  17. createRegime()       : Créer un nouveau régime
- *  18. updateRegime()       : Met à jour un régime par son id
- *  19. createAllergene()    : Créer un nouvel allergène
- *  20. updateAllergene()    : Met à jour un allergène par son id
- *  21. createPlat()         : Créer un nouveau plat
- *  22. updatePlat()         : Met à jour un plat par son id
- *  23. deletePlat()         : Supprimer un plat par son id
- *  24. getHoraires()        : Retourne la liste de tous les horaires
- *  25. createHoraire()      : Créer un nouvel horaire
- *  26. updateHoraire()      : Met à jour un horaire par son id
- *  27. deleteHoraire()      : Supprime un horaire par son id
+ *  7. filtrerCommandes()    : Filtrer les commandes par statut et/ou par client
+ *  8. getAvisEnAttente()    : Afficher tous les avis en attente de validation
+ *  9. approuverAvis()       : Approuver un avis client
+ *  10. refuserAvis()         : Refuser un avis client
+ *  11. getAllMenus()        : Retourner la liste de tous les menus
+ *  12. getMenuById()        : Retourner un menu par son id
+ *  13. createMenu()         : Créer un nouveau menu
+ *  14. updateMenu()         : Met à jour un menu par son id
+ *  15. deleteMenu()         : Supprimer un menu par son id
+ *  16. createTheme()        : Créer un nouveau thème
+ *  17. updateTheme()        : Met à jour un thème par son id
+ *  18. createRegime()       : Créer un nouveau régime
+ *  19. updateRegime()       : Met à jour un régime par son id
+ *  20. createAllergene()    : Créer un nouvel allergène
+ *  21. updateAllergene()    : Met à jour un allergène par son id
+ *  22. createPlat()         : Créer un nouveau plat
+ *  23. updatePlat()         : Met à jour un plat par son id
+ *  24. deletePlat()         : Supprimer un plat par son id
+ *  25. getHoraires()        : Retourne la liste de tous les horaires
+ *  26. createHoraire()      : Créer un nouvel horaire
+ *  27. updateHoraire()      : Met à jour un horaire par son id
+ *  28. deleteHoraire()      : Supprime un horaire par son id
  */
 
 #[Route('/api/employe')]
@@ -363,6 +365,47 @@ final class EmployeController extends AbstractController
             'restitution_materiel' => $commande->isRestitutionMateriel(),
         ]);
     }
+
+    /**
+     * @description Filtrer les commandes par statut et/ou par client
+     * 
+     * @param Request $request La requête HTTP avec les filtres
+     * @param CommandeRepository $commandeRepository Le repository des commandes
+     * @return JsonResponse
+     */
+    #[Route('/commandes/filtres', name: 'api_employe_commandes_filtres', methods: ['GET'])]
+    public function filtrerCommandes(
+        Request $request,
+        CommandeRepository $commandeRepository
+    ): JsonResponse {
+
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les filtres depuis la query string
+        $statut        = $request->query->get('statut');            // ex: ?statut=En attente
+        $utilisateurId = $request->query->get('utilisateur_id');    // ex: ?utilisateur_id=3
+
+        // Étape 3 - Convertir utilisateur_id en int si fourni
+        $utilisateurId = $utilisateurId !== null ? (int) $utilisateurId : null;
+
+        // Étape 4 - Appeler le repository avec les filtres
+        $commandes = $commandeRepository->findByFiltres($statut, $utilisateurId);
+
+        // Étape 5 - Retourner les résultats
+        return $this->json([
+            'status'   => 'Succès',
+            'total'    => count($commandes),
+            'filtres'  => [
+                'statut'        => $statut        ?? 'tous',
+                'utilisateur_id'=> $utilisateurId ?? 'tous',
+            ],
+            'commandes' => $commandes,
+        ]);
+    }
+
 
     // =========================================================================
     // AVIS
