@@ -49,20 +49,21 @@ final class ClientController extends BaseController
     // Récupère les données du profil du client connecté
     public function getProfil(): JsonResponse
     {
-        // Vérifie que l'utilisateur a le rôle CLIENT
+        
+        // Étape 1 - Vérifie que l'utilisateur a le rôle CLIENT
         if (!$this->isGranted('ROLE_CLIENT')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Récupère l'utilisateur connecté via le token JWT
+        // Étape 2 - Récupère l'utilisateur connecté via le token JWT
         $utilisateur = $this->getUser();
 
-        // Vérifie que l'utilisateur qui est connecté et est bien une instance de l'entité Utilisateur
+        // Étape 3 - Vérifie que l'utilisateur qui est connecté et est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
-        // Retourne ses données en JSON
+        // Étape 4 - Retourne ses données en JSON
         return $this->json($utilisateur);
     }
 
@@ -89,16 +90,16 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        // Vérifie que l'utilisateur qui est connecté est bien une instance de l'entité Utilisateur
+
+        // Étape 3 - Vérifie que l'utilisateur qui est connecté est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
-        // Étape 3 - Récupérer les données JSON
+        // Étape 4 - Récupérer les données JSON
         $data = json_decode($request->getContent(), true);
 
-        // Étape 4 - Mise à jour des champs
-        // Vérification doublon email
+        // Étape 5 - Mise à jour de l'email et vérification doublon email
         if (isset($data['email'])) {
             $emailExistant = $utilisateurRepository->findOneBy(['email' => $data['email']]);
             if ($emailExistant && $emailExistant->getId() !== $utilisateur->getId()) {
@@ -107,23 +108,23 @@ final class ClientController extends BaseController
             $utilisateur->setEmail($data['email']);
         }
         
-        // Modification du mot de passe
+        // Étape 6 - Modification du mot de passe
         if (isset($data['password'])) {
             $motDePasseHashe = $passwordHasher->hashPassword($utilisateur, $data['password']);
             $utilisateur->setPassword($motDePasseHashe);
         }
 
-        // Mise à jour du nom
+        // Étape 7 - Mise à jour du nom
         if (isset($data['nom'])) {
             $utilisateur->setNom($data['nom']);
         }
 
-        // Mise à jour du prénom
+        // Étape 8 - Mise à jour du prénom
         if (isset($data['prenom'])) {
             $utilisateur->setPrenom($data['prenom']);
         }
 
-        // Vérification doublon téléphone
+        // Étape 9 - Vérification doublon téléphone
         if (isset($data['telephone'])) {
             $telephoneExistant = $utilisateurRepository->findOneBy(['telephone' => $data['telephone']]);
             if ($telephoneExistant && $telephoneExistant->getId() !== $utilisateur->getId()) {
@@ -132,30 +133,30 @@ final class ClientController extends BaseController
             $utilisateur->setTelephone($data['telephone']);
         }
 
-        // Mise à jour de la ville
+        // Étape 9 - Mise à jour de la ville
         if (isset($data['ville'])) {
             $utilisateur->setVille($data['ville']);
         }
 
-        // Mise à jour du code postal
+        // Étape 10 - Mise à jour du code postal
         if (isset($data['code_postal'])) {
             $utilisateur->setCodePostal($data['code_postal']);
         }
 
-        // Mise à jour de l'adresse postale
+        // Étape 11 - Mise à jour de l'adresse postale
         if (isset($data['adresse_postale'])) {
             $utilisateur->setAdressePostale($data['adresse_postale']);
         }
 
-        // Mise à jour du pays
+        // Étape 12 - Mise à jour du pays
         if (isset($data['pays'])) {
             $utilisateur->setPays($data['pays']);
         }
 
-        // Étape 5 - Sauvegarder en base
+        // Étape 13 - Sauvegarder en base
         $em->flush();
 
-        // Étape 6 - Retourner un message de confirmation
+        // Étape 14 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Profil mis à jour avec succès']);
     }
 
@@ -182,31 +183,32 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+
+        // Étape 3 - Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
-        // Étape 3 - Vérifier que le compte n'est pas déjà en attente de désactivation
+        // Étape 4 - Vérifier que le compte n'est pas déjà en attente de désactivation
         if ($utilisateur->getStatutCompte() === 'en_attente_desactivation') {
             return $this->json(['status' => 'Erreur', 'message' => 'Demande de désactivation déjà en cours'], 400);
         }
 
-        // Étape 4 - Vérifier que le compte n'est pas déjà inactif
+        // Étape 5 - Vérifier que le compte n'est pas déjà inactif
         if ($utilisateur->getStatutCompte() === 'inactif') {
             return $this->json(['status' => 'Erreur', 'message' => 'Compte déjà désactivé'], 400);
         }
 
-        // Étape 5 - modification du statut du compte
+        // Étape 6 - modification du statut du compte
         $utilisateur->setStatutCompte('en_attente_desactivation');
 
-        // Étape 6 - Sauvegarder en base de donnée
+        // Étape 7 - Sauvegarder en base de donnée
         $em->flush();
 
-        // Étape 7 - Envoyer un email à l'admin
+        // Étape 8 - Envoyer un email à l'admin
         $mailerService->sendDemandeDesactivationEmail($utilisateur);
 
-        // Étape 7 - Retourner un message de confirmation
+        // Étape 9 - Retourner un message de confirmation
         return $this->json([
             'status'  => 'Succès',
             'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
@@ -230,17 +232,19 @@ final class ClientController extends BaseController
         if (!$this->isGranted('ROLE_CLIENT')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
+
         // Étape 2 - Récupére l'utilisateur connecté
         $utilisateur = $this->getUser();
-        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+
+        // Étape 3 - Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
 
-        // Étape 3 - Récupére ses commandes via le repository
+        // Étape 4 - Récupére ses commandes via le repository
         $commandes = $commandeRepository->findByUtilisateur($utilisateur);
         
-        // Étape 4 - Retourne les commandes en JSON
+        // Étape 5 - Retourne les commandes en JSON
         return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
     }
     /**
@@ -269,6 +273,7 @@ final class ClientController extends BaseController
         CommandeRepository $commandeRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+
         // Étape 1 - Vérifier le rôle CLIENT
         if (!$this->isGranted('ROLE_CLIENT')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -321,20 +326,20 @@ final class ClientController extends BaseController
         $villeLivraison  = isset($data['ville_livraison'])  ? strtolower(trim($data['ville_livraison'])) : strtolower(trim($commande->getVilleLivraison()));
         $distanceKm      = isset($data['distance_km'])      ? (float) $data['distance_km'] : 0;
 
-        // Flag pour savoir si un recalcul est nécessaire
+        // Étape 9.1 : Flag pour savoir si un recalcul est nécessaire
         $recalcul = isset($data['nombre_personnes']) || isset($data['ville_livraison']);
 
         if ($recalcul) {
-            // Récupérer le menu associé à la commande pour les calculs
+            // Étape 9.2 : Récupérer le menu associé à la commande pour les calculs
             $menu = $commande->getMenu();
 
-            // Recalcul du prix menu avec éventuelle réduction -10%
+            // Étape 9.3 : Recalcul du prix menu avec éventuelle réduction -10%
             $prixMenu = $menu->getPrixParPersonne() * $nombrePersonnes;
             if ($nombrePersonnes > ($menu->getNombrePersonneMinimum() + 5)) {
                 $prixMenu = $prixMenu * 0.90;
             }
 
-            // Recalcul du prix de livraison
+            // Étape 9.3 : Recalcul du prix de livraison
             // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
             if ($villeLivraison === 'bordeaux') {
                 $prixLivraison = 0;
@@ -342,13 +347,13 @@ final class ClientController extends BaseController
                 $prixLivraison = 5 + (0.59 * $distanceKm);
             }
 
-            // Recalcul de l'acompte
+            // Étape 9.4 : Recalcul de l'acompte
             // 50% si thème Événement, 30% sinon
             $libelleTheme = strtolower($menu->getTheme()->getLibelle());
             $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
             $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
 
-            // Mise à jour des champs recalculés
+            // Étape 9.5 : Mise à jour des champs recalculés
             $commande->setNombrePersonne($nombrePersonnes);
             $commande->setVilleLivraison($data['ville_livraison'] ?? $commande->getVilleLivraison());
             $commande->setPrixMenu(round($prixMenu, 2));
@@ -428,11 +433,13 @@ final class ClientController extends BaseController
         $motifAnnulation = $data['motif_annulation'] ?? null;
 
         // Étape 9 - Calculer le nombre de jours avant la prestation
-        // 9.1 : Récupérer la date de prestation de la commande
+        // Étape 9.1 : Récupérer la date de prestation de la commande
         $datePrestation = $commande->getDatePrestation();
-        // 9.2 : Récupérer la date actuelle
+
+        // Étape 9.2 : Récupérer la date actuelle
         $aujourdhui = new \DateTime();
-        // 9.3 : Calculer la différence en jours entre les deux dates
+
+        // Étape9.3 : Calculer la différence en jours entre les deux dates
         $diff = $aujourdhui->diff($datePrestation)->days;
 
         /*
@@ -444,22 +451,24 @@ final class ClientController extends BaseController
 
         // Étape 10 Mise en place et calcul du montant remboursé selon les règles sitée ci-dessus
         $montantRembourse = 0;
-        // variable pour spécifier la cas 50 100 ou 0 pour le message de confirmation
+
+        // Étape 10.1 spécifier la cas 50 100 ou 0 pour le message de confirmation
         $pourcentageRembourse = 0;
 
-        // Calcul du montant total de la commande (prix du menu + prix de la livraison)
+        // Étape 10.2 Calcul du montant total de la commande (prix du menu + prix de la livraison)
         $montantTotal = $commande->getPrixMenu() + $commande->getPrixLivraison();
 
-        // si la prestation est dans plus de 7 jours, le client est remboursé à 100%
+        // Étape 10.3 si la prestation est dans plus de 7 jours, le client est remboursé à 100%
         if ($diff > 7) {
             $montantRembourse = $montantTotal;
             $pourcentageRembourse = 100;
-        // si la prestation est dans 3 à 7 jours, le client est remboursé à 50%
+
+        // Étape 10.4 si la prestation est dans 3 à 7 jours, le client est remboursé à 50%
         } elseif ($diff >= 3 && $diff <= 7) {
             $montantRembourse = $montantTotal / 2;
             $pourcentageRembourse = 50;
         }
-        // sinon si la prestation est dans moins de 3 jours, le client n'est pas remboursé
+        // Étape 10.5 sinon si la prestation est dans moins de 3 jours, le client n'est pas remboursé
         else {
             $montantRembourse = 0;
             $pourcentageRembourse = 0;
@@ -477,8 +486,11 @@ final class ClientController extends BaseController
                 $messageRemboursement = 'Vous n\'avez pas été remboursé';
                 $pourcentageRembourse = 0;
         }
+        // Étape 11.1 Mise à jour du statut à annulée
         $commande->setStatut('annulée');
+        // Étape 11.2 Mise à jour du motif d'annulation
         $commande->setMotifAnnulation($motifAnnulation);
+        // Étape 11.3 Mise à jour du montant rembourser
         $commande->setMontantRembourse($montantRembourse);
 
         // Étape 12 - Sauvegarder en base de données
@@ -517,7 +529,7 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupére  l'utilisateur connecté
         $utilisateur = $this->getUser();
-        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        // Étape 2.1 Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
@@ -579,7 +591,7 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupérer l'utilisateur connecté
         $utilisateur = $this->getUser();
-        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+        // Étape 2.1 Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
@@ -618,7 +630,8 @@ final class ClientController extends BaseController
 
         // Étape 2 - Récupére  l'utilisateur connecté
         $utilisateur = $this->getUser();
-        // Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
+
+        // Étape 2.1 Vérifie que l'utilisateur est connecté et est bien une instance de l'entité Utilisateur
         if (!$utilisateur instanceof Utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
         }
@@ -639,7 +652,8 @@ final class ClientController extends BaseController
         // Étape 6 - Vérification de la taille de la description   
         if (strlen($data['description']) > 255) {
             return $this->json(['status' => 'Erreur', 'message' => 'La description est trop longue'], 400);
-        }       
+        }  
+
         // Étape 7 - Vérifie que la commande existe et appartient au client
         $commande = $commandeRepository->find($id);
         if (!$commande) {
@@ -668,7 +682,7 @@ final class ClientController extends BaseController
         $avis->setUtilisateur($utilisateur);
         $avis->setCommande($commande);
 
-        // Étape 11 - Sauvegarder en base
+        // Étape 11 - Persiste et sauvegarde en base
         $em->persist($avis);
         $em->flush();
 

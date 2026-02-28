@@ -101,6 +101,7 @@ final class MenuControllerAdmin extends BaseController
         ThemeRepository $themeRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -185,6 +186,7 @@ final class MenuControllerAdmin extends BaseController
         ThemeRepository $themeRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);

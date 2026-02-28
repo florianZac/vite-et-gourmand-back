@@ -97,10 +97,13 @@ final class RegimeController extends BaseController
             return $this->json(['status' => 'Erreur', 'message' => 'Ce régime existe déjà'], 409);
         }
 
-        // Étape 5 - Créer le nouveau régime
+        // Étape 5 - Créer un nouvelle objet régime
         $regime = new Regime();
+        // Étape 5.1 - met à jour ces données
         $regime->setLibelle($data['libelle']);
+        // Étape 5.2 - persiste la donnée
         $em->persist($regime);
+        // Étape 5.3 - sauvegarde la donnée
         $em->flush();
 
         // Étape 6 - Retourner une confirmation avec l'id créé

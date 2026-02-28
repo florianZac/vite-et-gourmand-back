@@ -21,19 +21,20 @@ class CheckStatutCompteListener
 {
     public function __invoke(CheckPassportEvent $event): void
     {
-        // Récupère l'utilisateur en cours de connection
+        // Étape 1 - Récupèrer l'utilisateur en cours de connection
         $user = $event->getPassport()->getUser();
 
-        // Vérifie que c'est bien un Utilisateur valide dans la BDD
+        // Étape 2 - Vérifier que c'est bien un Utilisateur valide dans la BDD
         if (!$user instanceof Utilisateur) {
             return;
         }
 
-        // Bloque si le compte est inactif
+        // Étape 3 - Bloquer si le compte est inactif
         if ($user->getStatutCompte() === 'inactif') {
             throw new CustomUserMessageAuthenticationException(
                 'Votre compte a été désactivé. Contactez l\'administrateur.'
             );
         }
+        // Étape 4 - Retourner une érreur ?  
     }
 }

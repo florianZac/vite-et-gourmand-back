@@ -91,6 +91,7 @@ final class PlatController extends BaseController
         AllergeneRepository $allergeneRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -120,8 +121,8 @@ final class PlatController extends BaseController
         if (!in_array($data['categorie'], $categoriesValides)) {
             return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
         }
+        // Étape 6.1 - Mise à jour la catégorie
         $plat->setCategorie($data['categorie']);
-
 
         // Étape 7 - Associer les allergènes si fournis
         if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
@@ -161,6 +162,7 @@ final class PlatController extends BaseController
         AllergeneRepository $allergeneRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);

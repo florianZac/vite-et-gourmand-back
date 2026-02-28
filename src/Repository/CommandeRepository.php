@@ -31,18 +31,18 @@ class CommandeRepository extends ServiceEntityRepository
     */
     public function findByUtilisateur($utilisateur): array
     {
-        // 1. : Créer un QueryBuilder pour construire la requête SQL en utilisant l'alias 'c' pour la table Commande
-        // 1.1:  équivalent à "SELECT * FROM commande c"
-        // 2. : Ajouter une condition pour filtrer les commandes par utilisateur avec la variable utilisateur passé en parametre
-        // 2.1: équivalent à "WHERE c.utilisateur = :utilisateur
-        // 3  : Remplissage des données de la variable utilisateur dans la requete SQL  
-        // 3.1: équivalent à "WHERE commande.utilisateur_id = 3"
-        // 4 : Trier les valeurs par ordre décroissant par date décroissante
-        // 4.1: équivalent à "ORDER BY c.date DESC" ASC pour ordre croissant
-        // 5 : transforme la requete SQL construite en une requete exécutable
-        // 5.1 : équivalent à "EXECUTE SELECT * FROM commande c WHERE c.utilisateur = 3 ORDER BY c.date DESC"
-        // 6 : Exécute la requete et retourne les résultats sous forme d'un tableau d'objets Commande
-        // 6.1 : équivalent à "GET ALL"
+        // Étape 1      : Créer un QueryBuilder pour construire la requête SQL en utilisant l'alias 'c' pour la table Commande
+        // Étape 1.1    : équivalent à "SELECT * FROM commande c"
+        // Étape 2      : Ajouter une condition pour filtrer les commandes par utilisateur avec la variable utilisateur passé en parametre
+        // Étape 2.1    : équivalent à "WHERE c.utilisateur = :utilisateur
+        // Étape 3      : Remplissage des données de la variable utilisateur dans la requete SQL  
+        // Étape 3.1    : équivalent à "WHERE commande.utilisateur_id = 3"
+        // Étape 4      : Trier les valeurs par ordre décroissant par date décroissante
+        // Étape 4.1    : équivalent à "ORDER BY c.date DESC" ASC pour ordre croissant
+        // Étape 5      : transforme la requete SQL construite en une requete exécutable
+        // Étape 5.1    : équivalent à "EXECUTE SELECT * FROM commande c WHERE c.utilisateur = 3 ORDER BY c.date DESC"
+        // Étape 6      : Exécute la requete et retourne les résultats sous forme d'un tableau d'objets Commande
+        // Étape 6.1    : équivalent à "GET ALL"
         return $this->createQueryBuilder('c')
             ->andWhere('c.utilisateur = :utilisateur')
             ->setParameter('utilisateur', $utilisateur)
@@ -237,12 +237,12 @@ class CommandeRepository extends ServiceEntityRepository
         // Parcours de toutes les commandes récupérées depuis la base de données
         foreach ($commandes as $commande) {
 
-            // Récupère la date de la commande et la formate en "mois/année" (ex : 02/2026) afin de regrouper les ventes/mois
+            // Étape 1.  Récupère la date de la commande et la formate en "mois/année" (ex : 02/2026) afin de regrouper les ventes/mois
             $mois = $commande->getDateCommande()->format('m/Y');
 
-            // Vérifie si les statistiques pour ce mois n'ont pas encore été initialisées
+            // Étape 2.  Vérifie si les statistiques pour ce mois n'ont pas encore été initialisées
             if (!isset($ventesParMois[$mois])) {
-                // Initialisation de la structure de données pour le mois courant
+                // Étape 2.1 Initialisation de la structure de données pour le mois courant
                 $ventesParMois[$mois] = [
                     // Mois concerné (ex : 02/2026)
                     'mois'            => $mois,
@@ -255,13 +255,13 @@ class CommandeRepository extends ServiceEntityRepository
                 ];
             }
 
-            // Incrémente le nombre total de commandes pour le mois courant
+            // Étape 3.   Incrémente le nombre total de commandes pour le mois courant
             $ventesParMois[$mois]['total_commandes']++;
-            // Ajoute le prix du menu et le prix de la livraison pour calculer le chiffre d'affaires mensuel
+            // Étape 4.    Ajoute le prix du menu et le prix de la livraison pour calculer le chiffre d'affaires mensuel
             $ventesParMois[$mois]['chiffre_affaire'] +=
                 $commande->getPrixMenu() + $commande->getPrixLivraison();
 
-            // Vérifie si un menu est bien associé à la commande et si ce menu possède un titre
+            // Étape 5.    Vérifie si un menu est bien associé à la commande et si ce menu possède un titre
             if ($commande->getMenu() !== null && $commande->getMenu()->getTitre() !== null) {
 
                 // Si le menu existe et a un titre, on récupère son nom
@@ -273,60 +273,58 @@ class CommandeRepository extends ServiceEntityRepository
                 $nomMenu = 'Inconnu';
             }
 
-            // Vérifie si ce menu n'a pas encore été comptabilisé pour ce mois
+            // Étape 6.   Vérifie si ce menu n'a pas encore été comptabilisé pour ce mois
             if (!isset($ventesParMois[$mois]['menus'][$nomMenu])) {
                 // Initialise le compteur du menu à 0
                 $ventesParMois[$mois]['menus'][$nomMenu] = 0;
             }
-            // Incrémente le nombre de fois où ce menu a été commandé durant le mois
+            // Étape 7.    Incrémente le nombre de fois où ce menu a été commandé durant le mois
             $ventesParMois[$mois]['menus'][$nomMenu]++;
         }
 
-        // Trouve le menu le plus prisé par mois
-
-        // Parcourt les statistiques de ventes pour chaque mois
+        // Étape 8.   Trouve le menu le plus prisé par mois et Parcourt les statistiques de ventes pour chaque mois
         foreach ($ventesParMois as &$moisData) {
 
-            // Trie les menus du mois par nombre de commandes décroissant pour récuperer Le menu le plus commandé qui se retrouve en première position
+            // Étape 8.1 Trie les menus du mois par nombre de commandes décroissant pour récuperer Le menu le plus commandé qui se retrouve en première position
             arsort($moisData['menus']);
 
-            // Récupère le nom du menu le plus prisé du mois
+            // Étape 8.2 Récupère le nom du menu le plus prisé du mois
             $moisData['menu_plus_prise'] = array_key_first($moisData['menus']);
 
-            // Supprime le détail des menus et ne conserver que le menu le plus prisé
+            // Étape 8.3 Supprime le détail des menus et ne conserver que le menu le plus prisé
             unset($moisData['menus']);
         }
         
-        // Création d'une requête Doctrine sur l'entité Commande (alias "c")
+        // Étape 9. Création d'une requête Doctrine sur l'entité Commande (alias "c")
         $commandesParMenu = $this->createQueryBuilder('c')
 
-            // Sélection des données à récupérer :le titre du menu, le nombre total de commandes pour ce menu, le CA généré par ce menu (menu + livraison)
+            // Étape 9.1 Sélection des données à récupérer :le titre du menu, le nombre total de commandes pour ce menu, le CA généré par ce menu (menu + livraison)
             ->select(
                 'm.titre AS menu',
                 'COUNT(c.id) AS nombre_commandes',
                 'SUM(c.prix_menu + c.prix_livraison) AS chiffre_affaires'
             )
 
-            // Jointure avec l'entité Menu liée à la commande
+            // Étape 9.2 Jointure avec l'entité Menu liée à la commande
             // c.menu correspond à la relation ManyToOne dans l'entité Commande
             ->join('c.menu', 'm')
 
-            // Exclut les commandes Annulées du calcul
+            // Étape 9.3 Exclut les commandes Annulées du calcul
             ->where('c.statut != :statut')
-            // Valeur du paramètre : statut "Annulée"
+            // Étape 9.4 Met à jour les Valeur du paramètre : statut "Annulée"
             ->setParameter('statut', 'Annulée')
-            // Regroupe les résultats par menu
+            // Étape 9.5 Regroupe les résultats par menu
             // Indispensable pour utiliser COUNT et SUM correctement
             ->groupBy('m.id')
-            // Trie les menus par nombre de commandes décroissant
+            // Étape 9.6 Trie les menus par nombre de commandes décroissant
             // Le menu le plus commandé apparaîtra en premier
             ->orderBy('nombre_commandes', 'DESC')
-            // Génère la requête Doctrine
+            // Étape 9.7  Génère la requête Doctrine
             ->getQuery()
-            // Exécute la requête et retourne le résultat sous forme de tableau
+            // Étape 9.8  Exécute la requête et retourne le résultat sous forme de tableau
             ->getResult();
 
-        // Formatage pour le chart
+        // Étape 10.  Formatage pour le chart
         $chartData = array_map(function ($item) {
             return [
                 'menu'              => $item['menu'],
@@ -338,6 +336,7 @@ class CommandeRepository extends ServiceEntityRepository
         // =====================================================================
         // Top 3 menus les plus commandés
         // =====================================================================
+        
         $topMenus = array_slice($chartData, 0, 3);
 
         // =====================================================================

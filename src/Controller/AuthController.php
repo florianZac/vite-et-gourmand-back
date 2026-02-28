@@ -8,7 +8,10 @@ use App\Repository\RoleRepository;
 use App\Repository\UtilisateurRepository;
 use App\Repository\PasswordResetTokenRepository;
 use App\Service\MailerService;
+use App\Service\LogService; // import du LogService MongoDB
+
 use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,6 +36,7 @@ final class AuthController extends AbstractController
     {
         // Symfony gère le login automatiquement via json_login
         // Cette méthode ne sera jamais appelée directement
+        // Le log de connexion est géré par SecuritySubscriber lié à événement LoginSuccessEvent
         throw new \Exception('Ne devrait pas être appelé directement');
     }
 
@@ -45,7 +49,8 @@ final class AuthController extends AbstractController
         EntityManagerInterface $em,                  // service qui communique avec la BDD
         UtilisateurRepository $utilisateurRepository,// service qui fait les SELECT sur utilisateur
         RoleRepository $roleRepository,              // service qui fait les SELECT sur role
-        MailerService $mailerService                 // service qui envoie les emails pour le mail de bienvenue
+        MailerService $mailerService,                // service qui envoie les emails pour le mail de bienvenue
+        LogService $logService                       // AJOUT : service de logs MongoDB
     ): JsonResponse
     {
         // Étape 1 - Récupère les données JSON envoyées par le client
@@ -115,7 +120,7 @@ final class AuthController extends AbstractController
         $utilisateur->setAdressePostale($data['adresse_postale'] ?? '');
         $utilisateur->setCodePostal($data['code_postal'] ?? '');
         $utilisateur->setStatutCompte('actif');     
-        $utilisateur->setRole($role );
+        $utilisateur->setRole($role);
 
         // Étape 10 - Hash le mot de passe avant de le stocker en base
         // On ne stocke JAMAIS un mot de passe en clair
@@ -132,7 +137,21 @@ final class AuthController extends AbstractController
         // Le mail contient un message de bienvenue personnalisé avec le prénom du nouvel utilisateur
         $mailerService->sendWelcomeEmail($utilisateur);
 
-        // Étape 13 - Retourne une réponse de succès avec le code 201
+        // Étape 13 - Enregistrer le log d'inscription dans MongoDB
+        // Pourquoi MongoDB et pas MySQL ? -> Les logs sont des données volumineuses sans schéma fixe,
+        // Pas de relations nécessaires, optimisé pour l'écriture rapide -> cas d'usage NoSQL idéal
+        $logService->log(
+            'inscription',                          // type de l'action
+            $utilisateur->getEmail(),              // email de l'utilisateur concerné
+            'ROLE_CLIENT',                          // rôle attribué par défaut à l'inscription
+            [                                   // contexte libre : données spécifiques à ce type de log
+                'nom'    => $utilisateur->getNom(),
+                'prenom' => $utilisateur->getPrenom(),
+                'ville'  => $utilisateur->getVille(),
+            ]
+        );
+
+        // Étape 14 - Retourne une réponse de succès avec le code 201
         return $this->json([
             'status'  => 'Succès',
             'message' => 'Compte créé avec succès',
@@ -202,6 +221,7 @@ final class AuthController extends AbstractController
 
         // Étape 7 - Construire le lien de réinitialisation
         // Ce lien sera cliqué par l'utilisateur pour se rendre sur la page de réinitialisation
+        // #RAPPEL PROD
         // IMPORTANT NE PAS OUBLIER DE MODIFIER : En production, utiliser le domaine réel (vite-et-gourmand.fr)
         $resetLink = "http://localhost:3000/reset-password?token=" . $token;
 

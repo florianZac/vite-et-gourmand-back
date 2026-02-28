@@ -48,8 +48,10 @@ final class AvisController extends BaseController
     #[Route('/{id}', name: 'api_admin_avis_show', methods: ['GET'])]
     public function getAvisById(int $id, AvisRepository $avisRepository): JsonResponse
     {
+        // Étape 1 -  Récuperer l'avis par son id
         $avis = $avisRepository->find($id);
 
+        // Étape 2 - Vérifier s'il existe
         if (!$avis) {
             return $this->json(
                 ['success' => false, 'error' => 'Avis not found'],
@@ -57,6 +59,7 @@ final class AvisController extends BaseController
             );
         }
 
+        // Étape 3 - Retourne le résultat
         return $this->json([
             'success' => true,
             'data' => $avis,
@@ -84,9 +87,10 @@ final class AvisController extends BaseController
         EntityManagerInterface $entityManager
     ): JsonResponse {
         
+        // Étape 1 - Récupère les données
         $data = $this->getDataFromRequest($request);
 
-        // Validation des données requises
+        // Étape 2 - Valide les données requises
         $requiredFields = ['note', 'description', 'statut', 'utilisateur_id', 'commande_id'];
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
@@ -97,7 +101,7 @@ final class AvisController extends BaseController
             }
         }
 
-        // Vérifier que l'utilisateur existe
+        // Étape 3 - Vérifier que l'utilisateur existe
         $utilisateur = $utilisateurRepository->find($data['utilisateur_id']);
         if (!$utilisateur) {
             return $this->json(
@@ -106,7 +110,7 @@ final class AvisController extends BaseController
             );
         }
 
-        // Vérifier que la commande existe
+        // Étape 4 - Vérifier que la commande existe
         $commande = $commandeRepository->find($data['commande_id']);
         if (!$commande) {
             return $this->json(
@@ -115,7 +119,7 @@ final class AvisController extends BaseController
             );
         }
 
-        // Créer le nouvel avis
+        // Étape 5 - Créer le nouvel avis
         $avis = new Avis();
         $avis->setNote((int) $data['note']);
         $avis->setDescription($data['description']);
@@ -123,6 +127,7 @@ final class AvisController extends BaseController
         $avis->setUtilisateur($utilisateur);
         $avis->setCommande($commande);
 
+        // Étape 6 - Persiste et sauvegarde les modifications en bdd
         $entityManager->persist($avis);
         $entityManager->flush();
 
@@ -148,8 +153,11 @@ final class AvisController extends BaseController
         AvisRepository $avisRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
+
+        // Étape 1 -  Récuperer l'avis par son id
         $avis = $avisRepository->find($id);
 
+        // Étape 2 - Vérifier s'il existe
         if (!$avis) {
             return $this->json(
                 ['success' => false, 'error' => 'Avis not found'],
@@ -157,9 +165,10 @@ final class AvisController extends BaseController
             );
         }
 
+        // Étape 3 - Récupération des données
         $data = $this->getDataFromRequest($request);
 
-        // Mise à jour des champs optionnels
+        // Étape 4 - Mise à jour des champs optionnels
         if (isset($data['note'])) {
             $avis->setNote((int) $data['note']);
         }
@@ -170,8 +179,10 @@ final class AvisController extends BaseController
             $avis->setStatut($data['statut']);
         }
 
+        // Étape 4 - Sauvegarde les données
         $entityManager->flush();
 
+        // Étape 5 - Retourne le résultat
         return $this->json([
             'success' => true,
             'message' => 'Avis updated successfully',
@@ -190,8 +201,11 @@ final class AvisController extends BaseController
         AvisRepository $avisRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
+
+        // Étape 1 -  Récuperer l'avis par son id   
         $avis = $avisRepository->find($id);
 
+        // Étape 2 - Vérifier s'il existe
         if (!$avis) {
             return $this->json(
                 ['success' => false, 'error' => 'Avis not found'],
@@ -199,9 +213,13 @@ final class AvisController extends BaseController
             );
         }
 
+        // Étape 3 - Supprime l'avis
         $entityManager->remove($avis);
+
+        // Étape 4 - Sauvegarder l'avis
         $entityManager->flush();
 
+        // Étape 5 - Retourne le résultat
         return $this->json([
             'success' => true,
             'message' => 'Avis deleted successfully',

@@ -28,7 +28,10 @@ final class MenuController extends AbstractController
     #[Route('/menus', name: 'api_menus', methods: ['GET'])]
     public function index(MenuRepository $menuRepository): JsonResponse
     {
+        // Étape 1 - Récupere les menus par son id
         $menus = $menuRepository->findAll();
+
+        // Étape 2 - Retourne le résultat
         return $this->json($menus);
     }
 
@@ -38,12 +41,14 @@ final class MenuController extends AbstractController
 
     public function show(int $id, MenuRepository $menuRepository): JsonResponse
     {
+        // Étape 1 - Récupere les menus par son id
         $menu = $menuRepository->find($id);
-        // Si le menu n'existe pas, on retourne une réponse JSON avec un message d'erreur et un code HTTP 404 correspondant à Not Found
+        // Étape 2 - Si le menu n'existe pas, on retourne une réponse JSON avec un message d'erreur et un code HTTP 404 correspondant à Not Found
+        // Sinon le menu est trouvé, on le retourne
         if (!$menu) {
             return $this->json(['message' => 'Menu non trouvé'], 404);
         }
-        // Si le menu est trouvé, on le retourne en JSON
+        // Étape 3 - retourne le résulat
         return $this->json($menu);
     }
 }

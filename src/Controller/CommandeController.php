@@ -57,6 +57,7 @@ final class CommandeController extends BaseController
         EntityManagerInterface $em,
         MailerService $mailerService
     ): JsonResponse {
+
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -98,10 +99,12 @@ final class CommandeController extends BaseController
         $nombrePersonnes = (int) $data['nombre_personnes'];
         $delaiMinimum = $nombrePersonnes > 20 ? 14 : 3;
 
-        // Calcul des jours ouvrables entre aujourd'hui et la date de prestation
+        // Étape 8 - Calcul des jours ouvrables entre aujourd'hui et la date de prestation
         $aujourdhui = new \DateTime();
         $joursOuvrables = 0;
         $dateCourante = clone $aujourdhui;
+
+        // Étape 9 - Calcul tant que la date courante est inférieur à la date de presation
 
         while ($dateCourante < $datePrestation) {
             $dateCourante->modify('+1 day');
@@ -111,6 +114,7 @@ final class CommandeController extends BaseController
             }
         }
 
+        // Étape 10 - Vérifie que le delais n'est pas dépassé
         if ($joursOuvrables < $delaiMinimum) {
             return $this->json([
                 'status'  => 'Erreur',
@@ -118,18 +122,18 @@ final class CommandeController extends BaseController
             ], 400);
         }
 
-        // Étape 8 - Calculer le prix de base
+        // Étape 10 - Calcule le prix de base
         $prixParPersonne = $menu->getPrixParPersonne();
         $prixMenu = $prixParPersonne * $nombrePersonnes;
 
-        // Étape 9 - Appliquer la réduction de -10%
+        // Étape 11 - Applique la réduction de -10% si nécessaire
         // si le nombre de personnes dépasse le minimum requis de plus de 5
         $minimumPersonnes = $menu->getNombrePersonneMinimum();
         if ($nombrePersonnes > ($minimumPersonnes + 5)) {
             $prixMenu = $prixMenu * 0.90;
         }
 
-        // Étape 10 - Calculer le prix de livraison
+        // Étape 12 - Calculer le prix de livraison
         // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
         $villeLivraison = strtolower(trim($data['ville_livraison']));
         $distanceKm = (float) ($data['distance_km'] ?? 0);
@@ -140,16 +144,16 @@ final class CommandeController extends BaseController
             $prixLivraison = 5 + (0.59 * $distanceKm);
         }
 
-        // Étape 11 - Calculer l'acompte
+        // Étape 13 - Calculer l'acompte
         // 50% si thème Événement, 30% sinon
         $libelleTheme = strtolower($menu->getTheme()->getLibelle());
         $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
         $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
 
-        // Étape 12 - Générer le numéro de commande unique
+        // Étape 14 - Générer le numéro de commande unique
         $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
 
-        // Étape 13 - Créer la commande
+        // Étape 15 - Créer la commande
         $commande = new Commande();
         $commande->setNumeroCommande($numeroCommande);
         $commande->setUtilisateur($utilisateur); // CORRECTION : association de l'utilisateur à la commande
@@ -163,25 +167,25 @@ final class CommandeController extends BaseController
         $commande->setMontantAcompte(round($montantAcompte, 2));
         $commande->setStatut('En attente');
         $commande->setDateCommande(new \DateTime());
-        // Enregistrer le pret_materiel depuis la checkbox front (défaut false)
+
+        // Étape 15 - met à jour la variable de pret de matériel 
         $commande->setPretMateriel((bool) ($data['pret_materiel'] ?? false));
 
-        // Étape 14 - Créer le premier suivi
+        // Étape 16 - Créer le suivi
         $suivi = new SuiviCommande();
         $suivi->setStatut('En attente');
         $suivi->setDateStatut(new \DateTime());
         $suivi->setCommande($commande);
 
-        // Étape 15 - Persister et sauvegarder
+        // Étape 17 - Persister et sauvegarder
         $em->persist($commande);
         $em->persist($suivi);
         $em->flush();
 
-        // Étape 16 - Envoyer un mail de confirmation de commande au client
-        // CORRECTION : $utilisateur est maintenant correctement défini via UtilisateurRepository
+        // Étape 18 - Envoyer un mail de confirmation de commande au client
         $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-        // Étape 17 - Retourner la confirmation
+        // Étape 19 - Retourner la confirmation
         return $this->json([
             'status'              => 'Succès',
             'message'             => 'Commande créée avec succès',
@@ -255,6 +259,7 @@ final class CommandeController extends BaseController
         CommandeRepository $commandeRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);

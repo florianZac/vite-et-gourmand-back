@@ -518,6 +518,7 @@ final class EmployeController extends AbstractController
         ThemeRepository $themeRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -605,6 +606,7 @@ final class EmployeController extends AbstractController
         ThemeRepository $themeRepository,
         EntityManagerInterface $em
     ): JsonResponse {
+        
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);

@@ -421,3 +421,34 @@ Test de la connection
 docker exec -it mongodb_symphony mongosh --eval "db.runCommand({ping:1})"
 
 if (php -m | findstr mongodb) { Write-Host "MongoDB PRESENT" } else { Write-Host "MongoDB N'EST PAS PRESENT" }
+
+6.8 création du log activité
+structure à implémenté
+{
+  "_id": "ObjectId(...)",
+  "type": "commande_creee",
+  "message": "Commande CMD-XXXX créée par florian@email.fr",
+  "email": "florian@email.fr",
+  "role": "ROLE_ADMIN",
+  "contexte": {
+    "numero_commande": "CMD-XXXX",
+    "montant": 450.00
+  },
+  "createdAt": "2026-02-28T10:30:00"
+}
+
+6.8.1 création du fichier LogActivite.php définissant les donnée représenté dans le log d'activité
+
+id -> string -> Identifiant MongoDB
+message -> string -> Message descriptif du log
+email -> string -> Email de l'utilisateur concerné
+role -> string -> Rôle de l'utilisateur concerné
+"numero_commande": "CMD-XXXX", "montant": 450.00 -> Données contextuelles supplémentaires 
+date -> DateTime -> Date et heure du log
+
+6.8.2 Création du service de gestion de l'enregistrement des logs dans mongodb
+création du fichier LogService.php dans src/Service
+
+6.8.3 Ajout des logs à chaque controleur 
+1. AdminController
+2. AuthController

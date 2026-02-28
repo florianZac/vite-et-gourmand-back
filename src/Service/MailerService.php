@@ -128,7 +128,7 @@ class MailerService
      */
     public function sendAnnulationEmail(Utilisateur $utilisateur, Commande $commande, int $pourcentage, float $montant): void
     {
-        // Génère le HTML à partir du template Twig
+        // Étape 1 - Génère le HTML à partir du template Twig
         $html = $this->twig->render('emails/annulation_commande.html.twig', [
             'prenom'          => $utilisateur->getPrenom(),
             'numero_commande' => $commande->getNumeroCommande(),
@@ -138,14 +138,14 @@ class MailerService
             'montant'         => $montant,
         ]);
 
-        // Création de l'email
+        // Étape 2 - Création de l'email
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to($utilisateur->getEmail())
             ->subject('Annulation de votre commande ' . $commande->getNumeroCommande())
             ->html($html);
 
-        // Envoie de l'email
+        // Étape 2 - Envoie de l'email
         $this->mailer->send($email);
     }
 
@@ -157,21 +157,21 @@ class MailerService
      */
     public function sendCommandeAccepteeEmail(Utilisateur $utilisateur, Commande $commande): void
     {
-        // Permet de remplir les données pour l'envoies de l'Email à travers le template
+        // Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
         $html = $this->twig->render('emails/commande_acceptee.html.twig', [
             'prenom'          => $utilisateur->getPrenom(),
             'numero_commande' => $commande->getNumeroCommande(),
             'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
         ]);
 
-        // Création de l'email
+        // Étape 2 - Création de l'email
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to($utilisateur->getEmail())
             ->subject('Votre commande ' . $commande->getNumeroCommande() . ' a été acceptée')
             ->html($html);
             
-        // Envoie de l'e-mail
+        // Étape 3 - Envoie de l'e-mail
         $this->mailer->send($email);
     }
 
@@ -183,18 +183,20 @@ class MailerService
      */
     public function sendCommandeLivraisonEmail(Utilisateur $utilisateur, Commande $commande): void
     {
+        // Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
         $html = $this->twig->render('emails/commande_livraison.html.twig', [
             'prenom'          => $utilisateur->getPrenom(),
             'numero_commande' => $commande->getNumeroCommande(),
             'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
         ]);
-
+        // Étape 2 - Création de l'objet email et remplissage de son contenant
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to($utilisateur->getEmail())
             ->subject('Votre commande ' . $commande->getNumeroCommande() . ' est en cours de livraison')
             ->html($html);
 
+        // Étape 3 - Retourne le résutat
         $this->mailer->send($email);
     }
 
@@ -206,18 +208,21 @@ class MailerService
      */
     public function sendCommandeTermineeEmail(Utilisateur $utilisateur, Commande $commande): void
     {
+        // Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
         $html = $this->twig->render('emails/commande_terminee.html.twig', [
             'prenom'          => $utilisateur->getPrenom(),
             'numero_commande' => $commande->getNumeroCommande(),
             'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
         ]);
 
+        // Étape 2 - Création de l'objet email et remplissage de son contenant
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to($utilisateur->getEmail())
             ->subject('Votre commande ' . $commande->getNumeroCommande() . ' est terminée - Donnez votre avis !')
             ->html($html);
 
+        // Étape 3 - Retourne le résutat
         $this->mailer->send($email);
     }
 
@@ -228,18 +233,21 @@ class MailerService
      */
     public function sendDemandeDesactivationEmail(Utilisateur $utilisateur): void
     {
+        // Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
         $html = $this->twig->render('emails/demande_desactivation.html.twig', [
             'prenom' => $utilisateur->getPrenom(),
             'nom'    => $utilisateur->getNom(),
             'email'  => $utilisateur->getEmail(),
         ]);
 
+        // Étape 2 - Création de l'objet email et remplissage de son contenant
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to('admin@vite-et-gourmand.fr')
             ->subject('Demande de désactivation de compte client ' . $utilisateur->getEmail())
             ->html($html);
 
+        // Étape 3 - Retourne le résutat    
         $this->mailer->send($email);
     }
 
@@ -252,18 +260,21 @@ class MailerService
      */
     public function sendRetourMaterielEmail(Utilisateur $utilisateur, Commande $commande): void
     {
+        // Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
         $html = $this->twig->render('emails/retour_materiel.html.twig', [
             'prenom'          => $utilisateur->getPrenom(),
             'numero_commande' => $commande->getNumeroCommande(),
             'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
         ]);
 
+        // Étape 2 - Création de l'objet email et remplissage de son contenant
         $email = (new Email())
             ->from('noreply@vite-et-gourmand.fr')
             ->to($utilisateur->getEmail())
             ->subject('Retour du matériel – Commande ' . $commande->getNumeroCommande())
             ->html($html);
 
+        // Étape 3 - Retourne le résutat  
         $this->mailer->send($email);
     }
 
@@ -295,7 +306,6 @@ class MailerService
     ): void
     {
         // Étape 1 - Préparer le rendu HTML via le template dédié aux pénalités
-        // CORRECTION : utilise emails/penalite_materiel.html.twig et non retour_materiel.html.twig
         // car les deux mails ont des contenus différents :
         // - retour_materiel : simple rappel de retour
         // - penalite_materiel : mail de pénalité avec montant et date limite

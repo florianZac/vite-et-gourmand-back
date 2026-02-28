@@ -3,14 +3,18 @@
 namespace App\Controller;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ODM\MongoDB\DocumentManager; // DocumentManager pour lire les logs MongoDB
+
 use App\Repository\UtilisateurRepository;
 use App\Repository\CommandeRepository;
 use App\Repository\AvisRepository;
+use App\Repository\RoleRepository;
+use App\Document\LogActivite;             // import du Document MongoDB
+use App\Service\MailerService;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Repository\RoleRepository;
-use App\Service\MailerService;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -34,6 +38,8 @@ use Symfony\Component\HttpFoundation\Request;
  *  12. refuserAvis             : Refuser un avis client
  *  13. approuverAvis           : Approuver un avis client
  *  14. getAvisEnAttente        : Afficher tous les avis en attente de validation
+ *  15. getStatistiques         : Retourne les statistiques complètes vennant de MySQl
+ *  16. getLogs                 : Retourne les logs d'activité vennant de MongoDB - NoSQL
 */
 
 #[Route('/api/admin')]
@@ -127,7 +133,6 @@ final class AdminController extends AbstractController
         }
 
         // Étape 2 - Chercher l'utilisateur par son email
-        // indice : $utilisateurRepository->findOneBy(...)
         $email_utilisateur = $utilisateurRepository->findOneBy(['email' => $email]);
         // Si l'utilisateur n'existe pas, on retourne une réponse JSON avec un message d'erreur 
         // et un code HTTP 404 correspondant à Not Found
@@ -180,15 +185,16 @@ final class AdminController extends AbstractController
 
         // Étape 2 - Récupérer les données JSON
         $data = json_decode($request->getContent(), true);
+
         // Étape 3 - Chercher l'utilisateur par son id
         $utilisateur = $utilisateurRepository->find($id);
+
         // Étape 4 - Si non trouvé retourner 404
         if (!$utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
         }
         
         // Étape 5 - Mise à jour des champs
-        
         // On vérifie que le nouvel email n'est pas déjà utilisé par un AUTRE utilisateur
         if (isset($data['email'])) {
 
@@ -201,7 +207,7 @@ final class AdminController extends AbstractController
             $utilisateur->setEmail($data['email']);
         }
 
-        // Modification du mot de passe d'un utilisateur par un administrateur
+        // Étape 6 - Modification du mot de passe d'un utilisateur par un administrateur
         // et envois d'un email de notification à l'utilisateur pour l'informer du changement de mot de passe
         if (isset($data['password'])) {
             // Génère un mot de passe temporaire aléatoire
@@ -212,12 +218,13 @@ final class AdminController extends AbstractController
             // Envoie un email au client avec le mot de passe temporaire
             $mailerService->sendPasswordResetEmail($utilisateur, $motDePasseTemporaire);
         }
-        // Mise à jour du prénom
+
+        // Étape 7 - Mise à jour du prénom
         if (isset($data['prenom'])) {
             $utilisateur->setPrenom($data['prenom']);
         }
 
-        // Vérification doublon téléphone
+        // Étape 8 - Vérification doublon téléphone
         if (isset($data['telephone'])) {
             $telephoneExistant = $utilisateurRepository->findOneBy(['telephone' => $data['telephone']]);
             // Même logique que pour l'email
@@ -226,16 +233,18 @@ final class AdminController extends AbstractController
             }
             $utilisateur->setTelephone($data['telephone']);
         }
-        // Mise à jour de la ville
+
+        // Étape 9 - Mise à jour de la ville
         if (isset($data['ville'])) {
             $utilisateur->setVille($data['ville']);
         }
-        // Mise à jour de l'adresse postale
+
+        // Étape 10 - Mise à jour de l'adresse postale
         if (isset($data['adresse_postale'])) {
             $utilisateur->setAdressePostale($data['adresse_postale']);
         }
 
-        // Modification du rôle
+        // Étape 11 - Modification du rôle
         if (isset($data['role'])) {
             $role = $roleRepository->findOneBy(['libelle' => $data['role']]);
             if (!$role) {
@@ -244,10 +253,10 @@ final class AdminController extends AbstractController
             $utilisateur->setRole($role);
         }
 
-        // Étape 6 - flush() uniquement, pas besoin de persist() pour une mise à jour
+        // Étape 12 - flush() uniquement, pas besoin de persist() pour une mise à jour
         $em->flush();
 
-        // Étape 7 - Retourner un message de confirmation
+        // Étape 13 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
 
@@ -282,8 +291,10 @@ final class AdminController extends AbstractController
 
         // Étape 2 - Récupérer les données JSON
         $data = json_decode($request->getContent(), true);
+
         // Étape 3 - Chercher l'utilisateur par son email
         $utilisateur = $utilisateurRepository->findOneBy(['email' => $email]);
+
         // Étape 4 - Si non trouvé retourner 404
         if (!$utilisateur) {
             return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
@@ -302,7 +313,7 @@ final class AdminController extends AbstractController
             $utilisateur->setEmail($data['email']);
         }
 
-        // Modification du mot de passe d'un utilisateur par un administrateur
+        // Étape 6 - Modification du mot de passe d'un utilisateur par un administrateur
         // et envois d'un email de notification à l'utilisateur pour l'informer du changement de mot de passe
         if (isset($data['password'])) {
             // Génère un mot de passe temporaire aléatoire
@@ -313,12 +324,13 @@ final class AdminController extends AbstractController
             // Envoie un email au client avec le mot de passe temporaire
             $mailerService->sendPasswordResetEmail($utilisateur, $motDePasseTemporaire);
         }
-        // Mise à jour du prénom
+
+        // Étape 7 - Mise à jour du prénom
         if (isset($data['prenom'])) {
             $utilisateur->setPrenom($data['prenom']);
         }
 
-        // Vérification doublon téléphone
+        // Étape 8 - Vérification doublon téléphone
         if (isset($data['telephone'])) {
             $telephoneExistant = $utilisateurRepository->findOneBy(['telephone' => $data['telephone']]);
             // Même logique que pour l'email
@@ -327,16 +339,18 @@ final class AdminController extends AbstractController
             }
             $utilisateur->setTelephone($data['telephone']);
         }
-        // Mise à jour de la ville
+
+        // Étape 9 - Mise à jour de la ville
         if (isset($data['ville'])) {
             $utilisateur->setVille($data['ville']);
         }
-        // Mise à jour de l'adresse postale
+
+        // Étape 10 - Mise à jour de l'adresse postale
         if (isset($data['adresse_postale'])) {
             $utilisateur->setAdressePostale($data['adresse_postale']);
         }
 
-        // Modification du rôle
+        // Étape 11 - Modification du rôle
         if (isset($data['role'])) {
             $role = $roleRepository->findOneBy(['libelle' => $data['role']]);
             if (!$role) {
@@ -345,10 +359,10 @@ final class AdminController extends AbstractController
             $utilisateur->setRole($role);
         }
 
-        // Étape 6 - flush() uniquement, pas besoin de persist() pour une mise à jour
+        // Étape 12 - flush() uniquement, pas besoin de persist() pour une mise à jour
         $em->flush();
 
-        // Étape 7 - Retourner un message de confirmation
+        // Étape 13 - Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
 
@@ -445,6 +459,7 @@ final class AdminController extends AbstractController
 
         // Étape 2 — Chercher la commande par son id
         $commande = $commandeRepository->find($id);
+
         // Étape 3 — Si non trouvée retourner 404
         if (!$commande) {
             return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
@@ -606,12 +621,14 @@ final class AdminController extends AbstractController
     }
 
     // =========================================================================
-    // STATISTIQUE
+    // STATISTIQUE - SOURCE MySQL
     // =========================================================================
 
     /**
      * @description Retourne les statistiques complètes pour le tableau de bord admin de l'entreprise vite et gourmand
      * Inclut : commandes, CA, remboursements, utilisateurs, avis, et données graphique par menu
+     * SOURCE : MySQL -> données structurées avec relations (commandes, utilisateurs, avis)
+     * Voir getLogs() pour les données de traçabilité depuis MongoDB
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @param UtilisateurRepository $utilisateurRepository Le repository des utilisateurs
      * @param AvisRepository $avisRepository Le repository des avis
@@ -668,5 +685,97 @@ final class AdminController extends AbstractController
         ]);
     }
 
-}
+    // =========================================================================
+    // LOGS - SOURCE MongoDB (NoSQL)
+    // =========================================================================
 
+    /**
+     * @description Retourne les logs d'activité depuis MongoDB
+     * 
+     * Pourquoi deux routes distinctes (/statistiques et /logs) ?
+     * 
+     * /statistiques -> MySQL (Doctrine ORM)
+     *   -> Données métier structurées : commandes, montants, utilisateurs, avis
+     *   -> Relations entre entités (jointures), agrégations comptables
+     *   -> Schéma fixe, intégrité référentielle garantie
+     * 
+     * /logs -> MongoDB (Doctrine ODM)
+     *   -> Données de traçabilité volumineuses : connexions, actions, changements de statut
+     *   -> Pas de relations, chaque log est autonome et indépendant
+     *   -> Schéma flexible (le champ "contexte" varie selon le type de log)
+     *   -> Écriture rapide, lecture par filtres simples sans jointure
+     * 
+     * Paramètres de filtrage (query string) :
+     *   ?type=connexion            ->  filtrer par type d'action (connexion, inscription, commande_creee, statut_change)
+     *   ?email=florian@email.fr   -> filtrer par email de l'utilisateur concerné
+     *   ?limit=50                 -> limiter le nombre de résultats (défaut: 100)
+     * 
+     * @param Request $request La requête HTTP avec les éventuels filtres
+     * @param DocumentManager $dm Le DocumentManager MongoDB
+     * @return JsonResponse
+     */
+    #[Route('/logs', name: 'api_admin_logs', methods: ['GET'])]
+    public function getLogs(Request $request, DocumentManager $dm): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les filtres depuis la query string
+        $type   = $request->query->get('type');             // ex: ?type=connexion
+        $email  = $request->query->get('email');            // ex: ?email=florian@email.fr
+        $limit  = (int) ($request->query->get('limit', 100)); // défaut 100 résultats
+
+        // Étape 3 - Construire la requête MongoDB via le QueryBuilder ODM
+        // Différence clé avec MySQL :
+        //       MySQL : $em->createQueryBuilder() -> génère du SQL avec jointures
+        //       MongoDB : $dm->createQueryBuilder() -> requête NoSQL, pas de SQL, pas de jointure
+        $qb = $dm->createQueryBuilder(LogActivite::class)
+            ->sort('createdAt', 'DESC') // tri du plus récent au plus ancien
+            ->limit($limit);
+
+        // Étape 4 - Appliquer les filtres si fournis
+        if ($type) {
+            // Filtre sur le champ "type" du document MongoDB
+            $qb->field('type')->equals($type);
+        }
+
+        
+        if ($email) {
+            // Filtre sur le champ "email" du document MongoDB
+            $qb->field('email')->equals($email);
+        }
+
+        // Étape 5 - Exécuter la requête et récupérer les résultats
+        $logs = $qb->getQuery()->execute();
+
+        // Étape 6 - Formater les résultats pour la réponse JSON
+        // MongoDB retourne des objets LogActivite -> on les sérialise manuellement
+        $logsFormates = [];
+        foreach ($logs as $log) {
+            $logsFormates[] = [
+                'id'         => $log->getId(),
+                'type'       => $log->getType(),
+                'message'    => $log->getMessage(),
+                'email'      => $log->getEmail(),
+                'role'       => $log->getRole(),
+                'contexte'   => $log->getContexte(),
+                'created_at' => $log->getCreatedAt()->format('d/m/Y H:i:s'),
+            ];
+        }
+
+        // Étape 7 - Retourner les logs en JSON
+        return $this->json([
+            'status'  => 'Succès',
+            'source'  => 'MongoDB',     // indique explicitement la source NoSQL
+            'total'   => count($logsFormates),
+            'filtres' => [              // rappel des filtres appliqués pour la lisibilité
+                'type'  => $type  ?? 'tous',
+                'email' => $email ?? 'tous',
+                'limit' => $limit,
+            ],
+            'logs' => $logsFormates,
+        ]);
+    }
+}

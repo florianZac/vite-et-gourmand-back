@@ -29,8 +29,10 @@ final class RoleController extends BaseController
     #[Route('', name: 'api_admin_roles_list', methods: ['GET'])]
     public function getAllRoles(RoleRepository $roleRepository): JsonResponse
     {
+        // Étape 1 - Retourne tous les roles
         $roles = $roleRepository->findAll();
 
+        // Étape 2 - Retourne le résultat
         return $this->json([
             'success' => true,
             'data' => $roles,
@@ -46,15 +48,17 @@ final class RoleController extends BaseController
     #[Route('/{id}', name: 'api_admin_roles_show', methods: ['GET'])]
     public function getRoleById(int $id, RoleRepository $roleRepository): JsonResponse
     {
+        // Étape 1 - Retourne le role d'un utilisateur par son id
         $role = $roleRepository->find($id);
 
+        // Étape 2 - Si il n'existe pas retourne une érreur
         if (!$role) {
             return $this->json(
                 ['success' => false, 'error' => 'Role not found'],
                 JsonResponse::HTTP_NOT_FOUND
             );
         }
-
+        // Étape 3 - Retourne le résultat
         return $this->json([
             'success' => true,
             'data' => $role,
@@ -78,7 +82,7 @@ final class RoleController extends BaseController
     ): JsonResponse {
         $data = $this->getDataFromRequest($request);
 
-        // Validation des données requises
+        // Étape 1 - test les données requises
         $requiredFields = ['libelle'];
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
@@ -89,7 +93,7 @@ final class RoleController extends BaseController
             }
         }
 
-        // Vérifier que le rôle n'existe pas déjà
+        // Étape 2 - Vérifie que le rôle n'existe pas déjà
         $existingRole = $roleRepository->findOneBy(['libelle' => $data['libelle']]);
         if ($existingRole) {
             return $this->json(
@@ -98,16 +102,18 @@ final class RoleController extends BaseController
             );
         }
 
-        // Créer le nouveau rôle
+        // Étape 3 - Créer le nouveau rôle
         $role = new Role();
         $role->setLibelle($data['libelle']);
         if (isset($data['description'])) {
             $role->setDescription($data['description']);
         }
 
+        // Étape 4 - Persiste et sauvegarde
         $entityManager->persist($role);
         $entityManager->flush();
 
+        // Étape 5 - Retourne le résultat
         return $this->json(
             [
                 'success' => true,
@@ -130,8 +136,11 @@ final class RoleController extends BaseController
         RoleRepository $roleRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
+        
+        // Étape 1 - Trouve un role d'un utilisateur pointé par son id
         $role = $roleRepository->find($id);
 
+        // Étape 2 - Vérifie si le role d'un utilisateur existe ou non 
         if (!$role) {
             return $this->json(
                 ['success' => false, 'error' => 'Role not found'],
@@ -139,11 +148,12 @@ final class RoleController extends BaseController
             );
         }
 
+        // Étape 3 - Récupere ces données
         $data = $this->getDataFromRequest($request);
 
-        // Mise à jour des champs optionnels
+        // Étape 4 - Mise à jour des champs optionnels
         if (isset($data['libelle'])) {
-            // Vérifier que le nouveau libellé n'existe pas ailleurs
+            // Étape 4.1 - Vérifier que le nouveau libellé n'existe pas ailleurs
             $existingRole = $roleRepository->findOneBy(['libelle' => $data['libelle']]);
             if ($existingRole && $existingRole->getId() !== $id) {
                 return $this->json(
@@ -153,12 +163,15 @@ final class RoleController extends BaseController
             }
             $role->setLibelle($data['libelle']);
         }
+        // Étape 4 - Met à jour la description 
         if (isset($data['description'])) {
             $role->setDescription($data['description']);
         }
 
+        // Étape 5 - Sauvegarde les données
         $entityManager->flush();
 
+        // Étape 6 - Retourne le résultat
         return $this->json([
             'success' => true,
             'message' => 'Role updated successfully',
@@ -170,6 +183,9 @@ final class RoleController extends BaseController
      * @description Supprime un rôle
      * @param int $id Identifiant du rôle
      * @return JsonResponse
+     * 
+     * FONCTION à vérifier dans mon algo pas sur quelle soit utile 
+     * le role ne devrait pas pourvoir etre supprimer !!
      */
     #[Route('/{id}', name: 'api_admin_roles_delete', methods: ['DELETE'])]
     public function deleteRole(
@@ -177,8 +193,9 @@ final class RoleController extends BaseController
         RoleRepository $roleRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
+        // Étape 1 - Trouve le role d'un utilisateur pointé par son id
         $role = $roleRepository->find($id);
-
+        // Étape 2 - existe t'il oui ou non ? 
         if (!$role) {
             return $this->json(
                 ['success' => false, 'error' => 'Role not found'],
@@ -186,7 +203,7 @@ final class RoleController extends BaseController
             );
         }
 
-        // Vérifier que le rôle n'est pas utilisé par des utilisateurs
+        // Étape 3 - Vérifier que le rôle n'est pas utilisé par des utilisateurs
         $utilisateurs = $role->getUtilisateurs();
         if ($utilisateurs && \count($utilisateurs) > 0) {
             return $this->json(
@@ -194,10 +211,13 @@ final class RoleController extends BaseController
                 JsonResponse::HTTP_CONFLICT
             );
         }
-
+        // Étape 4 - Supprime le role d'un utilisateur
         $entityManager->remove($role);
-        $entityManager->flush();
 
+        // Étape 5 - Sauvegarde le role d'un utilisateur
+        $entityManager->flush();
+        
+        // Étape 6 - Retourne le résultat
         return $this->json([
             'success' => true,
             'message' => 'Role deleted successfully',
