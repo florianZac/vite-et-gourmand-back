@@ -279,3 +279,19 @@ php bin/console doctrine:migrations:diff
 
 6.3.6 Voir la version de doctrine-bundle 
 composer show doctrine/doctrine-bundle | grep versions
+
+
+6.4 Installation est mise en place de MongoDB sur un projet symfony
+
+Quelle interet ? : Je vais utiliser MongoDB pour gérer les logs d'activité de la sociétée
+Pourquoi ? :Car se sont des données volumineuse qui n'on pas de schéma fixe il non pas de relation entre eux ce qui est le cas d'usage optimale de NoSQL.
+
+6.4.1 Vérification de MongoDB avant d'installation 
+composer show | findstr mongodb sur windows
+composer show | grep mongodb sur linux
+
+6.4.2 Installation de MongoDB
+composer require doctrine/mongodb-odm-bundle
+
+6.4.2
+
