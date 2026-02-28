@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Menu;
+use App\Entity\MenuImage;
 use App\Entity\Regime;
 use App\Entity\SuiviCommande;
 use App\Entity\Theme;
@@ -14,6 +15,7 @@ use App\Repository\AllergeneRepository;
 use App\Repository\AvisRepository;
 use App\Repository\CommandeRepository;
 use App\Repository\MenuRepository;
+use App\Repository\MenuImageRepository;
 use App\Repository\PlatRepository;
 use App\Repository\RegimeRepository;
 use App\Repository\SuiviCommandeRepository;
@@ -28,6 +30,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -42,27 +45,38 @@ use Symfony\Component\Routing\Attribute\Route;
  *  5. getMaterielCommande() : Retourne l'état du matériel d'une commande ciblée
  *  6. confirmerRestitution(): Confirme le retour du matériel et le paiement de la pénalité
  *  7. filtrerCommandes()    : Filtrer les commandes par statut et/ou par client
+ * 
  *  8. getAvisEnAttente()    : Afficher tous les avis en attente de validation
  *  9. approuverAvis()       : Approuver un avis client
- *  10. refuserAvis()         : Refuser un avis client
+ *  10. refuserAvis()        : Refuser un avis client
+ * 
  *  11. getAllMenus()        : Retourner la liste de tous les menus
  *  12. getMenuById()        : Retourner un menu par son id
- *  13. createMenu()         : Créer un nouveau menu
- *  14. updateMenu()         : Met à jour un menu par son id
+ *  13. createMenu()         : Créer un nouveau menu (avec conditions)
+ *  14. updateMenu()         : Met à jour un menu par son id (avec conditions)
  *  15. deleteMenu()         : Supprimer un menu par son id
- *  16. createTheme()        : Créer un nouveau thème
- *  17. updateTheme()        : Met à jour un thème par son id
- *  18. createRegime()       : Créer un nouveau régime
- *  19. updateRegime()       : Met à jour un régime par son id
- *  20. createAllergene()    : Créer un nouvel allergène
- *  21. updateAllergene()    : Met à jour un allergène par son id
- *  22. createPlat()         : Créer un nouveau plat
- *  23. updatePlat()         : Met à jour un plat par son id
- *  24. deletePlat()         : Supprimer un plat par son id
- *  25. getHoraires()        : Retourne la liste de tous les horaires
- *  26. createHoraire()      : Créer un nouvel horaire
- *  27. updateHoraire()      : Met à jour un horaire par son id
- *  28. deleteHoraire()      : Supprime un horaire par son id
+ * 
+ *  16. addImageMenu()       : Ajouter une image à la galerie d'un menu
+ *  17. deleteImageMenu()    : Supprimer une image de la galerie d'un menu
+ *  18. updateOrdreImage()   : Modifier l'ordre d'affichage d'une image
+ * 
+ *  19. createTheme()        : Créer un nouveau thème
+ *  20. updateTheme()        : Met à jour un thème par son id
+ * 
+ *  21. createRegime()       : Créer un nouveau régime
+ *  22. updateRegime()       : Met à jour un régime par son id
+ * 
+ *  23. createAllergene()    : Créer un nouvel allergène
+ *  24. updateAllergene()    : Met à jour un allergène par son id
+ * 
+ *  25. createPlat()         : Créer un nouveau plat
+ *  26. updatePlat()         : Met à jour un plat par son id
+ *  27. deletePlat()         : Supprimer un plat par son id
+ * 
+ *  28. getHoraires()        : Retourne la liste de tous les horaires
+ *  29. createHoraire()      : Créer un nouvel horaire
+ *  30. updateHoraire()      : Met à jour un horaire par son id
+ *  31. deleteHoraire()      : Supprime un horaire par son id
  */
 
 #[Route('/api/employe')]
@@ -120,7 +134,7 @@ final class EmployeController extends AbstractController
 
     /**
      * @description Modifier le statut d'une commande en respectant le cycle de vie strict
-     * Cycle autorisé : En attente → Acceptée → En préparation → En livraison → Terminée
+     * Cycle autorisé : En attente -> Acceptée -> En préparation -> En livraison -> Terminée
      * Un retour en arrière est interdit.
      * @param int $id L'id de la commande
      * @param Request $request La requête HTTP contenant le nouveau statut
@@ -552,8 +566,8 @@ final class EmployeController extends AbstractController
     /**
      * @description Créer un nouveau menu
      * Corps JSON attendu : { "titre": "...", "nombre_personne_minimum": 10, "prix_par_personne": 45.00,
-     *                        "description": "...", "quantite_restante": 50, "regime_id": 2, "theme_id": 3,
-     *                        "plats": [1, 4, 7] }
+     *                        "description": "...", "conditions": "...", "quantite_restante": 50,
+     *                        "regime_id": 2, "theme_id": 3, "plats": [1, 4, 7] }
      * @param Request $request La requête HTTP contenant les données au format JSON
      * @param MenuRepository $menuRepository Le repository des menus
      * @param PlatRepository $platRepository Le repository des plats
@@ -615,6 +629,12 @@ final class EmployeController extends AbstractController
         $menu->setQuantiteRestante((int) $data['quantite_restante']);
         $menu->setRegime($regime);
         $menu->setTheme($theme);
+
+        // Étape 7.1 - Conditions du menu (optionnel)
+        // Ex: "Commander minimum 14 jours à l'avance. Conserver au frais."
+        if (isset($data['conditions'])) {
+            $menu->setConditions($data['conditions']);
+        }
 
         // Étape 8 - Associer les plats si fournis
         if (!empty($data['plats']) && is_array($data['plats'])) {
@@ -699,6 +719,12 @@ final class EmployeController extends AbstractController
             $menu->setQuantiteRestante((int) $data['quantite_restante']);
         }
 
+        // Étape 4.1 - Mise à jour des conditions (optionnel)
+        // Ex: "Commander minimum 14 jours à l'avance. Conserver au frais."
+        if (isset($data['conditions'])) {
+            $menu->setConditions($data['conditions']);
+        }
+
         // Étape 5 - Mettre à jour le régime si fourni
         if (isset($data['regime_id'])) {
             $regime = $regimeRepository->find($data['regime_id']);
@@ -748,6 +774,7 @@ final class EmployeController extends AbstractController
 
     /**
      * @description Supprimer un menu par son id
+     * La suppression en cascade supprime aussi les images liées (onDelete CASCADE)
      * @param int $id L'id du menu à supprimer
      * @param MenuRepository $menuRepository Le repository des menus
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
@@ -767,7 +794,7 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
         }
 
-        // Étape 3 - suppression du menu
+        // Étape 3 - suppression du menu (cascade supprime aussi les menu_image liées)
         $em->remove($menu);
 
         // Étape 4 - sauvegarder
@@ -775,6 +802,234 @@ final class EmployeController extends AbstractController
 
         // Étape 5 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Menu supprimé avec succès']);
+    }
+
+    // =========================================================================
+    // IMAGES MENUS
+    // =========================================================================
+
+    /**
+     * @description Ajouter une image à la galerie d'un menu
+     * Reçoit un fichier image en en plusieurs parties /form-data (PAS en JSON)
+     * Sauvegarde le fichier dans public/uploads/menus/
+     * Stocke l'URL publique en base dans la table menu_image
+     * @see https://www.ibm.com/docs/fr/wm-integration-ipaas?topic=services-support-multipart-request-body
+     *
+     * Requête en plusieurs parties attendue :
+     *   - champ "image"  -> le fichier image (jpg, jpeg, png, webp)
+     *   - champ "ordre"  -> position dans la galerie par défaut à 1
+     *
+     * @param int $id L'id du menu
+     * @param Request $request La requête HTTP contenant le fichier uploadé
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/menus/{id}/images', name: 'api_employe_menus_images_add', methods: ['POST'])]
+    public function addImageMenu(
+        int $id,
+        Request $request,
+        MenuRepository $menuRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer le menu
+        $menu = $menuRepository->find($id);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 3 - Récupérer le fichier uploadé
+        // $request->files->get('image') lit le fichier depuis le champ "image" de la requête multipart
+        // Ce n'est PAS $request->getContent() qui lit le JSON -> ici on lit un fichier binaire
+        /** @var UploadedFile|null $fichier */
+        $fichier = $request->files->get('image');
+        if (!$fichier) {
+            return $this->json([
+                'status'  => 'Erreur',
+                'message' => 'Aucun fichier reçu. Utiliser multipart/form-data avec le champ "image"'
+            ], 400);
+        }
+
+        // Étape 4 - Vérifier que c'est bien une image acceptée
+        $extensionsAutorisees = ['jpg', 'jpeg', 'png', 'webp'];
+        $extension = strtolower($fichier->getClientOriginalExtension());
+        if (!in_array($extension, $extensionsAutorisees)) {
+            return $this->json([
+                'status'  => 'Erreur',
+                'message' => 'Format invalide. Formats acceptés : jpg, jpeg, png, webp'
+            ], 400);
+        }
+
+        // Étape 5 - Générer un nom de fichier unique pour éviter les collisions entre menus
+        // Exemple de résultat : "menu_3_6a3f2b1c4d5e6789.jpg"
+        $nomFichier = 'menu_' . $id . '_' . uniqid() . '.' . $extension;
+
+        // Étape 6 - Déplacer le fichier vers le dossier public/uploads/menus/
+        // kernel.project_dir = chemin absolu vers la racine du projet (ex: /var/www/vite-et-gourmand)
+        // Le dossier public/ est servi directement par le serveur web
+        $dossierUpload = $this->getParameter('kernel.project_dir') . '/public/uploads/menus';
+        $fichier->move($dossierUpload, $nomFichier);
+
+        // Étape 7 - Construire l'URL publique accessible depuis le navigateur
+        // Le dossier public/ est la racine web -> l'URL commence par /uploads/menus/
+        // Exemple : "http://monsite.fr/uploads/menus/menu_3_6a3f2b1c4d5e6789.jpg"
+        $urlPublique = '/uploads/menus/' . $nomFichier;
+
+        // Étape 8 - Récupérer l'ordre depuis le champ "ordre" de la requête multipart
+        // $request->request->get() lit les champs texte d'une requête multipart (pas JSON)
+        // Ordre 1 = photo principale affichée en premier dans la galerie
+        $ordre = (int) ($request->request->get('ordre', 1));
+
+        // Étape 9 - Créer l'entité MenuImage et l'associer au menu
+        $image = new MenuImage();
+        $image->setUrl($urlPublique);
+        $image->setOrdre($ordre);
+        $image->setMenu($menu);
+
+        // Étape 10 - Persister et sauvegarder
+        $em->persist($image);
+        $em->flush();
+
+        // Étape 11 - Retourner une confirmation avec l'URL et l'id de l'image créée
+        return $this->json([
+            'status'  => 'Succès',
+            'message' => 'Image ajoutée avec succès',
+            'image'   => [
+                'id'    => $image->getId(),
+                'url'   => $urlPublique,
+                'ordre' => $ordre,
+            ]
+        ], 201);
+    }
+
+    /**
+     * @description Supprimer une image de la galerie d'un menu
+     * Supprime le fichier physique sur le serveur ET l'entrée en base de données
+     * @param int $id L'id du menu
+     * @param int $imageId L'id de l'image à supprimer
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param MenuImageRepository $menuImageRepository Le repository des images
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/menus/{id}/images/{imageId}', name: 'api_employe_menus_images_delete', methods: ['DELETE'])]
+    public function deleteImageMenu(
+        int $id,
+        int $imageId,
+        MenuRepository $menuRepository,
+        MenuImageRepository $menuImageRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer le menu
+        $menu = $menuRepository->find($id);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 3 - Récupérer l'image
+        $image = $menuImageRepository->find($imageId);
+        if (!$image) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Image non trouvée'], 404);
+        }
+
+        // Étape 4 - Vérifier que l'image appartient bien à ce menu
+        // Sécurité : évite qu'un employé supprime une image d'un autre menu via manipulation d'URL
+        if ($image->getMenu()->getId() !== $menu->getId()) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cette image n\'appartient pas à ce menu'], 403);
+        }
+
+        // Étape 5 - Supprimer le fichier physique sur le serveur
+        // L'URL stockée est "/uploads/menus/fichier.jpg" -> on reconstitue le chemin absolu
+        $cheminFichier = $this->getParameter('kernel.project_dir') . '/public' . $image->getUrl();
+        if (file_exists($cheminFichier)) {
+            unlink($cheminFichier);
+        }
+
+        // Étape 6 - Supprimer l'entrée en base
+        $em->remove($image);
+        $em->flush();
+
+        // Étape 7 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Image supprimée avec succès']);
+    }
+
+
+    /**
+     * @description Modifier l'ordre d'affichage d'une image dans la galerie
+     * Permet de définir quelle image apparaît en premier (ordre 1 = photo principale)
+     * Corps JSON attendu : { "ordre": 2 }
+     * @param int $id L'id du menu
+     * @param int $imageId L'id de l'image à modifier
+     * @param Request $request La requête HTTP contenant le nouvel ordre
+     * @param MenuRepository $menuRepository Le repository des menus
+     * @param MenuImageRepository $menuImageRepository Le repository des images
+     * @param EntityManagerInterface $em L'EntityManager
+     * @return JsonResponse
+     */
+    #[Route('/menus/{id}/images/{imageId}', name: 'api_employe_menus_images_update', methods: ['PUT'])]
+    public function updateOrdreImage(
+        int $id,
+        int $imageId,
+        Request $request,
+        MenuRepository $menuRepository,
+        MenuImageRepository $menuImageRepository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer le menu
+        $menu = $menuRepository->find($id);
+        if (!$menu) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        }
+
+        // Étape 3 - Récupérer l'image
+        $image = $menuImageRepository->find($imageId);
+        if (!$image) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Image non trouvée'], 404);
+        }
+
+        // Étape 4 - Vérifier que l'image appartient bien à ce menu
+        if ($image->getMenu()->getId() !== $menu->getId()) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Cette image n\'appartient pas à ce menu'], 403);
+        }
+
+        // Étape 5 - Récupérer le nouvel ordre depuis le JSON
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['ordre'])) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Le champ ordre est obligatoire'], 400);
+        }
+
+        // Étape 6 - Mettre à jour l'ordre
+        $image->setOrdre((int) $data['ordre']);
+        $em->flush();
+
+        // Étape 7 - Retourner une confirmation
+        return $this->json([
+            'status'  => 'Succès',
+            'message' => 'Ordre de l\'image mis à jour avec succès',
+            'image'   => [
+                'id'    => $image->getId(),
+                'url'   => $image->getUrl(),
+                'ordre' => $image->getOrdre(),
+            ]
+        ]);
     }
 
     // =========================================================================

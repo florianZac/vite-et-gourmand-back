@@ -27,6 +27,10 @@ class Menu
     private ?Regime $regime = null;
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'theme_id', referencedColumnName: 'theme_id', nullable: false)] 
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $conditions = null;
+
     private ?Theme $theme = null;
     /**
      * @var Collection<int, Plat>
@@ -126,6 +130,16 @@ class Menu
     public function removePlat(Plat $plat): static
     {
         $this->plats->removeElement($plat);
+        return $this;
+    }
+    public function getConditions(): ?string
+    {
+        return $this->conditions;
+    }
+
+    public function setConditions(?string $conditions): static
+    {
+        $this->conditions = $conditions;
         return $this;
     }
 }

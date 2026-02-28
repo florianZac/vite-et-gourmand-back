@@ -41,26 +41,33 @@ use Symfony\Component\HttpFoundation\Request;
  * @description Contrôleur gérant les utilisateurs 
  *  mise en place d'un CRUD de base pour les utilisateurs
  * 
- *  1. getAllUsers()            : Retourne la liste de tous les utilisateurs
- *  2. getUserById()            : Retourne un utilisateurs par son id
- *  3. deleteUserByID()         : Supprime un utilisateurs par son id
- *  4. deleteUserByEmail()      : Supprime un utilisateurs par son e-mail
- *  5. updateUserAdminById()    : Modifie un utilisateurs en le ciblant par son id
- *  6. updateUserAdminByEmail() : Modifie un utilisateurs en le ciblant par son e-mail
- *  7. desactiverCompte()       : Désactivation d'un compte utilisateur
- *  8. reactiverCompte()        : Résactivation d'un compte utilisateur
- *  9. createEmploye()          : Création d'un compte employé par l'administrateur
- *  10. deleteCommande()        : Supprimer une commande
- *  11. rechercherCommande()    : Rechercher une commande par son numéro de commande
- *  12. supprimerAvis()         : Supprimer un avis client
- *  13. refuserAvis()           : Refuser un avis client
- *  14. approuverAvis()         : Approuver un avis client
- *  15. getAvisEnAttente()      : Afficher tous les avis en attente de validation
- *  16. getStatistiques()       : Retourne les statistiques complètes vennant de MySQl 
- *  17. getLogs()               : Retourne les logs d'activité vennant de MongoDB -> NoSQL
- *  18. createHoraireAdmin()    : Créer un nouvel horaire
- *  19. updateHoraireAdmin()    : Met à jour un horaire par son id
- *  20. deleteHoraireAdmin()    : Supprime un horaire par son id
+ *  1. getAllUsers()                : Retourne la liste de tous les utilisateurs
+ *  2. getUserById()                : Retourne un utilisateurs par son id
+ *  3. deleteUserByID()             : Supprime un utilisateurs par son id
+ *  4. deleteUserByEmail()          : Supprime un utilisateurs par son e-mail
+ *  5. updateUserAdminById()        : Modifie un utilisateurs en le ciblant par son id
+ *  6. updateUserAdminByEmail()     : Modifie un utilisateurs en le ciblant par son e-mail
+ *  7. desactiverCompte()           : Désactivation d'un compte utilisateur
+ *  8. reactiverCompte()            : Résactivation d'un compte utilisateur
+ * 
+ *  9. createEmploye()              : Création d'un compte employé par l'administrateur
+ * 
+ *  10. deleteCommande()            : Supprimer une commande
+ *  11. rechercherCommande()        : Rechercher une commande par son numéro de commande
+ * 
+ *  12. supprimerAvis()             : Supprimer un avis client
+ *  13. refuserAvis()               : Refuser un avis client
+ *  14. approuverAvis()             : Approuver un avis client
+ *  15. getAvisEnAttente()          : Afficher tous les avis en attente de validation
+ * 
+ *  16. getStatistiques()           : Retourne les statistiques complètes vennant de MySQl 
+ *  17. getLogs()                   : Retourne les logs d'activité vennant de MongoDB -> NoSQL
+ *  18. getStatistiquesGraphiques() : Retourne les données graphiques depuis MongoDB
+ * 
+ *  19. getHorairesAdmin()          : Retourne la liste de tous les horaires
+ *  20. createHoraireAdmin()        : Créer un nouvel horaire
+ *  21. updateHoraireAdmin()        : Met à jour un horaire par son id
+ *  22. deleteHoraireAdmin()        : Supprime un horaire par son id
 */
 
 #[Route('/api/admin')]
@@ -896,6 +903,139 @@ final class AdminController extends AbstractController
         ]);
     }
 
+    
+    /**
+     * @description Retourne les données graphiques depuis MongoDB
+     * 
+     * Exploite les logs de type "commande_creee" déjà stockés dans MongoDB
+     * 
+     * Pourquoi MongoDB pour les graphiques ?
+     *  L'énoncé impose une source NoSQL pour les graphiques
+     *  Les logs commande_creee contiennent déjà : menu, montant, ville_livraison, date
+     *  MongoDB est optimisé pour ce type d'agrégation sans jointure
+     *
+     * Données retournées :
+     *   - CA total et par menu
+     *   - Nombre de commandes par menu
+     *   - Filtres optionnels : ?menu=NomMenu, ?debut=2026-01-01, ?fin=2026-12-31
+     *
+     * SOURCE : MongoDB logs d'activité non relationnels
+     * Voir getStatistiques() pour les données métier depuis MySQL
+     *
+     * @param Request $request La requête HTTP avec les éventuels filtres
+     * @param DocumentManager $dm Le DocumentManager MongoDB
+     * @return JsonResponse
+     */
+    #[Route('/statistiques/graphiques', name: 'api_admin_statistiques_graphiques', methods: ['GET'])]
+    public function getStatistiquesGraphiques(Request $request, DocumentManager $dm): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Récupérer les filtres depuis la query string
+        $menuFiltre  = $request->query->get('menu');    // ex: ?menu=Menu Prestige
+        $dateDebut   = $request->query->get('debut');   // ex: ?debut=2026-01-01
+        $dateFin     = $request->query->get('fin');     // ex: ?fin=2026-12-31
+
+        // Étape 3 - Construire la requête MongoDB
+        // On cible uniquement les logs de type "commande_creee"
+        $qb = $dm->createQueryBuilder(LogActivite::class)
+            ->field('type')->equals('commande_creee')
+            ->sort('createdAt', 'ASC');
+
+        // Étape 4 - Filtre par date si fourni
+        // MongoDB stocke createdAt en DateTime ->comparaison directe possible
+        if ($dateDebut) {
+            $qb->field('createdAt')->gte(new \DateTime($dateDebut));
+        }
+        if ($dateFin) {
+            $qb->field('createdAt')->lte(new \DateTime($dateFin . ' 23:59:59'));
+        }
+
+        // Étape 5 - Exécuter la requête
+        $logs = $qb->getQuery()->execute();
+
+        // Étape 6 - Agréger les données pour les graphiques
+        // On parcourt les logs et on regroupe par menu
+        $caParMenu         = []; // CA total par menu
+        $commandesParMenu  = []; // Nombre de commandes par menu
+        $caParMois         = []; // CA par mois pour courbe d'évolution
+
+        foreach ($logs as $log) {
+            $contexte = $log->getContexte();
+            $menu     = $contexte['menu']    ?? 'Inconnu';
+            $montant  = $contexte['montant'] ?? 0;
+            $mois     = $log->getCreatedAt()->format('Y-m'); // ex: "2026-03"
+
+            // Si le filtre menu est actif, on ignore les autres menus
+            if ($menuFiltre && $menu !== $menuFiltre) {
+                continue;
+            }
+
+            // Agrégation CA par menu
+            if (!isset($caParMenu[$menu])) {
+                $caParMenu[$menu] = 0;
+            }
+            $caParMenu[$menu] += $montant;
+
+            // Agrégation nombre de commandes par menu
+            if (!isset($commandesParMenu[$menu])) {
+                $commandesParMenu[$menu] = 0;
+            }
+            $commandesParMenu[$menu]++;
+
+            // Agrégation CA par mois
+            if (!isset($caParMois[$mois])) {
+                $caParMois[$mois] = 0;
+            }
+            $caParMois[$mois] += $montant;
+        }
+
+        // Étape 7 - Formater pour l'affichage graphique côté front
+        // Format tableau de tableaux pour être directement exploitable par Chart.js ou autre
+        $graphiqueMenus = [];
+        foreach ($caParMenu as $menu => $ca) {
+            $graphiqueMenus[] = [
+                'menu'               => $menu,
+                'ca_total'           => round($ca, 2),
+                'nombre_commandes'   => $commandesParMenu[$menu],
+                'ca_moyen'           => round($ca / $commandesParMenu[$menu], 2),
+            ];
+        }
+
+        // Trier par CA décroissant
+        usort($graphiqueMenus, fn($a, $b) => $b['ca_total'] <=> $a['ca_total']);
+
+        // Formater CA par mois (trié chronologiquement)
+        ksort($caParMois);
+        $graphiqueMois = [];
+        foreach ($caParMois as $mois => $ca) {
+            $graphiqueMois[] = [
+                'mois'     => $mois,
+                'ca_total' => round($ca, 2),
+            ];
+        }
+
+        // Étape 8 - Retourner les données graphiques
+        return $this->json([
+            'status'  => 'Succès',
+            'source'  => 'MongoDB',
+            'filtres' => [
+                'menu'  => $menuFiltre ?? 'tous',
+                'debut' => $dateDebut  ?? 'aucun',
+                'fin'   => $dateFin    ?? 'aucun',
+            ],
+            'graphiques' => [
+                'ca_par_menu'  => $graphiqueMenus,  // pour graphique barres/camembert
+                'ca_par_mois'  => $graphiqueMois,   // pour courbe d'évolution temporelle
+                'ca_total'     => round(array_sum($caParMenu), 2),
+                'total_commandes' => array_sum($commandesParMenu),
+            ],
+        ]);
+    }
+
     // =========================================================================
     // HORAIRES
     // =========================================================================
@@ -906,7 +1046,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires', name: 'api_admin_horaires_list', methods: ['GET'])]
-    public function getHoraires(HoraireRepository $horaireRepository): JsonResponse
+    public function getHorairesAdmin(HoraireRepository $horaireRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
@@ -939,7 +1079,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires', name: 'api_admin_horaires_create', methods: ['POST'])]
-    public function createHoraire(
+    public function createHoraireAdmin(
         Request $request,
         HoraireRepository $horaireRepository,
         EntityManagerInterface $em
@@ -993,7 +1133,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires/{id}', name: 'api_admin_horaires_update', methods: ['PUT'])]
-    public function updateHoraire(
+    public function updateHoraireAdmin(
         int $id,
         Request $request,
         HoraireRepository $horaireRepository,
@@ -1047,7 +1187,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires/{id}', name: 'api_admin_horaires_delete', methods: ['DELETE'])]
-    public function deleteHoraire(
+    public function deleteHoraireAdmin(
         int $id,
         HoraireRepository $horaireRepository,
         EntityManagerInterface $em
