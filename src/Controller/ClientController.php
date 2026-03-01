@@ -5,11 +5,13 @@ use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
 use App\Repository\CommandeRepository;
 use App\Repository\SuiviCommandeRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use App\Service\MailerService;
 use App\Service\LogService; // import du LogService MongoDB
 use App\Entity\Avis;
 use App\Repository\AvisRepository;
+use App\Enum\CommandeStatut;
+
+use Doctrine\ORM\EntityManagerInterface;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -297,10 +299,10 @@ final class ClientController extends BaseController
             return $this->json(['status' => 'Erreur', 'message' => 'Commande non autorisée'], 403);
         }
 
-        // Étape 5 - Vérifier que la commande est bien en statut "En attente"
-        // La modification n'est possible que si la commande n'a pas encore été acceptée
-        if ($commande->getStatut() !== 'En attente') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Modification impossible : la commande n\'est plus en attente'], 400);
+        // Étape 5 - Vérifier que la commande est bien en statut MODIFIABLES
+        // La modification n'est possible que si la commande n'est pas dans un status MODIFIABLES
+        if (!in_array($commande->getStatut(), CommandeStatut::MODIFIABLES, true)) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Modification impossible : la commande ne peut plus être modifiée'], 400);
         }
 
         // Étape 6 - Récupérer les données JSON
@@ -432,8 +434,8 @@ final class ClientController extends BaseController
             return $this->json(['status' => 'Erreur', 'message' => 'Commande déjà annulée'], 400);
         }
 
-        // Étape 7 - Vérifier que la commande est bien en statut "En attente"
-        if ($commande->getStatut() !== 'En attente') {
+        // Étape 7 - Vérifier que la commande est bien en statut ANNULABLES_CLIENT
+        if (!in_array($commande->getStatut(), CommandeStatut::ANNULABLES_CLIENT, true)) {
             return $this->json(['status' => 'Erreur', 'message' => 'Annulation impossible, la commande n\'est plus en attente'], 400);
         }
 

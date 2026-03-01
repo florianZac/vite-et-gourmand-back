@@ -36,7 +36,7 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description Gestions des actions d'un employé connecté
- *
+ * 
  *  1. getCommandes()        : Afficher toutes les commandes en cours
  *  2. rechercherCommande()  : Rechercher une commande par son numéro de commande
  *  3. changerStatut()       : Modifier le statut d'une commande en respectant le cycle de vie strict
@@ -44,33 +44,34 @@ use Symfony\Component\Routing\Attribute\Route;
  *  5. getMaterielCommande() : Retourne l'état du matériel d'une commande ciblée
  *  6. confirmerRestitution(): Confirme le retour du matériel et le paiement de la pénalité
  *  7. filtrerCommandes()    : Filtrer les commandes par statut et/ou par client
- *
+ * 
  *  8. getAvisEnAttente()    : Afficher tous les avis en attente de validation
  *  9. approuverAvis()       : Approuver un avis client
  *  10. refuserAvis()        : Refuser un avis client
- *
+ * 
  *  11. getAllMenus()        : Retourner la liste de tous les menus
  *  12. getMenuById()        : Retourner un menu par son id
  *  13. createMenu()         : Créer un nouveau menu (avec conditions)
  *  14. updateMenu()         : Met à jour un menu par son id (avec conditions)
  *  15. deleteMenu()         : Supprimer un menu par son id
- *
+ * 
  *  16. addImageMenu()       : Ajouter une image à la galerie d'un menu
  *  17. deleteImageMenu()    : Supprimer une image de la galerie d'un menu
  *  18. updateOrdreImage()   : Modifier l'ordre d'affichage d'une image
- *
+ * 
  *  19. createTheme()        : Créer un nouveau thème
  *  20. updateTheme()        : Met à jour un thème par son id
- *
+ * 
  *  21. createRegime()       : Créer un nouveau régime
  *  22. updateRegime()       : Met à jour un régime par son id
- *
+ * 
  *  23. createAllergene()    : Créer un nouvel allergène
  *  24. updateAllergene()    : Met à jour un allergène par son id
- *
+ * 
  *  25. createPlat()         : Créer un nouveau plat
  *  26. updatePlat()         : Met à jour un plat par son id
  *  27. deletePlat()         : Supprimer un plat par son id
+ * 
  */
 
 #[Route('/api/employe')]
@@ -128,7 +129,7 @@ final class EmployeController extends AbstractController
 
     /**
      * @description Modifier le statut d'une commande en respectant le cycle de vie strict
-     * Cycle autorisé : En attente -> Acceptée -> En préparation -> En livraison -> Livré -> Terminée
+     * Cycle autorisé : En attente -> Acceptée -> En préparation -> En livraison -> Terminée
      * Un retour en arrière est interdit.
      * @param int $id L'id de la commande
      * @param Request $request La requête HTTP contenant le nouveau statut
@@ -145,7 +146,8 @@ final class EmployeController extends AbstractController
         SuiviCommandeRepository $suiviCommandeRepository,
         EntityManagerInterface $em,
         MailerService $mailerService
-    ): JsonResponse {
+    ): JsonResponse
+    {
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -165,10 +167,13 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Statut obligatoire'], 400);
         }
 
-        // Étape 4 - Récupérer l'ordre strict du cycle de vie depuis CommandeStatut
-        $ordreStatuts = CommandeStatut::ORDRE;
+        // Étape 4 - Vérifier le cycle de vie strict
+        /*
+            VOIR ORDRE DANS commandeStatus.php
 
-        // Étape 5 - Vérifier que le nouveau statut existe dans le cycle
+        */
+
+        // Étape 5 - Vérifier que le nouveau statut existe
         if (!isset($ordreStatuts[$nouveauStatut])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Statut invalide'], 400);
         }
@@ -189,40 +194,38 @@ final class EmployeController extends AbstractController
         $suivi->setCommande($commande);
         $em->persist($suivi);
 
-        // Étape 9 - Envoyer un email selon le statut et gérer les cas spéciaux
+        // Étape 9 - Envoyer un email selon le statut
         $client = $commande->getUtilisateur();
-
-        if ($nouveauStatut === CommandeStatut::ACCEPTEE) {
+        if ($nouveauStatut === 'Acceptée') {
             $mailerService->sendCommandeAccepteeEmail($client, $commande);
-
-        } elseif ($nouveauStatut === CommandeStatut::EN_LIVRAISON) {
+        } elseif ($nouveauStatut === 'En livraison') {
             $mailerService->sendCommandeLivraisonEmail($client, $commande);
-
-        } elseif ($nouveauStatut === CommandeStatut::LIVRE) {
+        } elseif ($nouveauStatut === 'Livré') {
             // Enregistrement automatique de l'heure de livraison
             $commande->setHeureLivraison(new \DateTime());
-
-            // Si matériel prêté -> passage automatique en "En attente du retour matériel"
+            // SI pret_materiel == true -> passage automatique en "En attente du retour matériel" + mail
             if ($commande->isPretMateriel() === true) {
-                $commande->setStatut(CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL);
+                $commande->setStatut('En attente du retour matériel');
                 $mailerService->sendRetourMaterielEmail($client, $commande);
 
                 // Créer un second suivi pour le vrai statut final
                 $suiviMateriel = new SuiviCommande();
-                $suiviMateriel->setStatut(CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL);
+                $suiviMateriel->setStatut('En attente du retour matériel');
                 $suiviMateriel->setDateStatut(new \DateTime());
                 $suiviMateriel->setCommande($commande);
                 $em->persist($suiviMateriel);
             }
-
-        } elseif ($nouveauStatut === CommandeStatut::TERMINEE) {
+        } elseif ($nouveauStatut === 'Terminée') {
             $mailerService->sendCommandeTermineeEmail($client, $commande);
         }
 
         // Étape 10 - Sauvegarder en base
         $em->flush();
 
-        // Étape 11 - Retourner un message de confirmation avec le statut final réel
+        // Étape 11 - Retourner un message de confirmation
+        // getStatut() retourne le vrai statut final de la commande
+        // si pret_materiel == true -> "En attente du retour matériel"
+        // sinon -> le statut demandé par l'employé
         return $this->json([
             'status'  => 'Succès',
             'message' => 'Statut mis à jour : ' . $commande->getStatut()
@@ -283,12 +286,12 @@ final class EmployeController extends AbstractController
 
         // Étape 3 - Retourner uniquement les infos liées au matériel
         return $this->json([
-            'status'               => 'Succès',
-            'numero_commande'      => $commande->getNumeroCommande(),
-            'pret_materiel'        => $commande->isPretMateriel(),
-            'restitution_materiel' => $commande->isRestitutionMateriel(),
-            'mail_penalite_envoye' => $commande->isMailPenaliteEnvoye(),
-            'statut'               => $commande->getStatut(),
+            'status'                => 'Succès',
+            'numero_commande'       => $commande->getNumeroCommande(),
+            'pret_materiel'         => $commande->isPretMateriel(),
+            'restitution_materiel'  => $commande->isRestitutionMateriel(),
+            'mail_penalite_envoye'  => $commande->isMailPenaliteEnvoye(),
+            'statut'                => $commande->getStatut(),
         ]);
     }
 
@@ -327,7 +330,7 @@ final class EmployeController extends AbstractController
         }
 
         // Étape 3 - Vérifier que la commande est bien en attente du retour matériel
-        if ($commande->getStatut() !== CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL) {
+        if ($commande->getStatut() !== 'En attente du retour matériel') {
             return $this->json(['status' => 'Erreur', 'message' => 'Cette commande n\'est pas en attente du retour matériel'], 400);
         }
 
@@ -342,9 +345,14 @@ final class EmployeController extends AbstractController
         // Étape 6 - Mettre à jour la restitution du matériel
         $commande->setRestitutionMateriel((bool) $data['restitution_materiel']);
 
-        // Étape 7 - Si les deux conditions sont remplies -> passer en "Terminée"
+        // Étape 7 - Vérifier si les deux conditions sont remplies pour passer en "Terminée"
+        // restitution_materiel == true ET penalite_payee == true
         if ($commande->isRestitutionMateriel() === true && (bool) $data['penalite_payee'] === true) {
-            $commande->setStatut(CommandeStatut::TERMINEE);
+
+            // Passage automatique en "Terminée"
+            $commande->setStatut('Terminée');
+
+            // Envoi du mail de confirmation au client
             $mailerService->sendCommandeTermineeEmail($commande->getUtilisateur(), $commande);
         }
 
@@ -354,7 +362,7 @@ final class EmployeController extends AbstractController
         // Étape 9 - Retourner une confirmation
         return $this->json([
             'status'               => 'Succès',
-            'message'              => $commande->getStatut() === CommandeStatut::TERMINEE
+            'message'              => $commande->getStatut() === 'Terminée'
                 ? 'Matériel rendu et pénalité payée : commande passée en Terminée'
                 : 'Informations mises à jour',
             'statut'               => $commande->getStatut(),
@@ -590,7 +598,7 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Un menu avec ce titre existe déjà'], 409);
         }
 
-        // Étape 5 - Récupérer le régime
+        // Étape 5 - Récupérer le régime 
         $regime = $regimeRepository->find($data['regime_id']);
         if (!$regime) {
             return $this->json(['status' => 'Erreur', 'message' => 'Régime non trouvé'], 404);
@@ -629,7 +637,7 @@ final class EmployeController extends AbstractController
             }
         }
 
-        // Étape 9 - Persister et sauvegarder
+        // Étape 9 - Persister le menu
         $em->persist($menu);
         
         // Étape 10 - Sauvegarder
@@ -727,14 +735,20 @@ final class EmployeController extends AbstractController
             $menu->setTheme($theme);
         }
 
-        // Étape 7 - Synchroniser les plats (remplacement complet)
+        // Étape 7 - Synchroniser les plats
         if (isset($data['plats']) && is_array($data['plats'])) {
+
             foreach ($menu->getPlats() as $platExistant) {
+
                 $menu->removePlat($platExistant);
             }
+
             foreach ($data['plats'] as $platId) {
+
                 $plat = $platRepository->find($platId);
+
                 if (!$plat) {
+
                     return $this->json(['status' => 'Erreur', 'message' => "Plat id $platId non trouvé"], 404);
                 }
                 $menu->addPlat($plat);
@@ -832,7 +846,7 @@ final class EmployeController extends AbstractController
             ], 400);
         }
 
-        // Étape 4 - Vérifier l'extension
+        // Étape 4 - Vérifier que c'est bien une image acceptée
         $extensionsAutorisees = ['jpg', 'jpeg', 'png', 'webp'];
         $extension = strtolower($fichier->getClientOriginalExtension());
         if (!in_array($extension, $extensionsAutorisees)) {
@@ -1416,4 +1430,5 @@ final class EmployeController extends AbstractController
         // Étape 5 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
     }
+   
 }

@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Repository\HoraireRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 
@@ -15,14 +14,12 @@ use Symfony\Component\Routing\Attribute\Route;
  * @description Contrôleur gérant le retour des informations qui concerne les horaires d'ouverture de l'entreprise vite & gourmand.
  * 
  *  1. getHoraire()      : Afficher la liste des horaires d'ouverture de l'entreprise vite & gourmand.
- *  2. showHoraire()     : Retourner un élément de la liste des horaires d'ouverture de l'entreprise vite & gourmand par l'id
- *  3. getByIndex()      : Retourner un horaire en fonction de son index dans la liste des horaires
 */
-
+#[Route('/api')]
 final class HoraireController extends AbstractController
 {
     // Afficher la liste des horaires d'ouverture de l'entreprise vite & gourmand.
-    #[Route('/api/horaires', name: 'api_horaires', methods: ['GET'])]
+    #[Route('/horaires', name: 'api_horaires', methods: ['GET'])]
 
     // équivalent de SELECT * FROM horaire tous les horaires.
     // permet de récupérer tous les horaires et de les retourner au format JSON
@@ -61,53 +58,4 @@ final class HoraireController extends AbstractController
         // Étape 3 - Retourne le résultat
         return $this->json($data);
     }
-
-    // Retourner un élément de la liste des horaires d'ouverture de l'entreprise vite & gourmand par l'id
-    #[Route('/api/horaires/{id}', name: 'api_horaire_show', methods: ['GET'])]
-    // Cette méthode séléctionne un horaire par son id meme chose que SELECT * FROM horaire WHERE horaire_id = :id
-    // fonction qui permet de récupérer un horaire en fonction de son id et de le retourner au format JSON
-    public function showHoraire(int $id, HoraireRepository $horaireRepository): JsonResponse
-    {
-        // Étape 1 - Récupère tous les horaires par son id
-        $horaire = $horaireRepository->find($id);
-        // Étape 2 - Si l'horaire n'existe pas, on retourne une réponse JSON avec un message d'erreur et un code HTTP 404 correspondant à Not Found
-        //  Sinon l'horaire est trouvé, on le retourne en JSON
-        if (!$horaire) {
-            return $this->json(['message' => 'Horaire non trouvé'], 404);
-        }
-        // Étape 3 - Retourne le résultat
-        return $this->json($horaire);
-    }
-
-    // Retourner un horaire en fonction de son index dans la liste des horaires
-    // l'index permet de cibler les ligne de table dans l'ordre de la BDD, index 1 = première ligne de la table BDD
-    #[Route('/api/horairesIndexTable/{index}', name: 'api_horaire_index_table', methods: ['GET'])]
-    public function getByIndex(int $index, HoraireRepository $horaireRepository): JsonResponse
-    {
-        // Étape 1 - Récupère tous les horaires
-        $horaires = $horaireRepository->findAll();
-
-        // Étape 2 - Retourne le nombre total de lignes
-        $total = count($horaires);
-
-        // Étape 3 - Vérifie que l'index demandé existe (commence à 1) et retourne le total de lignes.
-        if ($index < 1 || $index > $total) {
-            return $this->json([
-                'message' => 'Index invalide',
-                'total_lignes' => $total
-            ], 404);
-        }
-
-        // Étape 4 - Cible la ligne par rapport à l'index (index 1 = position 0 dans le tableau)
-        $horaire = $horaires[$index - 1];
-        
-        // Étape 5 - Retourne le résulat
-        return $this->json([
-            'total_lignes' => $total,
-            'index'        => $index,
-            'horaire_id'   => $horaire->getId(),
-            'jour'         => $horaire->getJour(),
-        ]);
-    }
-
 }

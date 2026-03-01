@@ -49,25 +49,16 @@ use Symfony\Component\HttpFoundation\Request;
  *  6. updateUserAdminByEmail()     : Modifie un utilisateurs en le ciblant par son e-mail
  *  7. desactiverCompte()           : Désactivation d'un compte utilisateur
  *  8. reactiverCompte()            : Résactivation d'un compte utilisateur
- * 
  *  9. createEmploye()              : Création d'un compte employé par l'administrateur
- * 
  *  10. deleteCommande()            : Supprimer une commande
- *  11. rechercherCommande()        : Rechercher une commande par son numéro de commande
- * 
+ *  11. getAllAvis                  : Récupère tous les avis
  *  12. supprimerAvis()             : Supprimer un avis client
- *  13. refuserAvis()               : Refuser un avis client
- *  14. approuverAvis()             : Approuver un avis client
- *  15. getAvisEnAttente()          : Afficher tous les avis en attente de validation
- * 
- *  16. getStatistiques()           : Retourne les statistiques complètes vennant de MySQl 
- *  17. getLogs()                   : Retourne les logs d'activité vennant de MongoDB -> NoSQL
- *  18. getStatistiquesGraphiques() : Retourne les données graphiques depuis MongoDB
- * 
- *  19. getHorairesAdmin()          : Retourne la liste de tous les horaires
- *  20. createHoraireAdmin()        : Créer un nouvel horaire
- *  21. updateHoraireAdmin()        : Met à jour un horaire par son id
- *  22. deleteHoraireAdmin()        : Supprime un horaire par son id
+ *  13. getStatistiques()           : Retourne les statistiques complètes vennant de MySQl 
+ *  14. getStatistiquesGraphiques() : Retourne les données graphiques depuis MongoDB
+ *  15. getLogs()                   : Retourne les logs d'activité vennant de MongoDB -> NoSQL
+ *  16. createHoraire()             : Créer un nouvel horaire
+ *  17. updateHoraire()             : Met à jour un horaire par son id
+ *  18. deleteHoraire()             : Supprime un horaire par son id
 */
 
 #[Route('/api/admin')]
@@ -596,123 +587,25 @@ final class AdminController extends AbstractController
         // Étape 5 — Retourner un message de confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Commande supprimée avec succès']);
     }
- 
-    /**
-     * @description Rechercher une commande par son numéro de commande
-     * @param string $nom Le numéro de commande à rechercher
-     * @param CommandeRepository $commandeRepository Le repository des commandes
-     * @return JsonResponse
-     */
-    #[Route('/commandes/recherche/{nom}', name: 'api_admin_commandes_recherche', methods: ['GET'])]
-    public function rechercherCommande(string $nom, CommandeRepository $commandeRepository): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Rechercher la commande par son numéro
-        $commandes = $commandeRepository->findByNumeroCommande($nom);
-
-        // Étape 3 - Si aucune commande trouvée
-        if (empty($commandes)) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Aucune commande trouvée'], 404);
-        }
-
-        // Étape 4 - Retourner les commandes en JSON
-        return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
-    }
 
     // =========================================================================
     // AVIS
     // =========================================================================
 
     /**
-     * @description Affiche tous les avis en attente de validation
-     * @param AvisRepository $avisRepository Le repository des avis
+     * @description Récupère tous les avis
      * @return JsonResponse
      */
-    #[Route('/avis', name: 'api_admin_avis', methods: ['GET'])]
-    public function getAvisEnAttente(AvisRepository $avisRepository): JsonResponse
+    #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
+    public function getAllAvis(AvisRepository $avisRepository): JsonResponse
     {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
+        $avis = $avisRepository->findAll();
 
-        // Étape 2 - Récupérer tous les avis en attente
-        $avis = $avisRepository->findBy(['statut' => 'en_attente']);
-
-        // Étape 3 - Retourner les avis en JSON
-        return $this->json(['status' => 'Succès', 'total' => count($avis), 'avis' => $avis]);
-    }
-
-    /**
-     * @description Approuve un avis client
-     * @param int $id L'id de l'avis
-     * @param AvisRepository $avisRepository Le repository des avis
-     * @param EntityManagerInterface $em L'EntityManager
-     * @return JsonResponse
-     */
-    #[Route('/avis/{id}/approuver', name: 'api_admin_avis_approuver', methods: ['PUT'])]
-    public function approuverAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer l'avis
-        $avis = $avisRepository->find($id);
-        if (!$avis) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Avis non trouvé'], 404);
-        }
-
-        // Étape 3 - Vérifier que l'avis est en attente
-        if ($avis->getStatut() !== 'en_attente') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Cet avis n\'est pas en attente'], 400);
-        }
-
-        // Étape 4 - Approuver l'avis
-        $avis->setStatut('validé');
-        $em->flush();
-
-        // Étape 5 - Retourner un message de confirmation
-        return $this->json(['status' => 'Succès', 'message' => 'Avis approuvé avec succès']);
-    }
-
-    /**
-     * @description Refuse un avis client
-     * @param int $id L'id de l'avis
-     * @param AvisRepository $avisRepository Le repository des avis
-     * @param EntityManagerInterface $em L'EntityManager
-     * @return JsonResponse
-     */
-    #[Route('/avis/{id}/refuser', name: 'api_admin_avis_refuser', methods: ['PUT'])]
-    public function refuserAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer l'avis
-        $avis = $avisRepository->find($id);
-        if (!$avis) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Avis non trouvé'], 404);
-        }
-
-        // Étape 3 - Vérifier que l'avis est en attente
-        if ($avis->getStatut() !== 'en_attente') {
-            return $this->json(['status' => 'Erreur', 'message' => 'Cet avis n\'est pas en attente'], 400);
-        }
-
-        // Étape 4 - Refuser l'avis
-        $avis->setStatut('refusé');
-        $em->flush();
-
-        // Étape 5 - Retourner un message de confirmation
-        return $this->json(['status' => 'Succès', 'message' => 'Avis refusé avec succès']);
+        return $this->json([
+            'success' => true,
+            'data' => $avis,
+            'count' => \count($avis),
+        ]);
     }
 
     /**
@@ -812,97 +705,6 @@ final class AdminController extends AbstractController
     // =========================================================================
     // LOGS - SOURCE MongoDB (NoSQL)
     // =========================================================================
-
-    /**
-     * @description Retourne les logs d'activité depuis MongoDB
-     * 
-     * Pourquoi deux routes distinctes (/statistiques et /logs) ?
-     * 
-     * /statistiques -> MySQL (Doctrine ORM)
-     *   -> Données métier structurées : commandes, montants, utilisateurs, avis
-     *   -> Relations entre entités (jointures), agrégations comptables
-     *   -> Schéma fixe, intégrité référentielle garantie
-     * 
-     * /logs -> MongoDB (Doctrine ODM)
-     *   -> Données de traçabilité volumineuses : connexions, actions, changements de statut
-     *   -> Pas de relations, chaque log est autonome et indépendant
-     *   -> Schéma flexible (le champ "contexte" varie selon le type de log)
-     *   -> Écriture rapide, lecture par filtres simples sans jointure
-     * 
-     * Paramètres de filtrage (query string) :
-     *   ?type=connexion            ->  filtrer par type d'action (connexion, inscription, commande_creee, statut_change)
-     *   ?email=florian@email.fr   -> filtrer par email de l'utilisateur concerné
-     *   ?limit=50                 -> limiter le nombre de résultats (défaut: 100)
-     * 
-     * @param Request $request La requête HTTP avec les éventuels filtres
-     * @param DocumentManager $dm Le DocumentManager MongoDB
-     * @return JsonResponse
-     */
-    #[Route('/logs', name: 'api_admin_logs', methods: ['GET'])]
-    public function getLogs(Request $request, DocumentManager $dm): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle ADMIN
-        if (!$this->isGranted('ROLE_ADMIN')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer les filtres depuis la query string
-        $type   = $request->query->get('type');             // ex: ?type=connexion
-        $email  = $request->query->get('email');            // ex: ?email=florian@email.fr
-        $limit  = (int) ($request->query->get('limit', 100)); // défaut 100 résultats
-
-        // Étape 3 - Construire la requête MongoDB via le QueryBuilder ODM
-        // Différence clé avec MySQL :
-        //       MySQL : $em->createQueryBuilder() -> génère du SQL avec jointures
-        //       MongoDB : $dm->createQueryBuilder() -> requête NoSQL, pas de SQL, pas de jointure
-        $qb = $dm->createQueryBuilder(LogActivite::class)
-            ->sort('createdAt', 'DESC') // tri du plus récent au plus ancien
-            ->limit($limit);
-
-        // Étape 4 - Appliquer les filtres si fournis
-        if ($type) {
-            // Filtre sur le champ "type" du document MongoDB
-            $qb->field('type')->equals($type);
-        }
-
-        
-        if ($email) {
-            // Filtre sur le champ "email" du document MongoDB
-            $qb->field('email')->equals($email);
-        }
-
-        // Étape 5 - Exécuter la requête et récupérer les résultats
-        $logs = $qb->getQuery()->execute();
-
-        // Étape 6 - Formater les résultats pour la réponse JSON
-        // MongoDB retourne des objets LogActivite -> on les sérialise manuellement
-        $logsFormates = [];
-        foreach ($logs as $log) {
-            $logsFormates[] = [
-                'id'         => $log->getId(),
-                'type'       => $log->getType(),
-                'message'    => $log->getMessage(),
-                'email'      => $log->getEmail(),
-                'role'       => $log->getRole(),
-                'contexte'   => $log->getContexte(),
-                'created_at' => $log->getCreatedAt()->format('d/m/Y H:i:s'),
-            ];
-        }
-
-        // Étape 7 - Retourner les logs en JSON
-        return $this->json([
-            'status'  => 'Succès',
-            'source'  => 'MongoDB',     // indique explicitement la source NoSQL
-            'total'   => count($logsFormates),
-            'filtres' => [              // rappel des filtres appliqués pour la lisibilité
-                'type'  => $type  ?? 'tous',
-                'email' => $email ?? 'tous',
-                'limit' => $limit,
-            ],
-            'logs' => $logsFormates,
-        ]);
-    }
-
     
     /**
      * @description Retourne les données graphiques depuis MongoDB
@@ -1036,39 +838,94 @@ final class AdminController extends AbstractController
         ]);
     }
 
-    // =========================================================================
-    // HORAIRES
-    // =========================================================================
-
     /**
-     * @description Retourne la liste de tous les horaires
-     * @param HoraireRepository $horaireRepository Le repository des horaires
+     * @description Retourne les logs d'activité depuis MongoDB
+     * 
+     * Pourquoi deux routes distinctes (/statistiques et /logs) ?
+     * 
+     * /statistiques -> MySQL (Doctrine ORM)
+     *   -> Données métier structurées : commandes, montants, utilisateurs, avis
+     *   -> Relations entre entités (jointures), agrégations comptables
+     *   -> Schéma fixe, intégrité référentielle garantie
+     * 
+     * /logs -> MongoDB (Doctrine ODM)
+     *   -> Données de traçabilité volumineuses : connexions, actions, changements de statut
+     *   -> Pas de relations, chaque log est autonome et indépendant
+     *   -> Schéma flexible (le champ "contexte" varie selon le type de log)
+     *   -> Écriture rapide, lecture par filtres simples sans jointure
+     * 
+     * @param Request $request La requête HTTP avec les éventuels filtres
+     * @param DocumentManager $dm Le DocumentManager MongoDB
      * @return JsonResponse
      */
-    #[Route('/horaires', name: 'api_admin_horaires_list', methods: ['GET'])]
-    public function getHorairesAdmin(HoraireRepository $horaireRepository): JsonResponse
+    #[Route('/logs', name: 'api_admin_logs', methods: ['GET'])]
+    public function getLogs(Request $request, DocumentManager $dm): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 - Retourne les horraire
-        $horaires = $horaireRepository->findAll();
+        // Étape 2 - Récupérer les filtres depuis la query string
+        $type   = $request->query->get('type');             // ex: ?type=connexion
+        $email  = $request->query->get('email');            // ex: ?email=florian@email.fr
+        $limit  = (int) ($request->query->get('limit', 100)); // défaut 100 résultats
 
-        // Étape 3 - Formate les horraires : on convertit heure_ouverture et heure_fermeture en string lisible
-        $horaireFormates = [];
-        foreach ($horaires as $horaire) {
-            $horaireFormates[] = [
-                'id'               => $horaire->getId(),
-                'jour'             => $horaire->getJour(),
-                'heure_ouverture'  => $horaire->getHeureOuverture()?->format('H:i'),
-                'heure_fermeture'  => $horaire->getHeureFermeture()?->format('H:i'),
+        // Étape 3 - Construire la requête MongoDB via le QueryBuilder ODM
+        // Différence clé avec MySQL :
+        //       MySQL : $em->createQueryBuilder() -> génère du SQL avec jointures
+        //       MongoDB : $dm->createQueryBuilder() -> requête NoSQL, pas de SQL, pas de jointure
+        $qb = $dm->createQueryBuilder(LogActivite::class)
+            ->sort('createdAt', 'DESC') // tri du plus récent au plus ancien
+            ->limit($limit);
+
+        // Étape 4 - Appliquer les filtres si fournis
+        if ($type) {
+            // Filtre sur le champ "type" du document MongoDB
+            $qb->field('type')->equals($type);
+        }
+
+        
+        if ($email) {
+            // Filtre sur le champ "email" du document MongoDB
+            $qb->field('email')->equals($email);
+        }
+
+        // Étape 5 - Exécuter la requête et récupérer les résultats
+        $logs = $qb->getQuery()->execute();
+
+        // Étape 6 - Formater les résultats pour la réponse JSON
+        // MongoDB retourne des objets LogActivite -> on les sérialise manuellement
+        $logsFormates = [];
+        foreach ($logs as $log) {
+            $logsFormates[] = [
+                'id'         => $log->getId(),
+                'type'       => $log->getType(),
+                'message'    => $log->getMessage(),
+                'email'      => $log->getEmail(),
+                'role'       => $log->getRole(),
+                'contexte'   => $log->getContexte(),
+                'created_at' => $log->getCreatedAt()->format('d/m/Y H:i:s'),
             ];
         }
-        // Étape 4 - Retourne le résultat
-        return $this->json(['status' => 'Succès', 'total' => count($horaireFormates), 'horaires' => $horaireFormates]);
+
+        // Étape 7 - Retourner les logs en JSON
+        return $this->json([
+            'status'  => 'Succès',
+            'source'  => 'MongoDB',     // indique explicitement la source NoSQL
+            'total'   => count($logsFormates),
+            'filtres' => [              // rappel des filtres appliqués pour la lisibilité
+                'type'  => $type  ?? 'tous',
+                'email' => $email ?? 'tous',
+                'limit' => $limit,
+            ],
+            'logs' => $logsFormates,
+        ]);
     }
+
+    // =========================================================================
+    // HORAIRES
+    // =========================================================================
 
     /**
      * @description Créer un nouvel horaire
@@ -1079,7 +936,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires', name: 'api_admin_horaires_create', methods: ['POST'])]
-    public function createHoraireAdmin(
+    public function createHoraire(
         Request $request,
         HoraireRepository $horaireRepository,
         EntityManagerInterface $em
@@ -1133,7 +990,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires/{id}', name: 'api_admin_horaires_update', methods: ['PUT'])]
-    public function updateHoraireAdmin(
+    public function updateHoraire(
         int $id,
         Request $request,
         HoraireRepository $horaireRepository,
@@ -1187,7 +1044,7 @@ final class AdminController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/horaires/{id}', name: 'api_admin_horaires_delete', methods: ['DELETE'])]
-    public function deleteHoraireAdmin(
+    public function deleteHoraire(
         int $id,
         HoraireRepository $horaireRepository,
         EntityManagerInterface $em

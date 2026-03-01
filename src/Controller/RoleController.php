@@ -82,7 +82,12 @@ final class RoleController extends BaseController
     ): JsonResponse {
         $data = $this->getDataFromRequest($request);
 
-        // Étape 1 - test les données requises
+        // Étape 1 - Vérifie que l'utilisateur a le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['success' => false, 'error' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - test les données requises
         $requiredFields = ['libelle'];
         foreach ($requiredFields as $field) {
             if (!isset($data[$field])) {
@@ -93,7 +98,7 @@ final class RoleController extends BaseController
             }
         }
 
-        // Étape 2 - Vérifie que le rôle n'existe pas déjà
+        // Étape 3 - Vérifie que le rôle n'existe pas déjà
         $existingRole = $roleRepository->findOneBy(['libelle' => $data['libelle']]);
         if ($existingRole) {
             return $this->json(
@@ -102,18 +107,18 @@ final class RoleController extends BaseController
             );
         }
 
-        // Étape 3 - Créer le nouveau rôle
+        // Étape 4 - Créer le nouveau rôle
         $role = new Role();
         $role->setLibelle($data['libelle']);
         if (isset($data['description'])) {
             $role->setDescription($data['description']);
         }
 
-        // Étape 4 - Persiste et sauvegarde
+        // Étape 5 - Persiste et sauvegarde
         $entityManager->persist($role);
         $entityManager->flush();
 
-        // Étape 5 - Retourne le résultat
+        // Étape 6 - Retourne le résultat
         return $this->json(
             [
                 'success' => true,
@@ -137,10 +142,15 @@ final class RoleController extends BaseController
         EntityManagerInterface $entityManager
     ): JsonResponse {
         
-        // Étape 1 - Trouve un role d'un utilisateur pointé par son id
+        // Étape 1 - Vérifie que l'utilisateur a le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['success' => false, 'error' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Trouve un role d'un utilisateur pointé par son id
         $role = $roleRepository->find($id);
 
-        // Étape 2 - Vérifie si le role d'un utilisateur existe ou non 
+        // Étape 3 - Vérifie si le role d'un utilisateur existe ou non 
         if (!$role) {
             return $this->json(
                 ['success' => false, 'error' => 'Role not found'],
@@ -148,12 +158,12 @@ final class RoleController extends BaseController
             );
         }
 
-        // Étape 3 - Récupere ces données
+        // Étape 4 - Récupere ces données
         $data = $this->getDataFromRequest($request);
 
-        // Étape 4 - Mise à jour des champs optionnels
+        // Étape 5 - Mise à jour des champs optionnels
         if (isset($data['libelle'])) {
-            // Étape 4.1 - Vérifier que le nouveau libellé n'existe pas ailleurs
+            // Étape 5.1 - Vérifier que le nouveau libellé n'existe pas ailleurs
             $existingRole = $roleRepository->findOneBy(['libelle' => $data['libelle']]);
             if ($existingRole && $existingRole->getId() !== $id) {
                 return $this->json(
@@ -163,15 +173,16 @@ final class RoleController extends BaseController
             }
             $role->setLibelle($data['libelle']);
         }
-        // Étape 4 - Met à jour la description 
+
+        // Étape 6 - Met à jour la description 
         if (isset($data['description'])) {
             $role->setDescription($data['description']);
         }
 
-        // Étape 5 - Sauvegarde les données
+        // Étape 7 - Sauvegarde les données
         $entityManager->flush();
 
-        // Étape 6 - Retourne le résultat
+        // Étape 8 - Retourne le résultat
         return $this->json([
             'success' => true,
             'message' => 'Role updated successfully',
@@ -193,9 +204,16 @@ final class RoleController extends BaseController
         RoleRepository $roleRepository,
         EntityManagerInterface $entityManager
     ): JsonResponse {
-        // Étape 1 - Trouve le role d'un utilisateur pointé par son id
+
+        // Étape 1 - Vérifie que l'utilisateur a le rôle ADMIN
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['success' => false, 'error' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Trouve le role d'un utilisateur pointé par son id
         $role = $roleRepository->find($id);
-        // Étape 2 - existe t'il oui ou non ? 
+
+        // Étape 3 - existe t'il oui ou non ? 
         if (!$role) {
             return $this->json(
                 ['success' => false, 'error' => 'Role not found'],
@@ -203,7 +221,7 @@ final class RoleController extends BaseController
             );
         }
 
-        // Étape 3 - Vérifier que le rôle n'est pas utilisé par des utilisateurs
+        // Étape 4 - Vérifier que le rôle n'est pas utilisé par des utilisateurs
         $utilisateurs = $role->getUtilisateurs();
         if ($utilisateurs && \count($utilisateurs) > 0) {
             return $this->json(
@@ -211,13 +229,13 @@ final class RoleController extends BaseController
                 JsonResponse::HTTP_CONFLICT
             );
         }
-        // Étape 4 - Supprime le role d'un utilisateur
+        // Étape 5 - Supprime le role d'un utilisateur
         $entityManager->remove($role);
 
-        // Étape 5 - Sauvegarde le role d'un utilisateur
+        // Étape 6 - Sauvegarde le role d'un utilisateur
         $entityManager->flush();
         
-        // Étape 6 - Retourne le résultat
+        // Étape 7 - Retourne le résultat
         return $this->json([
             'success' => true,
             'message' => 'Role deleted successfully',

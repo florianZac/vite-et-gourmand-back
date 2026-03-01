@@ -2,7 +2,15 @@
 
 namespace App\Controller;
 
+use App\Entity\Avis;
+
 use App\Repository\MenuRepository;
+use App\Repository\CommandeRepository;
+use App\Repository\UtilisateurRepository;
+use App\Repository\AvisRepository;
+
+use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,4 +59,24 @@ final class MenuController extends AbstractController
         // Étape 3 - retourne le résulat
         return $this->json($menu);
     }
+
+    
+    // =========================================================================
+    // AVIS
+    // =========================================================================
+
+    /**
+     * @description Récupère les avis validés publics pour le site
+     * @return JsonResponse
+     */
+    #[Route('/avis', name: 'api_avis_public', methods: ['GET'])]
+    public function getAvisValides(AvisRepository $avisRepository): JsonResponse
+    {
+        // Étape 1 - Récupérer uniquement les avis validés
+        $avis = $avisRepository->findBy(['statut' => 'validé']);
+
+        // Étape 2 - Retourner en JSON
+        return $this->json(['status' => 'Succès', 'total' => count($avis), 'avis' => $avis]);
+    }
+
 }
