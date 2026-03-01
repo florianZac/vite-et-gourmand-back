@@ -182,7 +182,7 @@ class ContactController extends AbstractController
      */
     private function verifierSecurite(Request $request, RateLimiterFactory $contactLimiter, ?array $data): ?JsonResponse
     {
-        // Étape 1 - Rate Limiting : limite à 5 requêtes par heure par adresse IP
+        // Étape 1 - Rate Limiting : limite à 25 requêtes par heure par adresse IP
         $limiter = $contactLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {
             return $this->json([

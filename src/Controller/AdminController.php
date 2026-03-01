@@ -557,10 +557,10 @@ final class AdminController extends AbstractController
     // COMMANDE
     // =========================================================================
 
-    #[Route('/commandes/{id}', name: 'api_client_commande_delete', methods: ['DELETE'])]
+    #[Route('/commandes/{id}', name: 'api_admin_commande_delete', methods: ['DELETE'])]
     /**
-     * @description Cette fonction permet à un client connecté de supprimer une commande.
-     * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
+     * @description Cette fonction permet à un administrateur de supprimer physiquement une commande.
+     * L'utilisateur doit être authentifié et avoir le rôle ADMIN
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @param EntityManagerInterface $em l'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse reponse JSON

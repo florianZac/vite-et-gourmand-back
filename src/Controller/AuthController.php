@@ -59,9 +59,9 @@ final class AuthController extends AbstractController
         //dump($data); // version du printf affiche le tableau $data
 
         // Étape 2 - Vérifie que les champs obligatoires sont présents
-        if ( empty($data['nom']) || empty($data['prenom']) || empty($data['telephone']) ||
+        if (empty($data['nom']) || empty($data['prenom']) || empty($data['telephone']) ||
             empty($data['email']) || empty($data['password']) || empty($data['pays']) ||
-            empty($data['ville']) || empty($data['code_postal'])) {
+            empty($data['ville']) || empty($data['code_postal']) || empty($data['adresse_postale'])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Toutes les données doivent etre remplis'], 400);
         }
 
@@ -213,7 +213,7 @@ final class AuthController extends AbstractController
         $resetToken->setUtilisateur($utilisateur);
         $resetToken->setCreatedAt(new \DateTime());
         // Le token expire dans 4 heure
-        $resetToken->setExpiresAt((new \DateTime())->modify('+4 heure'));
+        $resetToken->setExpiresAt((new \DateTime())->modify('+4 hours'));
         $resetToken->setIsUsed(false);
 
         // Étape 6 - Sauvegarder le token en base de données
@@ -273,11 +273,11 @@ final class AuthController extends AbstractController
         // Étape 2 - Valider le nouveau mot de passe 
         // Même validation que lors de l'inscription
         // Penser à faire une fonction reggex plus tard
-        if (strlen($data['password']) < 10 ||
-            !preg_match('/[A-Z]/', $data['password']) ||
-            !preg_match('/[a-z]/', $data['password']) ||
-            !preg_match('/[0-9]/', $data['password']) ||
-            !preg_match('/[\W_]/', $data['password'])) {
+        if (strlen($data['password']) < 10  ||                     // 10 caractères min
+            !preg_match('/[A-Z]/', $data['password']) || // 1 majuscule
+            !preg_match('/[a-z]/', $data['password']) || // 1 minuscule
+            !preg_match('/[0-9]/', $data['password']) || // 1 chiffre
+            !preg_match('/[\W_]/', $data['password'])) { // 1 caractère spécial
             return $this->json([
                 'status'  => 'Erreur',
                 'message' => 'Mot de passe invalide : 10 caractères minimum, 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial'

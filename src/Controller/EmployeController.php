@@ -44,35 +44,36 @@ use Symfony\Component\Routing\Attribute\Route;
  *  5. getMaterielCommande() : Retourne l'état du matériel d'une commande ciblée
  *  6. confirmerRestitution(): Confirme le retour du matériel et le paiement de la pénalité
  *  7. filtrerCommandes()    : Filtrer les commandes par statut et/ou par client
+ *  8. getSuiviCommande()    : Afficher le suivi d'une commande
  *
- *  8. getAvisEnAttente()    : Afficher tous les avis en attente de validation
- *  9. approuverAvis()       : Approuver un avis client
- *  10. refuserAvis()        : Refuser un avis client
+ *  9. getAvisEnAttente()    : Afficher tous les avis en attente de validation
+ *  10. approuverAvis()      : Approuver un avis client
+ *  11. refuserAvis()        : Refuser un avis client
+ * 
+ *  12. createMenu()         : Créer un nouveau menu
+ *  13. updateMenu()         : Met à jour un menu par son id
+ *  14. deleteMenu()         : Supprimer un menu par son id
  *
- *  11. getAllMenus()        : Retourner la liste de tous les menus
- *  12. getMenuById()        : Retourner un menu par son id
- *  13. createMenu()         : Créer un nouveau menu (avec conditions)
- *  14. updateMenu()         : Met à jour un menu par son id (avec conditions)
- *  15. deleteMenu()         : Supprimer un menu par son id
+ *  15. addImageMenu()       : Ajouter une image à la galerie d'un menu
+ *  16. deleteImageMenu()    : Supprimer une image de la galerie d'un menu
+ *  17. updateOrdreImage()   : Modifier l'ordre d'affichage d'une image
  *
- *  16. addImageMenu()       : Ajouter une image à la galerie d'un menu
- *  17. deleteImageMenu()    : Supprimer une image de la galerie d'un menu
- *  18. updateOrdreImage()   : Modifier l'ordre d'affichage d'une image
- *
- *  19. createTheme()        : Créer un nouveau thème
- *  20. updateTheme()        : Met à jour un thème par son id
+ *  18. createTheme()        : Créer un nouveau thème
+ *  19. updateTheme()        : Met à jour un thème par son id
+ *  20. deleteTheme()        : Supprimer un thème par son id
  *
  *  21. createRegime()       : Créer un nouveau régime
  *  22. updateRegime()       : Met à jour un régime par son id
+ *  23. deleteRegime()       : Supprimer un régime par son id
  *
- *  23. createAllergene()    : Créer un nouvel allergène
- *  24. updateAllergene()    : Met à jour un allergène par son id
+ *  24. createAllergene()    : Créer un nouvel allergène
+ *  25. updateAllergene()    : Met à jour un allergène par son id
+ *  26. deleteAllergene()    : Supprimer un allergène par son id
  *
- *  25. createPlat()         : Créer un nouveau plat
- *  26. updatePlat()         : Met à jour un plat par son id
- *  27. deletePlat()         : Supprimer un plat par son id
+ *  27. createPlat()         : Créer un nouveau plat
+ *  28. updatePlat()         : Met à jour un plat par son id
+ *  29. deletePlat()         : Supprimer un plat par son id
  */
-
 #[Route('/api/employe')]
 final class EmployeController extends AbstractController
 {
@@ -130,12 +131,9 @@ final class EmployeController extends AbstractController
      * @description Modifier le statut d'une commande en respectant le cycle de vie strict
      * Cycle autorisé : En attente -> Acceptée -> En préparation -> En livraison -> Livré -> Terminée
      * Un retour en arrière est interdit.
-     * @param int $id L'id de la commande
-     * @param Request $request La requête HTTP contenant le nouveau statut
-     * @param CommandeRepository $commandeRepository Le repository des commandes
-     * @param EntityManagerInterface $em L'EntityManager
-     * @param MailerService $mailerService Le service d'envoi d'emails
-     * @return JsonResponse
+     * Cas spéciaux au statut LIVRE :
+     *   - pret_materiel = false -> passage automatique à Terminée
+     *   - pret_materiel = true  -> passage automatique à En attente du retour matériel + email client
      */
     #[Route('/commandes/{id}/statut', name: 'api_employe_commande_statut', methods: ['POST'])]
     public function changerStatut(
@@ -158,14 +156,14 @@ final class EmployeController extends AbstractController
         }
 
         // Étape 3 - Récupérer le nouveau statut depuis le JSON
-        $data = json_decode($request->getContent(), true);
+        $data          = json_decode($request->getContent(), true);
         $nouveauStatut = $data['statut'] ?? null;
 
         if (!$nouveauStatut) {
             return $this->json(['status' => 'Erreur', 'message' => 'Statut obligatoire'], 400);
         }
 
-        // Étape 4 - Récupérer l'ordre strict du cycle de vie depuis CommandeStatut
+        // Étape 4 - Récupérer l'ordre strict du cycle de vie
         $ordreStatuts = CommandeStatut::ORDRE;
 
         // Étape 5 - Vérifier que le nouveau statut existe dans le cycle
@@ -182,7 +180,7 @@ final class EmployeController extends AbstractController
         // Étape 7 - Mettre à jour le statut de la commande
         $commande->setStatut($nouveauStatut);
 
-        // Étape 8 - Créer un suivi de commande pour le statut demandé
+        // Étape 8 - Créer un suivi pour le statut demandé
         $suivi = new SuiviCommande();
         $suivi->setStatut($nouveauStatut);
         $suivi->setDateStatut(new \DateTime());
@@ -199,15 +197,28 @@ final class EmployeController extends AbstractController
             $mailerService->sendCommandeLivraisonEmail($client, $commande);
 
         } elseif ($nouveauStatut === CommandeStatut::LIVRE) {
-            // Enregistrement automatique de l'heure de livraison
-            $commande->setHeureLivraison(new \DateTime());
 
-            // Si matériel prêté -> passage automatique en "En attente du retour matériel"
-            if ($commande->isPretMateriel() === true) {
+            // stocker date_statut_livree (utilisée par le cron pour calculer les 10 jours ouvrés)
+            $commande->setDateStatutLivree(new \DateTime());
+
+            if ($commande->isPretMateriel() === false) {
+                // cas (0,0) et (0,1) → passage automatique à Terminée
+                $commande->setStatut(CommandeStatut::TERMINEE);
+                $mailerService->sendCommandeTermineeEmail($client, $commande);
+
+                // Suivi pour le statut Terminée
+                $suiviTerminee = new SuiviCommande();
+                $suiviTerminee->setStatut(CommandeStatut::TERMINEE);
+                $suiviTerminee->setDateStatut(new \DateTime());
+                $suiviTerminee->setCommande($commande);
+                $em->persist($suiviTerminee);
+
+            } else {
+                // cas (1,0) → passage automatique à En attente du retour matériel
                 $commande->setStatut(CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL);
                 $mailerService->sendRetourMaterielEmail($client, $commande);
 
-                // Créer un second suivi pour le vrai statut final
+                // Suivi pour le statut En attente du retour matériel
                 $suiviMateriel = new SuiviCommande();
                 $suiviMateriel->setStatut(CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL);
                 $suiviMateriel->setDateStatut(new \DateTime());
@@ -299,12 +310,7 @@ final class EmployeController extends AbstractController
      *  "pénalité payée" -> confirmé via le JSON
      * Une fois les deux confirmés -> commande passe automatiquement à "Terminée"
      * Corps JSON attendu : { "restitution_materiel": true, "penalite_payee": true }
-     * @param int $id L'id de la commande
-     * @param Request $request La requête HTTP contenant les données au format JSON
-     * @param CommandeRepository $commandeRepository Le repository des commandes
-     * @param EntityManagerInterface $em L'EntityManager
-     * @param MailerService $mailerService Le service d'envoi d'emails
-     * @return JsonResponse
+     * Si les deux conditions sont remplies -> commande passe automatiquement à Terminée
      */
     #[Route('/commandes/{id}/restitution', name: 'api_employe_materiel_restitution', methods: ['PUT'])]
     public function confirmerRestitution(
@@ -314,7 +320,6 @@ final class EmployeController extends AbstractController
         EntityManagerInterface $em,
         MailerService $mailerService
     ): JsonResponse {
-
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -342,10 +347,17 @@ final class EmployeController extends AbstractController
         // Étape 6 - Mettre à jour la restitution du matériel
         $commande->setRestitutionMateriel((bool) $data['restitution_materiel']);
 
-        // Étape 7 - Si les deux conditions sont remplies -> passer en "Terminée"
+        // Étape 7 - Si les deux conditions sont remplies -> passer en Terminée
         if ($commande->isRestitutionMateriel() === true && (bool) $data['penalite_payee'] === true) {
             $commande->setStatut(CommandeStatut::TERMINEE);
             $mailerService->sendCommandeTermineeEmail($commande->getUtilisateur(), $commande);
+
+            // Enregistrer le suivi du passage à Terminée
+            $suivi = new SuiviCommande();
+            $suivi->setStatut(CommandeStatut::TERMINEE);
+            $suivi->setDateStatut(new \DateTime());
+            $suivi->setCommande($commande);
+            $em->persist($suivi);
         }
 
         // Étape 8 - Sauvegarder en base
@@ -374,7 +386,6 @@ final class EmployeController extends AbstractController
         Request $request,
         CommandeRepository $commandeRepository
     ): JsonResponse {
-
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -392,16 +403,59 @@ final class EmployeController extends AbstractController
 
         // Étape 5 - Retourner les résultats
         return $this->json([
-            'status'   => 'Succès',
-            'total'    => count($commandes),
-            'filtres'  => [
-                'statut'        => $statut        ?? 'tous',
-                'utilisateur_id'=> $utilisateurId ?? 'tous',
+            'status'    => 'Succès',
+            'total'     => count($commandes),
+            'filtres'   => [
+                'statut'         => $statut        ?? 'tous',
+                'utilisateur_id' => $utilisateurId ?? 'tous',
             ],
             'commandes' => $commandes,
         ]);
     }
 
+    /**
+     * @description Afficher le suivi de toutes les commandes (sans restriction de propriétaire)
+     */
+    #[Route('/commandes/{id}/suivi', name: 'api_employe_commande_suivi', methods: ['GET'])]
+    public function getSuiviCommande(
+        int $id,
+        CommandeRepository $commandeRepository,
+        SuiviCommandeRepository $suiviCommandeRepository
+    ): JsonResponse {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Chercher la commande par son id
+        $commande = $commandeRepository->find($id);
+        if (!$commande) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
+        }
+
+        // Étape 3 - Récupérer les suivis triés du plus ancien au plus récent
+        $suivis = $suiviCommandeRepository->findBy(
+            ['commande' => $commande],
+            ['date_statut' => 'ASC']
+        );
+
+        // Étape 4 - Formater les données
+        $suivisFormates = [];
+        foreach ($suivis as $suivi) {
+            $suivisFormates[] = [
+                'statut'      => $suivi->getStatut(),
+                'date_statut' => $suivi->getDateStatut()->format('d/m/Y H:i'),
+            ];
+        }
+
+        // Étape 5 - Retourner les suivis en JSON
+        return $this->json([
+            'status'  => 'Succès',
+            'message' => 'Suivi retourné avec succès',
+            'total'   => count($suivis),
+            'suivis'  => $suivisFormates
+        ]);
+    }
 
     // =========================================================================
     // AVIS
@@ -500,50 +554,6 @@ final class EmployeController extends AbstractController
     // =========================================================================
     // MENUS
     // =========================================================================
-
-    /**
-     * @description Retourner la liste de tous les menus
-     * @param MenuRepository $menuRepository Le repository des menus
-     * @return JsonResponse
-     */
-    #[Route('/menus', name: 'api_employe_menus_list', methods: ['GET'])]
-    public function getAllMenus(MenuRepository $menuRepository): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle EMPLOYE
-        if (!$this->isGranted('ROLE_EMPLOYE')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer tous les menus
-        $menus = $menuRepository->findAll();
-
-        // Étape 3 - Retourner la liste en JSON
-        return $this->json(['status' => 'Succès', 'total' => count($menus), 'menus' => $menus]);
-    }
-
-    /**
-     * @description Retourner un menu par son id
-     * @param int $id L'id du menu
-     * @param MenuRepository $menuRepository Le repository des menus
-     * @return JsonResponse
-     */
-    #[Route('/menus/{id}', name: 'api_employe_menus_show', methods: ['GET'])]
-    public function getMenuById(int $id, MenuRepository $menuRepository): JsonResponse
-    {
-        // Étape 1 - Vérifier le rôle EMPLOYE
-        if (!$this->isGranted('ROLE_EMPLOYE')) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-        }
-
-        // Étape 2 - Récupérer le menu par son id
-        $menu = $menuRepository->find($id);
-        if (!$menu) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
-        }
-
-        // Étape 3 - Retourner le menu en JSON
-        return $this->json(['status' => 'Succès', 'menu' => $menu]);
-    }
 
     /**
      * @description Créer un nouveau menu
@@ -770,7 +780,7 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
         }
 
-        // Étape 3 - suppression du menu (cascade supprime aussi les menu_image liées)
+        // Étape 3 - Supprimer (cascade supprime les menu_image liées)
         $em->remove($menu);
 
         // Étape 4 - sauvegarder
@@ -808,7 +818,6 @@ final class EmployeController extends AbstractController
         MenuRepository $menuRepository,
         EntityManagerInterface $em
     ): JsonResponse {
-
         // Étape 1 - Vérifier le rôle EMPLOYE
         if (!$this->isGranted('ROLE_EMPLOYE')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -826,20 +835,14 @@ final class EmployeController extends AbstractController
         /** @var UploadedFile|null $fichier */
         $fichier = $request->files->get('image');
         if (!$fichier) {
-            return $this->json([
-                'status'  => 'Erreur',
-                'message' => 'Aucun fichier reçu. Utiliser multipart/form-data avec le champ "image"'
-            ], 400);
+            return $this->json(['status' => 'Erreur', 'message' => 'Aucun fichier reçu. Utiliser multipart/form-data avec le champ "image"'], 400);
         }
 
         // Étape 4 - Vérifier l'extension
         $extensionsAutorisees = ['jpg', 'jpeg', 'png', 'webp'];
         $extension = strtolower($fichier->getClientOriginalExtension());
         if (!in_array($extension, $extensionsAutorisees)) {
-            return $this->json([
-                'status'  => 'Erreur',
-                'message' => 'Format invalide. Formats acceptés : jpg, jpeg, png, webp'
-            ], 400);
+            return $this->json(['status' => 'Erreur', 'message' => 'Format invalide. Formats acceptés : jpg, jpeg, png, webp'], 400);
         }
 
         // Étape 5 - Générer un nom de fichier unique pour éviter les collisions entre menus
@@ -940,7 +943,6 @@ final class EmployeController extends AbstractController
         // Étape 7 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Image supprimée avec succès']);
     }
-
 
     /**
      * @description Modifier l'ordre d'affichage d'une image dans la galerie
@@ -1078,7 +1080,10 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
         }
 
-        // Étape 4 - Mettre à jour le libellé si fourni
+        // Étape 4 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 5 - Mettre à jour le libellé si fourni
         if (isset($data['libelle'])) {
             $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
             if ($existant && $existant->getId() !== $theme->getId()) {
@@ -1087,11 +1092,36 @@ final class EmployeController extends AbstractController
             $theme->setLibelle($data['libelle']);
         }
 
-        // Étape 5 - Sauvegarder
+        // Étape 6 - Sauvegarder
         $em->flush();
 
-        // Étape 6 - Retourner une confirmation
+        // Étape 7 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Thème mis à jour avec succès']);
+    }
+
+    /**
+     * @description Supprimer un thème par son id
+     */
+    #[Route('/themes/{id}', name: 'api_employe_themes_delete', methods: ['DELETE'])]
+    public function deleteTheme(int $id, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Chercher le thème à supprimer
+        $theme = $themeRepository->find($id);
+        if (!$theme) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
+        }
+
+        // Étape 3 - Supprimer
+        $em->remove($theme);
+        $em->flush();
+
+        // Étape 4 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Thème supprimé avec succès']);
     }
 
     // =========================================================================
@@ -1164,7 +1194,10 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Régime non trouvé'], 404);
         }
 
-        // Étape 4 - Mettre à jour le libellé si fourni
+        // Étape 4 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
+        // Étape 5 - Mettre à jour le libellé si fourni
         if (isset($data['libelle'])) {
             $existant = $regimeRepository->findOneBy(['libelle' => $data['libelle']]);
             if ($existant && $existant->getId() !== $regime->getId()) {
@@ -1173,11 +1206,36 @@ final class EmployeController extends AbstractController
             $regime->setLibelle($data['libelle']);
         }
 
-        // Étape 5 - Sauvegarder
+        // Étape 6 - Sauvegarder
         $em->flush();
 
-        // Étape 6 - Retourner une confirmation
+        // Étape 7 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Régime mis à jour avec succès']);
+    }
+
+    /**
+     * @description Supprimer un régime par son id
+     */
+    #[Route('/regimes/{id}', name: 'api_employe_regimes_delete', methods: ['DELETE'])]
+    public function deleteRegime(int $id, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Chercher le régime à supprimer
+        $regime = $regimeRepository->find($id);
+        if (!$regime) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Régime non trouvé'], 404);
+        }
+
+        // Étape 3 - Supprimer
+        $em->remove($regime);
+        $em->flush();
+
+        // Étape 4 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Régime supprimé avec succès']);
     }
 
     // =========================================================================
@@ -1241,6 +1299,9 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Allergène non trouvé'], 404);
         }
 
+        // Étape 3 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
         // Étape 4 - Mettre à jour le libellé si fourni
         if (isset($data['libelle'])) {
             $existant = $allergeneRepository->findOneBy(['libelle' => $data['libelle']]);
@@ -1255,6 +1316,32 @@ final class EmployeController extends AbstractController
 
         // Étape 6 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Allergène mis à jour avec succès']);
+    }
+
+    /**
+     * @description Supprimer un allergène par son id
+     *  méthode manquante ajoutée (CDC : employé peut créer, modifier ET supprimer les allergènes)
+     */
+    #[Route('/allergenes/{id}', name: 'api_employe_allergenes_delete', methods: ['DELETE'])]
+    public function deleteAllergene(int $id, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+    {
+        // Étape 1 - Vérifier le rôle EMPLOYE
+        if (!$this->isGranted('ROLE_EMPLOYE')) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        }
+
+        // Étape 2 - Chercher l'allergène à supprimer
+        $allergene = $allergeneRepository->find($id);
+        if (!$allergene) {
+            return $this->json(['status' => 'Erreur', 'message' => 'Allergène non trouvé'], 404);
+        }
+
+        // Étape 3 - Supprimer
+        $em->remove($allergene);
+        $em->flush();
+
+        // Étape 4 - Retourner une confirmation
+        return $this->json(['status' => 'Succès', 'message' => 'Allergène supprimé avec succès']);
     }
 
     // =========================================================================
@@ -1339,6 +1426,9 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
         }
 
+        // Étape 3 - Récupérer les données JSON
+        $data = json_decode($request->getContent(), true);
+
         // Étape 4 - Mettre à jour le titre si fourni
         if (isset($data['titre_plat'])) {
             $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
@@ -1362,14 +1452,12 @@ final class EmployeController extends AbstractController
             $plat->setCategorie($data['categorie']);
         }
 
-        // Étape 7 - Synchroniser les allergènes si fournis
+        // Étape 7 - Synchroniser les allergènes si fournis (remplacement complet)
         if (isset($data['allergenes']) && is_array($data['allergenes'])) {
             foreach ($plat->getAllergenes() as $allergeneExistant) {
-
                 $plat->removeAllergene($allergeneExistant);
             }
             foreach ($data['allergenes'] as $allergeneId) {
-
                 $allergene = $allergeneRepository->find($allergeneId);
                 if (!$allergene) {
                     return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
@@ -1384,7 +1472,7 @@ final class EmployeController extends AbstractController
         // Étape 9 - Retourner une confirmation
         return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
     }
-    
+
     /**
      * @description Supprimer un plat par son id
      * @param int $id L'id du plat à supprimer
@@ -1392,7 +1480,6 @@ final class EmployeController extends AbstractController
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse
      */
-    // Dans la section PLATS
     #[Route('/plats/{id}', name: 'api_employe_plats_delete', methods: ['DELETE'])]
     public function deletePlat(int $id, PlatRepository $platRepository, EntityManagerInterface $em): JsonResponse
     {
@@ -1407,13 +1494,13 @@ final class EmployeController extends AbstractController
             return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
         }
 
-        // Étape 3 - suppression
+        // Étape 3 - Supprimer
         $em->remove($plat);
-
-        // Étape 4 - sauvegarder
+ 
+        // Étape 4 - Sauvegarder       
         $em->flush();
 
-        // Étape 5 - Retourner une confirmation
+        // Étape 5 - Retourne le résulat
         return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
     }
 }

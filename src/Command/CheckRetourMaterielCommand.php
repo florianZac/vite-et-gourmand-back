@@ -17,8 +17,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class CheckRetourMaterielCommand extends Command
 {
-    protected static $defaultName = 'app:check-retour-materiel';
-
     /**
      * Injection des services nécessaires :
      * CommandeRepository : récupérer les commandes dans la base

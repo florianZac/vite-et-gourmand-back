@@ -629,3 +629,20 @@ PS D:\wamp64\www\vite-et-gourmand-back> php bin/console debug:router
 PS D:\wamp64\www\vite-et-gourmand-back> 
 
 
+test de la commande 
+php bin/console app:check-retour-materiel
+
+configuration de cron sur linux
+édite la crontab du serveur linux
+crontab -e
+ensuite ajout de la ligne 
+# Tous les jours à 9h00 (minute heure jour mois jour_semaine commande)
+0 8 * * * /usr/bin/php /var/www/html/mon-projet/bin/console app:check-retour-materiel
+
+Version Windows
+Panneau de configuration → Planificateur de tâches
+Nouvelle tâche → déclencher tous les jours à 8h
+Action : php C:\wamp64\www\mon-projet\bin/console app:check-retour-materiel
+
+
+APP_SECRET génèration par la commande => php bin/console secrets:generate-keys

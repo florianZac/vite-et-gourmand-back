@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Commande;
 use App\Entity\SuiviCommande;
+use App\Enum\CommandeStatut;
 use App\Repository\MenuRepository;
 use App\Repository\UtilisateurRepository;
 use App\Service\MailerService;
@@ -18,14 +19,94 @@ use Symfony\Component\Routing\Attribute\Route;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description Contrôleur gérant les opérations sur les commandes côté administrateur
- *  1. createCommande         : Créer une nouvelle commande avec toutes les règles métier
- *  2. getAllCommandes        : Retourne la liste de toutes les commandes
- *  3. getCommandeById       : Retourne une commande par son id
- *  4. annulerCommande        : Annule une commande avec un remboursement de 100% du montant total (prix menu + livraison)
+ *  1. createCommande  : Créer une nouvelle commande avec toutes les règles métier
+ *  2. getAllCommandes : Retourne la liste de toutes les commandes
+ *  3. getCommandeById : Retourne une commande par son id
+ *  4. annulerCommande : Annule une commande avec un remboursement de 100%
  */
 #[Route('/api/admin/commandes')]
 final class CommandeController extends BaseController
 {
+    /**
+     * @description Retourne la liste des jours fériés français pour une année donnée
+     * Utilisé pour exclure les jours fériés du calcul des jours ouvrables
+     * @param int $annee L'année pour laquelle calculer les jours fériés
+     * @return array Tableau de dates au format Y-m-d
+     */
+    private function getJoursFeries(int $annee): array
+    {
+        // Calcul de Pâques via l'algorithme de Butcher
+        $a = $annee % 19;
+        $b = (int) ($annee / 100);
+        $c = $annee % 100;
+        $d = (int) ($b / 4);
+        $e = $b % 4;
+        $f = (int) (($b + 8) / 25);
+        $g = (int) (($b - $f + 1) / 3);
+        $h = (19 * $a + $b - $d - $g + 15) % 30;
+        $i = (int) ($c / 4);
+        $k = $c % 4;
+        $l = (36 - $e - $i + $k + $h) % 7;
+        $m = (int) (($a + 11 * $h + 22 * $l) / 451);
+        $moisPaques = (int) (($h + $l - 7 * $m + 114) / 31);
+        $jourPaques = (($h + $l - 7 * $m + 114) % 31) + 1;
+
+        $paques      = new \DateTime("$annee-$moisPaques-$jourPaques");
+        $lundiPaques = (clone $paques)->modify('+1 day');
+        $ascension   = (clone $paques)->modify('+39 days');
+        $lundiPentec = (clone $paques)->modify('+50 days');
+
+        return [
+            // Jours fériés fixes
+            "$annee-01-01", // Jour de l'an
+            "$annee-05-01", // Fête du travail
+            "$annee-05-08", // Victoire 1945
+            "$annee-07-14", // Fête nationale
+            "$annee-08-15", // Assomption
+            "$annee-11-01", // Toussaint
+            "$annee-11-11", // Armistice
+            "$annee-12-25", // Noël
+            // Jours fériés mobiles (basés sur Pâques)
+            $paques->format('Y-m-d'),
+            $lundiPaques->format('Y-m-d'),
+            $ascension->format('Y-m-d'),
+            $lundiPentec->format('Y-m-d'),
+        ];
+    }
+
+    /**
+     * @description Calcule le nombre de jours ouvrables entre aujourd'hui et une date cible
+     * Exclut les samedis, dimanches ET jours fériés français
+     * @param \DateTime $datePrestation La date cible
+     * @return int Le nombre de jours ouvrables
+     */
+    private function calculerJoursOuvrables(\DateTime $datePrestation): int
+    {
+        $aujourdhui   = new \DateTime();
+        $joursOuvrables = 0;
+        $dateCourante = clone $aujourdhui;
+
+        // Précalculer les jours fériés des années concernées
+        $annees      = array_unique([(int) $aujourdhui->format('Y'), (int) $datePrestation->format('Y')]);
+        $joursFeries = [];
+        foreach ($annees as $annee) {
+            $joursFeries = array_merge($joursFeries, $this->getJoursFeries($annee));
+        }
+
+        while ($dateCourante < $datePrestation) {
+            $dateCourante->modify('+1 day');
+            $jourSemaine = (int) $dateCourante->format('N'); // 1=lundi, 7=dimanche
+            $dateStr     = $dateCourante->format('Y-m-d');
+
+            // Compter uniquement lundi-vendredi hors jours fériés
+            if ($jourSemaine <= 5 && !in_array($dateStr, $joursFeries)) {
+                $joursOuvrables++;
+            }
+        }
+
+        return $joursOuvrables;
+    }
+
     // =========================================================================
     // COMMANDE
     // =========================================================================
@@ -61,7 +142,6 @@ final class CommandeController extends BaseController
         MailerService $mailerService,
         LogService $logService
     ): JsonResponse {
-
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -104,7 +184,6 @@ final class CommandeController extends BaseController
         // Ex: si le menu requiert minimum 10 personnes, on ne peut pas commander pour 5
         $nombrePersonnes  = (int) $data['nombre_personnes'];
         $minimumPersonnes = $menu->getNombrePersonneMinimum();
-
         if ($nombrePersonnes < $minimumPersonnes) {
             return $this->json([
                 'status'  => 'Erreur',
@@ -128,16 +207,7 @@ final class CommandeController extends BaseController
         $joursOuvrables = 0;
         $dateCourante = clone $aujourdhui;
 
-        // Étape 9 - Calcul tant que la date courante est inférieur à la date de prestation
-        while ($dateCourante < $datePrestation) {
-            $dateCourante->modify('+1 day');
-            // 1 = lundi ... 5 = vendredi (jours ouvrables)
-            if ((int) $dateCourante->format('N') <= 5) {
-                $joursOuvrables++;
-            }
-        }
-
-        // Étape 10 - Vérifie que le délai n'est pas dépassé
+        // Étape 9 - Vérifier que le délai minimum est respecté
         if ($joursOuvrables < $delaiMinimum) {
             return $this->json([
                 'status'  => 'Erreur',
@@ -145,38 +215,33 @@ final class CommandeController extends BaseController
             ], 400);
         }
 
-        // Étape 11 - Calcule le prix de base
+        // Étape 10 - Calculer le prix de base
         $prixParPersonne = $menu->getPrixParPersonne();
-        $prixMenu = $prixParPersonne * $nombrePersonnes;
+        $prixMenu        = $prixParPersonne * $nombrePersonnes;
 
-        // Étape 12 - Applique la réduction de -10% si nécessaire
-        // si le nombre de personnes dépasse le minimum requis de plus de 5
-        $minimumPersonnes = $menu->getNombrePersonneMinimum();
+        // Étape 11 - Appliquer la réduction de -10% si nécessaire
         if ($nombrePersonnes > ($minimumPersonnes + 5)) {
             $prixMenu = $prixMenu * 0.90;
         }
 
-        // Étape 13 - Calculer le prix de livraison
-        // Gratuit à Bordeaux, sinon 5€ + 0,59€/km
+        // Étape 12 - Calculer le prix de livraison
         $villeLivraison = strtolower(trim($data['ville_livraison']));
-        $distanceKm = (float) ($data['distance_km'] ?? 0);
-
+        $distanceKm     = (float) ($data['distance_km'] ?? 0);
         if ($villeLivraison === 'bordeaux') {
             $prixLivraison = 0;
         } else {
             $prixLivraison = 5 + (0.59 * $distanceKm);
         }
 
-        // Étape 14 - Calculer l'acompte
-        // 50% si thème Événement, 30% sinon
-        $libelleTheme = strtolower($menu->getTheme()->getLibelle());
-        $tauxAcompte = ($libelleTheme === 'événement') ? 0.50 : 0.30;
+        // Étape 13 - Calculer l'acompte (50% événement, 30% sinon)
+        $libelleTheme   = strtolower($menu->getTheme()->getLibelle());
+        $tauxAcompte    = ($libelleTheme === 'événement') ? 0.50 : 0.30;
         $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
 
-        // Étape 15 - Générer le numéro de commande unique
+        // Étape 14 - Générer le numéro de commande unique
         $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
 
-        // Étape 16 - Créer la commande
+        // Étape 15 - Créer la commande
         $commande = new Commande();
         $commande->setNumeroCommande($numeroCommande);
         $commande->setUtilisateur($utilisateur);
@@ -188,42 +253,40 @@ final class CommandeController extends BaseController
         $commande->setPrixMenu(round($prixMenu, 2));
         $commande->setPrixLivraison(round($prixLivraison, 2));
         $commande->setMontantAcompte(round($montantAcompte, 2));
-        $commande->setStatut('En attente');
+        $commande->setStatut(CommandeStatut::EN_ATTENTE);
         $commande->setDateCommande(new \DateTime());
         $commande->setPretMateriel((bool) ($data['pret_materiel'] ?? false));
 
-        // Étape 17 - Créer le suivi
+        // Étape 16 - Créer le suivi initial
         $suivi = new SuiviCommande();
-        $suivi->setStatut('En attente');
+        $suivi->setStatut(CommandeStatut::EN_ATTENTE);
         $suivi->setDateStatut(new \DateTime());
         $suivi->setCommande($commande);
 
-        // Étape 18 - Persister et sauvegarder la commande en base
+        // Étape 17 - Persister et sauvegarder
         $em->persist($commande);
         $em->persist($suivi);
         $em->flush();
 
-        // Étape 18.1 - Décrémenter le stock du menu
-        // Fait après le premier flush() pour garantir que la commande est bien sauvegardée
-        // avant de toucher au stock → cohérence des données en cas d'erreur
+        // Étape 18 - Décrémenter le stock du menu
         $menu->setQuantiteRestante($menu->getQuantiteRestante() - 1);
         $em->flush();
 
-        // Étape 19 - Envoyer un mail de confirmation de commande au client
+        // Étape 19 - Envoyer un mail de confirmation au client
         $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-        // Étape 20 - Enregistrer le log de création de commande dans MongoDB
+        // Étape 20 - Enregistrer le log MongoDB
         $logService->log(
             'commande_creee',
             $utilisateur->getEmail(),
             'ROLE_ADMIN',
             [
-                'numero_commande'   => $numeroCommande,
-                'montant'           => round($prixMenu + $prixLivraison, 2),
-                'menu'              => $menu->getTitre(),
-                'ville_livraison'   => $data['ville_livraison'],
-                'pret_materiel'     => $commande->isPretMateriel(),
-                'stock_restant'     => $menu->getQuantiteRestante(), // stock après décrémentation
+                'numero_commande' => $numeroCommande,
+                'montant'         => round($prixMenu + $prixLivraison, 2),
+                'menu'            => $menu->getTitre(),
+                'ville_livraison' => $data['ville_livraison'],
+                'pret_materiel'   => $commande->isPretMateriel(),
+                'stock_restant'   => $menu->getQuantiteRestante(),
             ]
         );
 
@@ -243,8 +306,6 @@ final class CommandeController extends BaseController
 
     /**
      * @description Retourne la liste de toutes les commandes
-     * @param CommandeRepository $commandeRepository Le repository des commandes
-     * @return JsonResponse
      */
     #[Route('', name: 'api_admin_commandes_list', methods: ['GET'])]
     public function getAllCommandes(CommandeRepository $commandeRepository): JsonResponse
@@ -275,7 +336,7 @@ final class CommandeController extends BaseController
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 - Récupérer la commande par son id
+        // Étape 2 - Récupérer la commande
         $commande = $commandeRepository->find($id);
         if (!$commande) {
             return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
@@ -302,41 +363,44 @@ final class CommandeController extends BaseController
         Request $request,
         CommandeRepository $commandeRepository,
         EntityManagerInterface $em,
+        MailerService $mailerService,
         LogService $logService
     ): JsonResponse {
-        
         // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
         }
 
-        // Étape 2 - Récupérer la commande par son id
+        // Étape 2 - Récupérer la commande
         $commande = $commandeRepository->find($id);
         if (!$commande) {
             return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
         }
 
         // Étape 3 - Vérifier que la commande n'est pas déjà annulée
-        if ($commande->getStatut() === 'annulée') {
+        if ($commande->getStatut() === CommandeStatut::ANNULEE) {
             return $this->json(['status' => 'Erreur', 'message' => 'Cette commande est déjà annulée'], 400);
         }
 
-        // Étape 4 - Récupérer le motif d'annulation depuis le corps de la requête (optionnel)
-        $data = json_decode($request->getContent(), true);
+        // Étape 4 - Récupérer le motif d'annulation (optionnel pour l'admin)
+        $data  = json_decode($request->getContent(), true);
         $motif = $data['motif_annulation'] ?? 'Annulée par l\'administrateur';
 
-        // Étape 5 - Calculer le montant remboursé (100% du total : prix menu + livraison)
+        // Étape 5 - Calculer le montant remboursé (100% : prix menu + livraison)
         $montantRembourse = $commande->getPrixMenu() + $commande->getPrixLivraison();
 
         // Étape 6 - Mettre à jour la commande
-        $commande->setStatut('annulée');
+        $commande->setStatut(CommandeStatut::ANNULEE);
         $commande->setMotifAnnulation($motif);
         $commande->setMontantRembourse($montantRembourse);
 
         // Étape 7 - Sauvegarder en base
         $em->flush();
 
-        // Étape 8 - Enregistrer le log d'annulation dans MongoDB
+        // Étape 8 - Envoyer l'email de confirmation d'annulation au client
+        $mailerService->sendCommandeAnnuleeEmail($commande->getUtilisateur(), $commande, $montantRembourse);
+
+        // Étape 9 - Enregistrer le log MongoDB
         $admin = $this->getUser();
         $logService->log(
             'commande_annulee',
@@ -350,7 +414,7 @@ final class CommandeController extends BaseController
             ]
         );
 
-        // Étape 9 - Retourner une confirmation avec le détail du remboursement
+        // Étape 10 - Retourner une confirmation
         return $this->json([
             'status'            => 'Succès',
             'message'           => 'Commande annulée avec succès',
