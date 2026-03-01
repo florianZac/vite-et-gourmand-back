@@ -4,6 +4,9 @@ namespace App\Repository;
 
 use App\Entity\Commande;
 use App\Entity\Utilisateur;
+use App\Enum\CommandeStatut;
+
+
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -69,7 +72,7 @@ class CommandeRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('c')
             // Exclut les commandes terminées ou Annulées
             ->where('c.statut NOT IN (:statut)')
-            ->setParameter('statut', ['Terminée', 'Annulée'])
+            ->setParameter('statut', [CommandeStatut::TERMINEE, CommandeStatut::ANNULEE])
             // Trie par date de commande décroissante
             ->orderBy('c.date_commande', 'DESC')
             ->getQuery()
@@ -147,7 +150,7 @@ class CommandeRepository extends ServiceEntityRepository
             ->where('c.pret_materiel = true')
             ->andWhere('c.restitution_materiel = false')
             ->andWhere('c.statut = :statut')
-            ->setParameter('statut', 'En attente du retour matériel')
+            ->setParameter('statut', CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL)
             ->getQuery()
             ->getResult();
     }
@@ -214,7 +217,7 @@ class CommandeRepository extends ServiceEntityRepository
         // =====================================================
         $commandes = $this->createQueryBuilder('c')
             ->where('c.statut != :statut')
-            ->setParameter('statut', 'Annulée')
+            ->setParameter('statut', CommandeStatut::ANNULEE)
             ->getQuery()
             ->getResult();
 
@@ -247,7 +250,7 @@ class CommandeRepository extends ServiceEntityRepository
         $montantRembourseTotal = $this->createQueryBuilder('c')
             ->select('COALESCE(SUM(c.montant_rembourse), 0)')
             ->where('c.statut = :statut')
-            ->setParameter('statut', 'Annulée')
+            ->setParameter('statut', CommandeStatut::ANNULEE)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -344,7 +347,7 @@ class CommandeRepository extends ServiceEntityRepository
             // Étape 9.3 Exclut les commandes Annulées du calcul
             ->where('c.statut != :statut')
             // Étape 9.4 Met à jour les Valeur du paramètre : statut "Annulée"
-            ->setParameter('statut', 'Annulée')
+            ->setParameter('statut', CommandeStatut::ANNULEE)
             // Étape 9.5 Regroupe les résultats par menu
             // Indispensable pour utiliser COUNT et SUM correctement
             ->groupBy('m.id')

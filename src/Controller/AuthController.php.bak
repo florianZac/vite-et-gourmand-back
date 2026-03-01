@@ -37,7 +37,9 @@ final class AuthController extends AbstractController
         throw new \Exception('Ne devrait pas être appelé directement');
     }
 
+    // Fonction qui inscris de tous les utilisateurs
     #[Route('/register', name: 'api_register', methods: ['POST'])]
+    // utilisation de l'injection de dépendances pour récupérer les services nécessaires à la fonction register()
     public function register(
         Request $request,                            // la requête HTTP entrante (contenant les données JSON du client)
         UserPasswordHasherInterface $passwordHasher, // service qui hashe les mots de passe
@@ -45,7 +47,7 @@ final class AuthController extends AbstractController
         UtilisateurRepository $utilisateurRepository,// service qui fait les SELECT sur utilisateur
         RoleRepository $roleRepository,              // service qui fait les SELECT sur role
         MailerService $mailerService,                // service qui envoie les emails pour le mail de bienvenue
-        LogService $logService                       // service de logs MongoDB
+        LogService $logService                       // AJOUT : service de logs MongoDB
     ): JsonResponse
     {
         // Étape 1 - Récupère les données JSON envoyées par le client
@@ -153,6 +155,23 @@ final class AuthController extends AbstractController
         ], 201);
     }
 
+    /**
+     * @description Traite la demande de réinitialisation de mot de passe
+     * 
+     * Algo de reinitialisation mdp
+     * 1. L'utilisateur fournit son email
+     * 2. On crée un token sécurisé et unique
+     * 3. On le stocke en base de données avec une date d'expiration 4 heure 
+     * 4. On envoie un email contenant le lien avec le token au destinataire
+     * 5. L'utilisateur reçoit le mail et clique sur le lien pour réinitialiser
+     * 
+     * @param Request $request La requête contenant l'email dans le JSON
+     * @param UtilisateurRepository $utilisateurRepository Pour trouver l'utilisateur
+     * @param PasswordResetTokenRepository $tokenRepository Pour créer/stocker le token
+     * @param EntityManagerInterface $em Pour sauvegarder en base
+     * @param MailerService $mailerService Pour envoyer l'email
+     * @return JsonResponse
+     */
     #[Route('/forgot-password', name: 'api_forgot_password', methods: ['POST'])]
     public function forgotPassword(
         Request $request,
@@ -160,17 +179,19 @@ final class AuthController extends AbstractController
         PasswordResetTokenRepository $tokenRepository,
         EntityManagerInterface $em,
         MailerService $mailerService
-    ): JsonResponse {
-        // Étape 1 - Récupérer et valider l'email
+    ): JsonResponse
+    {
+        // Étape 1 - Récupérer et valider l'email fourni
         $data = json_decode($request->getContent(), true);
+
         if (empty($data['email'])) {
             return $this->json(['status' => 'Erreur', 'message' => 'Email requis'], 400);
         }
 
-        // Étape 2 - Vérifier que l'utilisateur existe
+        // Étape 2 - Vérifier que l'utilisateur existe en le cherchant pas son email
         $utilisateur = $utilisateurRepository->findOneBy(['email' => $data['email']]);
 
-        // Étape 3 - Message générique si l'utilisateur n'existe pas (sécurité)
+        // Étape 3 - On retourne le même message succès dans les deux cas
         if (!$utilisateur) {
             return $this->json([
                 'status'  => 'Succès',
@@ -178,23 +199,20 @@ final class AuthController extends AbstractController
             ], 200);
         }
 
-        // Étape 4 - Nettoyer les anciens tokens expirés ou utilisés de cet utilisateur
-        // Evite l'accumulation de tokens morts en base de données
-        $tokenRepository->deleteOldTokens($utilisateur);
-
-        // Étape 5 - Générer un token sécurisé
+        // Étape 4 - Générer un token sécurisé et unique
+        // bin2hex() + random_bytes() pour générer un token aléatoire sans risque de collision
         $token = bin2hex(random_bytes(32));
 
-        // Étape 6 - Créer l'entité PasswordResetToken
+        // Étape 5 - Créer l'entité PasswordResetToken
         $resetToken = new PasswordResetToken();
         $resetToken->setToken($token);
         $resetToken->setUtilisateur($utilisateur);
         $resetToken->setCreatedAt(new \DateTime());
-        // Le token expire dans 4 heures
+        // Le token expire dans 4 heure
         $resetToken->setExpiresAt((new \DateTime())->modify('+4 hours'));
         $resetToken->setIsUsed(false);
 
-        // Étape 7 - Sauvegarder le token
+        // Étape 6 - Sauvegarder le token en base de données
         $em->persist($resetToken);
         $em->flush();
 
