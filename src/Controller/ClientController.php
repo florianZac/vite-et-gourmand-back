@@ -35,7 +35,6 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 
 #[Route('/api/client')]
-
 final class ClientController extends BaseController
 {
 

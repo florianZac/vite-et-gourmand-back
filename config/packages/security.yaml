@@ -21,7 +21,9 @@ security:
     # ROLE_CLIENT : rôle pour les clients connectés, hérite de ROLE_VISITEUR
     # ROLE_EMPLOYE : rôle pour les employés, hérite de ROLE_VISITEUR
     # ROLE_ADMIN : rôle pour les administrateurs, hérite de ROLE_EMPLOYE et ROLE_CLIENT ainsi que du ROLE_VISITEUR
+    # PEUT CREE UN BUGUE à verifier car ROLE_VISITEUR n'existe pas réelement car c'est un PUBLIC_ACCESS 
     role_hierarchy:
+        ROLE_VISITEUR: []
         ROLE_CLIENT:   [ROLE_VISITEUR]
         ROLE_EMPLOYE:  [ROLE_VISITEUR]
         ROLE_ADMIN:    [ROLE_EMPLOYE, ROLE_CLIENT]
@@ -53,12 +55,14 @@ security:
      # Attention : la première règle qui correspond est appliquée
     access_control:
         # Routes publiques — Accessible à tout le monde (visiteurs non connectés)
-        - { path: ^/api/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/register, roles: PUBLIC_ACCESS }
-        - { path: ^/api/menus, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/horaires, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/contact, roles: PUBLIC_ACCESS }
-
+        - { path: ^/api/login,           roles: PUBLIC_ACCESS }
+        - { path: ^/api/register,        roles: PUBLIC_ACCESS }
+        - { path: ^/api/forgot-password, roles: PUBLIC_ACCESS } 
+        - { path: ^/api/reset-password,  roles: PUBLIC_ACCESS }  
+        - { path: ^/api/menus,           roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/horaires,        roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/avis,            roles: PUBLIC_ACCESS, methods: [GET] } 
+        - { path: ^/api/contact,         roles: PUBLIC_ACCESS }
         # Routes client — nécessite ROLE_CLIENT, Accessible uniquement aux clients connectés
         - { path: ^/api/client, roles: ROLE_CLIENT }
 

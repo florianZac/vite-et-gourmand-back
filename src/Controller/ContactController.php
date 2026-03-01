@@ -1,40 +1,48 @@
 <?php
+
 namespace App\Controller;
+
 use App\Service\MailerService;
+use App\Service\SanitizerService;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\DependencyInjection\Attribute\Target;
+
 /**
  * @author      Florian Aizac
  * @created     23/02/2026
  * @description Contrôleur gérant l'envoi de messages de contact
- * 
- *  1. contact                  : Récupere les données de contact d'un formulaire
- *  2. validationDataContact    : Teste la validation de tous les champs du formulaire de contact
- *  3. sanitizer                : Nettoie une valeur passé en parametre selon son type pour éviter les injections
- *  4. validerEmail             : Vérifie que l'email correspond au regex
- *  5. validerSujet             : Vérifie que le sujet correspond au regex
- *  6. validerMessage           : Vérifie que le contenu du message est correct
- *  7. verifierSecurite         : Vérifie toutes les protections de sécurité avant de traiter la requête 
+ *
+ *  1. contact               : Récupère les données de contact d'un formulaire
+ *  2. validationDataContact : Teste la validation de tous les champs du formulaire de contact
+ *  3. validerEmail          : Vérifie que l'email correspond au regex
+ *  4. validerSujet          : Vérifie que le sujet correspond au regex
+ *  5. validerMessage        : Vérifie que le contenu du message est correct
+ *  6. verifierSecurite      : Vérifie toutes les protections de sécurité avant de traiter la requête
  */
-
 #[Route('/api')]
 class ContactController extends AbstractController
 {
+    public function __construct(private SanitizerService $sanitizer) {}
+
+    /**
+     * @description Récupère les données de contact d'un formulaire
+     * Reçoit un JSON avec le sujet, email et le message, valide et envoie un email
+     * à l'administrateur du site via le service MailerService
+     */
     #[Route('/contact', name: 'api_contact', methods: ['POST'])]
     /**
      * @description : Récupere les données de contact d'un formulaire
      * Reçoit un JSON avec le sujet, email et le message, valide et envoie un email à l'administrateur du site via le service MailerService
     */
     public function contact(
-            Request $request, 
-            MailerService $mailerService, 
-            #[Target('contact_limiter.limiter')] RateLimiterFactory $contactLimiter
-        ): JsonResponse
-    {
+        Request $request,
+        MailerService $mailerService,
+        #[Target('contact_limiter.limiter')] RateLimiterFactory $contactLimiter
+    ): JsonResponse {
         // Étape 1 - Récupère et décode les données JSON envoyées par le client
         $data = json_decode($request->getContent(), true);
 
@@ -47,7 +55,6 @@ class ContactController extends AbstractController
 
         // Étape 3 - Vérifie que les données sont valides
         if (!$data) {
-            // Si le JSON est invalide, retourne une erreur avec un code 400
             return $this->json(['status' => 'error', 'message' => 'Format JSON invalide'], 400);
         }
 
@@ -73,29 +80,13 @@ class ContactController extends AbstractController
      */
     private function validationDataContact(array $data): array
     {
-        // Étape 1 - Création du tableau de stokage des erreurs de validation
+        // Étape 1 - Création du tableau de stockage des erreurs de validation
         $erreurs = [];
 
-        // Étape 2 - Nettoyage des données avant validation
-        // On vérifie que chaque champ existe avant de le sanitizer
-        // Si le champ n'existe pas on assigne une chaîne vide
-        if (isset($data['email'])) {
-            $email = $this->sanitizer($data['email'], 'email');
-        } else {
-            $email = '';
-        }
-
-        if (isset($data['sujet'])) {
-            $sujet = $this->sanitizer($data['sujet'], 'texte');
-        } else {
-            $sujet = '';
-        }
-
-        if (isset($data['message'])) {
-            $message = $this->sanitizer($data['message'], 'message');
-        } else {
-            $message = '';
-        }
+        // Étape 2 - Nettoyage des données avant validation via le SanitizerService
+        $email   = isset($data['email'])   ? $this->sanitizer->sanitize($data['email'],   'email')   : '';
+        $sujet   = isset($data['sujet'])   ? $this->sanitizer->sanitize($data['sujet'],   'texte')   : '';
+        $message = isset($data['message']) ? $this->sanitizer->sanitize($data['message'], 'message') : '';
 
         // Étape 3 - Validation de l'email
         // On appelle la fonction validerEmail avec l'email nettoyé
@@ -120,59 +111,6 @@ class ContactController extends AbstractController
         // Étape 6 - Retourne le tableau d'erreurs, vide si tout est valide
         return $erreurs;
     }
-        
-    /**
-     * @description Nettoie une valeur passé en parametre selon son type pour éviter les injections
-     * @param string $valeur La valeur à nettoyer
-     * @param string $type Le type de champ (email, texte, message)
-     * @return string La valeur nettoyée
-     */
-    private function sanitizer(string $valeur, string $type): string
-    {
-        // Étape 1 - Supprime les espaces inutiles en début et fin de chaîne
-        $valeur = trim($valeur);
-
-        // Étape 2 - Supprime toutes les balises HTML et PHP
-        $valeur = strip_tags($valeur);
-
-        // Étape 3 - Convertit les caractères spéciaux HTML en entités
-        $valeur = htmlspecialchars($valeur, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        // Étape 4 - Traitement spécifique selon le type de champ
-        switch ($type) {
-            case 'email':
-                // Supprime tous les caractères non autorisés dans un email
-                $valeur = filter_var($valeur, FILTER_SANITIZE_EMAIL);
-                // Si l'email n'est pas valide on retourne une chaîne vide
-                if (!filter_var($valeur, FILTER_VALIDATE_EMAIL)) {
-                    return '';
-                }
-                break;
-
-            case 'texte':
-                // Supprime les caractères de contrôle invisibles (ex: null byte \0)
-                $valeur = preg_replace('/[\x00-\x1F\x7F]/u', '', $valeur);
-                // Supprime les tentatives d'injection SQL basiques
-                $valeur = preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i', '', $valeur);
-                break;
-
-            case 'message':
-                // Supprime les caractères de contrôle invisibles
-                $valeur = preg_replace('/[\x00-\x1F\x7F]/u', '', $valeur);
-                // Supprime les tentatives d'injection SQL
-                $valeur = preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i', '', $valeur);
-                // Limite la taille du message à 1000 caractères
-                if (strlen($valeur) > 1000) {
-                    $valeur = substr($valeur, 0, 1000);
-                }
-                break;
-
-            default:
-                return '';
-        }
-
-        return $valeur;
-    }
 
     /**
      * @description Vérifie que l'email correspond au regex
@@ -185,14 +123,12 @@ class ContactController extends AbstractController
         if (empty($email)) {
             return 'Email obligatoire';
         }
-        // Étape 2 - Vérifie que l'email correspond à un format valide avec une regex stricte
-        // caractères autorisés, @,.com ou .fr
-        if (!preg_match(
-              '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|fr)$/', 
-              $email
-               )){
+
+        // Étape 2 - Vérifie que l'email correspond à un format valide
+        if (!preg_match('/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|fr)$/', $email)) {
             return 'Format email invalide';
         }
+
         return null;
     }
 
@@ -203,16 +139,17 @@ class ContactController extends AbstractController
      */
     private function validerSujet(string $sujet): ?string
     {
-        // Étape 1 - Vérifie si le parametre d'entrée est vide ou non 
+        // Étape 1 - Vérifie que le sujet n'est pas vide
         if (empty($sujet)) {
             return 'Sujet du mail obligatoire';
         }
 
-        // Étape 2 - Vérifie que le sujet ne contient que des lettres, chiffres, espaces et tirets, 
+        // Étape 2 - Vérifie que le sujet ne contient que des lettres, chiffres, espaces et tirets
         // et qu'il fait entre 3 et 100 caractères
         if (!preg_match('/^[a-zA-ZÀ-ÿ0-9\s\-]{3,100}$/', $sujet)) {
             return 'Sujet invalide (3 à 100 caractères)';
         }
+
         return null;
     }
 
@@ -223,28 +160,29 @@ class ContactController extends AbstractController
      */
     private function validerMessage(string $message): ?string
     {
-        // Étape 1 - Vérifie si le parametre d'entrée est vide ou non 
+        // Étape 1 - Vérifie que le message n'est pas vide
         if (empty($message)) {
             return 'Message obligatoire';
         }
 
-        // Étape 2 - Vérifie que la taille du message est inf à 500 
+        // Étape 2 - Vérifie que la taille du message est inférieure à 500 caractères
         if (strlen($message) > 500) {
             return 'Message trop long (500 caractères max)';
         }
+
         return null;
     }
-    
+
     /**
      * @description Vérifie toutes les protections de sécurité avant de traiter la requête
      * @param Request $request La requête HTTP
      * @param RateLimiterFactory $contactLimiter Le limiteur de requêtes
      * @param array|null $data Les données JSON décodées
-     * @return JsonResponse|null Retourne une erreur si une protection est déclenchée, null si tout est OK
+     * @return JsonResponse|null Retourne une erreur si une protection est déclenchée, null sinon
      */
     private function verifierSecurite(Request $request, RateLimiterFactory $contactLimiter, ?array $data): ?JsonResponse
     {
-        // Étape 1 - Mise en place de la protection 1, Rate Limiting Limite à 5 requêtes par heure par adresse IP
+        // Étape 1 - Rate Limiting : limite à 5 requêtes par heure par adresse IP
         $limiter = $contactLimiter->create($request->getClientIp());
         if (!$limiter->consume(1)->isAccepted()) {
             return $this->json([
@@ -253,7 +191,7 @@ class ContactController extends AbstractController
             ], 429);
         }
 
-        // Étape 2 - Mise en place de la protection 2, Vérifie que le Content-Type est bien du JSON
+        // Étape 2 - Vérifie que le Content-Type est bien du JSON
         if ($request->getContentTypeFormat() !== 'json') {
             return $this->json([
                 'status'  => 'error',
@@ -261,7 +199,7 @@ class ContactController extends AbstractController
             ], 415);
         }
 
-        // Étape 3 - Mise en place de la protection 3, Limite la taille du body à 10Ko
+        // Étape 3 - Limite la taille du body à 10Ko
         if (strlen($request->getContent()) > 10240) {
             return $this->json([
                 'status'  => 'error',
@@ -269,13 +207,12 @@ class ContactController extends AbstractController
             ], 413);
         }
 
-        // Étape 4 - Mise en place de la protection 4, Honeypot Si le champ site_web est rempli c'est un bot
+        // Étape 4 - Honeypot : si le champ site_web est rempli c'est un bot
         if (!empty($data['site_web'])) {
             return $this->json(['status' => 'success', 'message' => 'Message envoyé avec succès'], 200);
         }
 
-        // Étape 5 Retourne null si est OK
+        // Étape 5 - Tout est OK
         return null;
     }
-
 }

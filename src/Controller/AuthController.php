@@ -28,10 +28,11 @@ use Symfony\Component\Routing\Attribute\Route;
  *  3. forgotPassword         : Demande de réinitialisation de mot de passe envoie lien par email
  *  4. resetPassword          : Réinitialise le mot de passe avec le token reçu par email
  */
+#[Route('/api')]
 final class AuthController extends AbstractController
 {
     // Fonction qui log tous les utilisateurs
-    #[Route('/api/login', name: 'api_login', methods: ['POST'])]
+    #[Route('/login', name: 'api_login', methods: ['POST'])]
     public function login(): JsonResponse
     {
         // Symfony gère le login automatiquement via json_login
@@ -41,7 +42,7 @@ final class AuthController extends AbstractController
     }
 
     // Fonction qui inscris de tous les utilisateurs
-    #[Route('/api/register', name: 'api_register', methods: ['POST'])]
+    #[Route('/register', name: 'api_register', methods: ['POST'])]
     // utilisation de l'injection de dépendances pour récupérer les services nécessaires à la fonction register()
     public function register(
         Request $request,                            // la requête HTTP entrante (contenant les données JSON du client)
@@ -175,7 +176,7 @@ final class AuthController extends AbstractController
      * @param MailerService $mailerService Pour envoyer l'email
      * @return JsonResponse
      */
-    #[Route('/api/forgot-password', name: 'api_forgot_password', methods: ['POST'])]
+    #[Route('/forgot-password', name: 'api_forgot_password', methods: ['POST'])]
     public function forgotPassword(
         Request $request,
         UtilisateurRepository $utilisateurRepository,
@@ -254,7 +255,7 @@ final class AuthController extends AbstractController
      * @param EntityManagerInterface $em Pour sauvegarder en base
      * @return JsonResponse
      */
-    #[Route('/api/reset-password', name: 'api_reset_password', methods: ['POST'])]
+    #[Route('/reset-password', name: 'api_reset_password', methods: ['POST'])]
     public function resetPassword(
         Request $request,
         PasswordResetTokenRepository $tokenRepository,

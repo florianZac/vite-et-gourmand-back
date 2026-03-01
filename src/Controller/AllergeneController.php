@@ -19,7 +19,7 @@ use Symfony\Component\Routing\Attribute\Route;
  *  4. updateAllergene : modifie un allergène en le ciblant par son id
  *  5. deleteAllergene : supprime un allergène en le ciblant par son id 
  */
-#[Route('/api/admin/allergenes')]
+#[Route('/api/admin')]
 final class AllergeneController extends BaseController
 {
     /**
@@ -27,7 +27,7 @@ final class AllergeneController extends BaseController
      * @param AllergeneRepository $allergeneRepository Le repository des allergènes
      * @return JsonResponse
      */
-    #[Route('', name: 'api_admin_allergenes_list', methods: ['GET'])]
+    #[Route('/allergenes', name: 'api_admin_allergenes_list', methods: ['GET'])]
     public function getAllAllergenes(AllergeneRepository $allergeneRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -48,7 +48,7 @@ final class AllergeneController extends BaseController
      * @param AllergeneRepository $allergeneRepository Le repository des allergènes
      * @return JsonResponse
      */
-    #[Route('/{id}', name: 'api_admin_allergenes_show', methods: ['GET'])]
+    #[Route('/allergenes/{id}', name: 'api_admin_allergenes_show', methods: ['GET'])]
     public function getAllergeneById(int $id, AllergeneRepository $allergeneRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -74,7 +74,7 @@ final class AllergeneController extends BaseController
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse
      */
-    #[Route('', name: 'api_admin_allergenes_create', methods: ['POST'])]
+    #[Route('/allergenes', name: 'api_admin_allergenes_create', methods: ['POST'])]
     public function createAllergene(Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -115,7 +115,7 @@ final class AllergeneController extends BaseController
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse
      */
-    #[Route('/{id}', name: 'api_admin_allergenes_update', methods: ['PUT'])]
+    #[Route('/allergenes/{id}', name: 'api_admin_allergenes_update', methods: ['PUT'])]
     public function updateAllergene(int $id, Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -156,7 +156,7 @@ final class AllergeneController extends BaseController
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse
      */
-    #[Route('/{id}', name: 'api_admin_allergenes_delete', methods: ['DELETE'])]
+    #[Route('/allergenes/{id}', name: 'api_admin_allergenes_delete', methods: ['DELETE'])]
     public function deleteAllergene(int $id, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
