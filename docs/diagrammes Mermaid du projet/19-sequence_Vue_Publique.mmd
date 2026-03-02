@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant U as Visiteur
+    participant P as Pages Publiques
+    participant CTX as AppContext
+    participant D as mockData
+
+    Note over U,P: Page Accueil
+    U->>P: Accede a /
+    P->>CTX: getMenus()
+    CTX->>D: Menus populaires
+    D-->>P: 3 menus mis en avant
+    P-->>U: Hero + menus populaires + CTA
+
+    Note over U,P: Detail Menu
+    U->>P: Clique sur un menu
+    P->>CTX: getMenuById(id)
+    CTX->>D: Menu + avis approuves
+    D-->>P: Donnees completes
+    P-->>U: Fiche menu + ingredients + avis + CTA commander
+
+    Note over U,P: Contact
+    U->>P: Accede a /contact
+    U->>P: Remplit formulaire (nom, email, message)
+    P->>P: Validation champs
+    P-->>U: Toast "Message envoye"
+
+    Note over U,P: Pages legales
+    U->>P: Accede a /cgv ou /mentions-legales
+    P-->>U: Affiche contenu statique

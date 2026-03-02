@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant E as Employe
+    participant P as Page Employe
+    participant CTX as AppContext
+    participant D as mockData
+
+    E->>P: Consulte onglet "Pret materiel"
+    P->>CTX: getOrdersWithLoan()
+    CTX->>D: Commandes avec pret actif
+    D-->>P: Liste des prets
+
+    Note over E,P: Restitution materiel
+    E->>P: Clique "Restituer" sur un pret
+    P->>P: Affiche formulaire restitution
+    E->>P: Selectionne etat: bon / abime / non-restitue
+
+    alt Bon etat
+        P->>CTX: updateLoanStatus(id, "restitue")
+        CTX->>D: Cloture le pret
+        P-->>E: Toast "Materiel restitue"
+    else Abime
+        P->>CTX: updateLoanStatus(id, "restitue-abime")
+        P->>CTX: applyPenalty(orderId, montant)
+        CTX->>D: Ajoute penalite a la commande
+        P-->>E: Toast "Penalite appliquee"
+    else Non restitue
+        P->>CTX: updateLoanStatus(id, "non-restitue")
+        P->>CTX: applyPenalty(orderId, montant)
+        P-->>E: Toast "Penalite materiel non restitue"
+    end

@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant A as Admin / Employe
+    participant P as Formulaire Plat
+    participant V as Validateur
+    participant S as Stockage (mockData)
+
+   %% TAILLE_MAX 150 Mo ? à définir je sais pas ce qui est bien ou pas 
+
+    Note over A,P: Upload d image lors de la creation/modification d un plat
+    A->>P: Clique sur le champ "Image du plat"
+    P-->>A: Ouvre le selecteur de fichier
+
+    A->>P: Selectionne un fichier image
+    P->>V: Verifie le type MIME (jpg, png, webp)
+    alt Type invalide
+        V-->>P: Erreur type
+        P-->>A: Message "Format non supporte (jpg, png, webp uniquement)"
+    else Type valide
+        V->>V: Verifie la taille (max TAILLE_MAX Mo)
+        alt Taille > TAILLE_MAX Mo
+            V-->>P: Erreur taille
+            P-->>A: Message "Image trop lourde (max TAILLE_MAX Mo)"
+        else Taille OK
+            V-->>P: Fichier valide
+            P->>P: Genere un apercu (URL.createObjectURL)
+            P-->>A: Affiche preview de l image
+        end
+    end
+
+    Note over A,P: Enregistrement avec le plat
+    A->>P: Clique "Enregistrer le plat"
+    P->>P: Convertit image en base64 (FileReader) 
+    P->>S: Enregistre le plat avec champ image (base64 ou URL)
+    S-->>P: Plat enregistre
+    P-->>A: Toast "Plat enregistre avec image"
+
+    Note over A,P: Suppression de l image
+    A->>P: Clique "Supprimer l image"
+    P->>P: Retire le preview
+    P->>S: Met a jour le plat sans image
+    S-->>P: Image supprimee
+    P-->>A: Image retiree du formulaire

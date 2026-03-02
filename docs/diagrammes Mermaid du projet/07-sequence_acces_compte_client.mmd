@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant U as Client
+    participant P as Page MonCompte
+    participant CTX as AppContext
+    participant D as mockData
+
+    U->>P: Accede a /mon-compte
+    P->>CTX: getCurrentUser()
+    CTX->>D: Charge profil utilisateur
+    D-->>P: Donnees utilisateur
+
+    P->>CTX: getUserOrders(userId)
+    CTX->>D: Commandes du client
+    D-->>P: Liste commandes
+    P-->>U: Affiche profil + commandes + avis
+
+    Note over U,P: Annulation commande
+    U->>P: Clique "Annuler" sur commande en-attente
+    P->>CTX: cancelOrder(orderId)
+    CTX->>D: Met status = "annulee" ( vérification de la date de commande d'après les regles et obligation de justification (motif))
+    D-->>CTX: Commande annulee
+    CTX-->>U: Toast "Commande annulee"
+
+    Note over U,P: Depot avis
+    U->>P: Remplit formulaire avis (note + commentaire)
+    P->>CTX: addReview(menuId, review)
+    CTX->>D: Ajoute avis status="en-attente"
+    D-->>CTX: Avis enregistre
+    CTX-->>U: Toast "Avis soumis, en attente de moderation"

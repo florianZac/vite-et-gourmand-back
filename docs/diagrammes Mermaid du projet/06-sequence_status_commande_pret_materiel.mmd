@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant E as Employé
+    participant EC as EmployeCtrl
+    participant C as Commande
+    participant SC as SuiviCommande
+    participant MS as MailerService
+    participant CL as Client
+
+    Note over E,CL: Gestion du statut de commande (LIVRÉ)
+
+    E->>EC: changerStatut(id, LIVRE)
+
+    EC->>C: setStatut(LIVRE)
+    EC->>C: setDateStatutLivree(now)
+
+    EC->>SC: persist SuiviCommande(LIVRE)
+
+    alt prêt_materiel = false
+        EC->>C: setStatut(TERMINEE)
+        EC->>MS: sendCommandeTermineeEmail()
+        MS-->>CL: email commande terminée
+
+    else prêt_materiel = true
+        EC->>C: setStatut(EN_ATTENTE_RETOUR)
+        EC->>MS: sendRetourMaterielEmail()
+        MS-->>CL: email retour matériel
+
+        EC->>SC: persist SuiviCommande(EN_ATTENTE_RETOUR)
+    end
+
+    EC-->>E: HTTP 200 { statut_actuel }

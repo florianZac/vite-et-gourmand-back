@@ -1,0 +1,28 @@
+sequenceDiagram
+    participant A as Administrateur
+    participant P as Page Admin - Horaires
+    participant CTX as AppContext
+    participant D as mockData
+
+    Note over A,P: Consulter les horaires
+    A->>P: Accede a onglet "Horaires"
+    P->>CTX: getHoraires()
+    CTX->>D: Charge les horaires
+    D-->>P: Horaires par jour (Lundi-Dimanche)
+    P-->>A: Affiche tableau des horaires
+
+    Note over A,P: Modifier les horaires
+    A->>P: Clique "Modifier" sur un jour
+    P-->>A: Formulaire (heure ouverture, heure fermeture, ferme)
+    A->>P: Modifie les heures
+    alt Jour ferme
+        A->>P: Coche "Ferme"
+        P->>P: Desactive les champs horaires
+    else Jour ouvert
+        A->>P: Saisit heures au format HH:MM
+        P->>P: Validation format horaire
+    end
+    A->>P: Clique "Enregistrer"
+    P->>CTX: updateHoraire(jour, heureOuverture, heureFermeture)
+    CTX->>D: Met a jour l horaire
+    P-->>A: Toast "Horaire mis a jour"
