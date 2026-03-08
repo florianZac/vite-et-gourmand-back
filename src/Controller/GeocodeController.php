@@ -21,7 +21,6 @@ use Symfony\Component\Validator\Constraints\Json;
  *  2. distance  : Distance à vol d'oiseau entre les deux adresses celle du restaurant et celle du client
  *  3. delivery-cost :  Calcul des frais de livraison via OSRM  et tarification. 
  */
-
 class GeocodeController extends AbstractController
 {
 	// Coordonnées fixes du restaurant Vite et Gourmand // 22 quai des Chartrons, Bordeaux
