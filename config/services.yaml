@@ -24,3 +24,4 @@ services:
     App\Service\MailerService:
             arguments:
                 $appUrl: '%env(APP_URL)%'
+                $userAgent: 'MonAppSymfony/1.0'
