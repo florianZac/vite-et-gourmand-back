@@ -1,0 +1,50 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: "Vite & Gourmand - API"
+            description: "API REST du service traiteur Vite & Gourmand"
+            version: "1.0.0"
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
+
+    # Une area par rôle
+    areas:
+        # Doc publique : routes sans authentification
+        public:
+            path_patterns:
+                - ^/api/menus
+                - ^/api/themes
+                - ^/api/regimes
+                - ^/api/allergenes
+                - ^/api/plats
+                - ^/api/avis
+                - ^/api/horaires
+                - ^/api/contact
+                - ^/api/register
+                - ^/api/login
+                - ^/api/forgot-password
+                - ^/api/reset-password
+                - ^/geocode
+                - ^/distance
+                - ^/delivery-cost
+
+        # Doc client : routes /api/client/*
+        client:
+            path_patterns:
+                - ^/api/client
+
+        # Doc employé : routes /api/employe/*
+        employe:
+            path_patterns:
+                - ^/api/employe
+
+        # Doc admin : routes /api/admin/*
+        admin:
+            path_patterns:
+                - ^/api/admin

@@ -34,6 +34,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -64,12 +65,18 @@ use Symfony\Component\HttpFoundation\Request;
 #[Route('/api/admin')]
 final class AdminController extends AbstractController
 {
-    
     // =========================================================================
     // UTILISATEUR
     // =========================================================================
 
     #[Route('/utilisateurs', name: 'api_utilisateurs', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Liste de tous les utilisateurs',
+        description: 'Retourne la liste complète des utilisateurs. Réservé aux administrateurs.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Response(response: 200, description: 'Liste des utilisateurs retournée avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé - Rôle ADMIN requis')]
 
     // Fonction qui récupère tous les utilisateurs
     // équivalent de SELECT * FROM utilisateur
@@ -88,6 +95,15 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/utilisateurs/{id}', name: 'api_utilisateur_show', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Détail d\'un utilisateur par ID',
+        description: 'Retourne les informations d\'un utilisateur ciblé par son ID. Réservé aux administrateurs.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'utilisateur', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Utilisateur trouvé')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
     // Fonction qui sélectionne un utilisateur par son id meme chose que SELECT * FROM utilisateur WHERE utilisateur_id = :id
     public function getUserById(int $id, UtilisateurRepository $utilisateurRepository): JsonResponse
     {
@@ -108,6 +124,15 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/utilisateurs/{id}', name: 'api_utilisateur_delete', methods: ['DELETE'])]
+    #[OA\Delete(
+        summary: 'Supprimer un utilisateur par ID',
+        description: 'Supprime un utilisateur ciblé par son ID. L\'admin ne peut pas se supprimer lui-même.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'utilisateur à supprimer', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Utilisateur supprimé avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou tentative de suppression de son propre compte')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
     // Fonction qui supprime un utilisateur par son id
     // équivalent de DELETE FROM utilisateur WHERE utilisateur_id = :id
     public function deleteUserByID(int $id, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
@@ -142,6 +167,15 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/utilisateurs/email/{email}', name: 'api_utilisateur_delete_email', methods: ['DELETE'])]
+    #[OA\Delete(
+        summary: 'Supprimer un utilisateur par email',
+        description: 'Supprime un utilisateur ciblé par son adresse email. L\'admin ne peut pas se supprimer lui-même.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'email', in: 'path', required: true, description: 'Email de l\'utilisateur à supprimer', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(response: 200, description: 'Utilisateur supprimé avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
     // Fonction qui supprime un utilisateur par son email
     // équivalent de DELETE FROM utilisateur WHERE email = :email
     public function deleteUserByEmail(string $email, UtilisateurRepository $utilisateurRepository, EntityManagerInterface $em): JsonResponse
@@ -173,6 +207,30 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/utilisateurs/{id}', name: 'api_utilisateur_update', methods: ['PUT'])]
+    #[OA\Put(
+        summary: 'Modifier un utilisateur par ID',
+        description: 'Met à jour les informations d\'un utilisateur (email, prénom, téléphone, ville, adresse, rôle, mot de passe). Lors du changement de mot de passe, un email de notification est envoyé.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'utilisateur', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'nouveau@email.com'),
+                new OA\Property(property: 'prenom', type: 'string', example: 'Jean'),
+                new OA\Property(property: 'telephone', type: 'string', example: '0612345678'),
+                new OA\Property(property: 'ville', type: 'string', example: 'Bordeaux'),
+                new OA\Property(property: 'adresse_postale', type: 'string', example: '12 rue des Roses'),
+                new OA\Property(property: 'password', type: 'string', example: 'true'),
+                new OA\Property(property: 'role', type: 'string', example: 'ROLE_CLIENT'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Utilisateur mis à jour avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
+    #[OA\Response(response: 409, description: 'Email ou téléphone déjà utilisé')]
     /**
      * 
      * @description Cette fonction permet à un administrateur de mettre à jour les informations d'un utilisateur en utilisant son id.
@@ -280,6 +338,30 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/utilisateurs/email/{email}', name: 'api_utilisateur_update_by_email', methods: ['PUT'])]
+    #[OA\Put(
+        summary: 'Modifier un utilisateur par email',
+        description: 'Met à jour les informations d\'un utilisateur ciblé par son email.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'email', in: 'path', required: true, description: 'Email de l\'utilisateur', schema: new OA\Schema(type: 'string'))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'nouveau@email.com'),
+                new OA\Property(property: 'prenom', type: 'string', example: 'Jean'),
+                new OA\Property(property: 'telephone', type: 'string', example: '0612345678'),
+                new OA\Property(property: 'ville', type: 'string', example: 'Bordeaux'),
+                new OA\Property(property: 'adresse_postale', type: 'string', example: '12 rue des Roses'),
+                new OA\Property(property: 'password', type: 'string', example: 'true'),
+                new OA\Property(property: 'role', type: 'string', example: 'ROLE_EMPLOYE'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Utilisateur mis à jour avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
+    #[OA\Response(response: 409, description: 'Email ou téléphone déjà utilisé')]
     /**
      * @description Cette fonction permet à un administrateur de mettre à jour les informations d'un utilisateur en utilisant son email.
      * L'administrateur peut mettre à jour les champs suivants : email, prenom, telephone, ville, adresse_postale, mdp et role.
@@ -385,6 +467,14 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Utilisateur mis à jour avec succès']);
     }
 
+    #[Route('/utilisateurs/{id}/desactivation', name: 'api_admin_utilisateur_desactivation', methods: ['PUT'])]
+    #[OA\Put(summary: 'Désactiver un compte utilisateur', description: 'Passe le statut du compte à "inactif". Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'utilisateur', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Compte désactivé avec succès')]
+    #[OA\Response(response: 400, description: 'Compte déjà désactivé')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
     /**
      * @description Désactivation d'un compte utilisateur
      * @param int $id L'id de l'utilisateur à désactiver
@@ -421,6 +511,14 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Compte désactivé avec succès']);
     }
 
+    #[Route('/utilisateurs/{id}/reactivation', name: 'api_admin_utilisateur_reactivation', methods: ['PUT'])]
+    #[OA\Put(summary: 'Réactiver un compte utilisateur', description: 'Passe le statut du compte à "actif". Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'utilisateur', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Compte réactivé avec succès')]
+    #[OA\Response(response: 400, description: 'Compte déjà actif')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur non trouvé')]
     /**
      * @description Réactivation d'un compte utilisateur
      * @param int $id L'id de l'utilisateur à réactiver
@@ -457,6 +555,28 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Compte réactivé avec succès']);
     }
 
+    #[Route('/employes', name: 'api_admin_employes_create', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Créer un compte employé',
+        description: 'Crée un compte employé avec un mot de passe temporaire envoyé par email. Réservé aux administrateurs.'
+    )]
+    #[OA\Tag(name: 'Admin - Utilisateurs')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'nom', type: 'string', example: 'Dupont'),
+                new OA\Property(property: 'prenom', type: 'string', example: 'Jean'),
+                new OA\Property(property: 'email', type: 'string', example: 'jean.dupont@vite-et-gourmand.fr'),
+                new OA\Property(property: 'telephone', type: 'string', example: '0612345678'),
+                new OA\Property(property: 'ville', type: 'string', example: 'Bordeaux'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: 'Compte employé créé avec succès')]
+    #[OA\Response(response: 400, description: 'Champs obligatoires manquants')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 409, description: 'Email déjà utilisé')]
     /**
      * @description Création d'un compte employé par l'administrateur
      * Génère un mot de passe temporaire aléatoire et l'envoie par email à l'employé
@@ -558,6 +678,12 @@ final class AdminController extends AbstractController
     // =========================================================================
 
     #[Route('/commandes/{id}', name: 'api_admin_commande_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer une commande', description: 'Supprime physiquement une commande par son ID. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Commande supprimée avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     /**
      * @description Cette fonction permet à un administrateur de supprimer physiquement une commande.
      * L'utilisateur doit être authentifié et avoir le rôle ADMIN
@@ -592,6 +718,10 @@ final class AdminController extends AbstractController
     // AVIS
     // =========================================================================
 
+    #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les avis', description: 'Retourne tous les avis clients (tous statuts confondus). Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Avis')]
+    #[OA\Response(response: 200, description: 'Liste des avis retournée avec succès')]
     /**
      * @description Récupère tous les avis
      * @return JsonResponse
@@ -608,6 +738,13 @@ final class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/avis/{id}', name: 'api_admin_avis_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un avis', description: 'Supprime un avis client par son ID. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Avis')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'avis', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Avis supprimé avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Avis non trouvé')]
     /**
      * @description Supprime un avis client
      * @param int $id L'id de l'avis
@@ -641,6 +778,14 @@ final class AdminController extends AbstractController
     // STATISTIQUE - SOURCE MySQL
     // =========================================================================
 
+    #[Route('/statistiques', name: 'api_admin_statistiques', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Statistiques complètes (MySQL)',
+        description: 'Retourne les statistiques métier : commandes, CA, remboursements, utilisateurs, avis. Source : MySQL.'
+    )]
+    #[OA\Tag(name: 'Admin - Statistiques')]
+    #[OA\Response(response: 200, description: 'Statistiques retournées avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     /**
      * @description Retourne les statistiques complètes pour le tableau de bord admin de l'entreprise vite et gourmand
      * Inclut : commandes, CA, remboursements, utilisateurs, avis, et données graphique par menu
@@ -705,7 +850,18 @@ final class AdminController extends AbstractController
     // =========================================================================
     // LOGS - SOURCE MongoDB (NoSQL)
     // =========================================================================
-    
+
+    #[Route('/statistiques/graphiques', name: 'api_admin_statistiques_graphiques', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Données graphiques (MongoDB)',
+        description: 'Retourne CA par menu et par mois depuis les logs MongoDB. Filtres optionnels : menu, debut, fin.'
+    )]
+    #[OA\Tag(name: 'Admin - Statistiques')]
+    #[OA\Parameter(name: 'menu', in: 'query', required: false, description: 'Filtrer par nom de menu', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'debut', in: 'query', required: false, description: 'Date de début (YYYY-MM-DD)', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'fin', in: 'query', required: false, description: 'Date de fin (YYYY-MM-DD)', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(response: 200, description: 'Données graphiques retournées avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     /**
      * @description Retourne les données graphiques depuis MongoDB
      * 
@@ -838,6 +994,17 @@ final class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/logs', name: 'api_admin_logs', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Logs d\'activité (MongoDB)',
+        description: 'Retourne les logs d\'activité depuis MongoDB. Filtres optionnels : type, email, limit.'
+    )]
+    #[OA\Tag(name: 'Admin - Logs')]
+    #[OA\Parameter(name: 'type', in: 'query', required: false, description: 'Filtrer par type de log (connexion, inscription, commande_creee...)', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'email', in: 'query', required: false, description: 'Filtrer par email utilisateur', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'limit', in: 'query', required: false, description: 'Nombre max de résultats (défaut: 100)', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Logs retournés avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     /**
      * @description Retourne les logs d'activité depuis MongoDB
      * 
@@ -927,6 +1094,23 @@ final class AdminController extends AbstractController
     // HORAIRES
     // =========================================================================
 
+    #[Route('/horaires', name: 'api_admin_horaires_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un horaire', description: 'Crée un nouvel horaire d\'ouverture. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Horaires')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'jour', type: 'string', example: 'Lundi'),
+                new OA\Property(property: 'heure_ouverture', type: 'string', example: '09:00'),
+                new OA\Property(property: 'heure_fermeture', type: 'string', example: '18:00'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: 'Horaire créé avec succès')]
+    #[OA\Response(response: 400, description: 'Champ jour obligatoire')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 409, description: 'Horaire pour ce jour existe déjà')]
     /**
      * @description Créer un nouvel horaire
      * Corps JSON attendu : { "jour": "Lundi", "heure_ouverture": "09:00", "heure_fermeture": "18:00" }
@@ -980,6 +1164,21 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Horaire créé avec succès', 'id' => $horaire->getId()], 201);
     }
 
+    #[Route('/horaires/{id}', name: 'api_admin_horaires_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un horaire', description: 'Met à jour un horaire par son ID. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Horaires')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'horaire', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(
+        properties: [
+            new OA\Property(property: 'jour', type: 'string', example: 'Mardi'),
+            new OA\Property(property: 'heure_ouverture', type: 'string', example: '10:00'),
+            new OA\Property(property: 'heure_fermeture', type: 'string', example: '19:00'),
+        ]
+    ))]
+    #[OA\Response(response: 200, description: 'Horaire mis à jour')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Horaire non trouvé')]
+    #[OA\Response(response: 409, description: 'Horaire pour ce jour existe déjà')]
     /**
      * @description Met à jour un horaire par son id
      * Corps JSON attendu (tous optionnels) : { "jour": "Mardi", "heure_ouverture": "10:00", "heure_fermeture": "19:00" }
@@ -1036,6 +1235,13 @@ final class AdminController extends AbstractController
         return $this->json(['status' => 'Succès', 'message' => 'Horaire mis à jour avec succès']);
     }
 
+    #[Route('/horaires/{id}', name: 'api_admin_horaires_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un horaire', description: 'Supprime un horaire par son ID. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Horaires')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'horaire', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Horaire supprimé avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Horaire non trouvé')]
     /**
      * @description Supprime un horaire par son id
      * @param int $id L'id de l'horaire

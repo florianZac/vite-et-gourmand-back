@@ -14,6 +14,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
+
 /**
  * @author      Florian Aizac
  * @created     24/02/2026
@@ -29,6 +31,22 @@ final class AuthController extends AbstractController
 {
     // Fonction qui log tous les utilisateurs
     #[Route('/login', name: 'api_login', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Connexion utilisateur',
+        description: 'Authentifie un utilisateur via json_login et retourne un token JWT. Géré automatiquement par Symfony (json_login).'
+    )]
+    #[OA\Tag(name: 'Authentification')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'marie.dupont@email.com'),
+                new OA\Property(property: 'password', type: 'string', example: 'MonMotDePasse1!'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Connexion réussie, token JWT retourné')]
+    #[OA\Response(response: 401, description: 'Email ou mot de passe incorrect')]
     public function login(): JsonResponse
     {
         // Symfony gère le login automatiquement via json_login
@@ -38,6 +56,31 @@ final class AuthController extends AbstractController
     }
 
     #[Route('/register', name: 'api_register', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Inscription d\'un nouveau client',
+        description: 'Crée un nouveau compte client avec validation des données, protection honeypot, et envoi d\'un email de bienvenue. Le rôle ROLE_CLIENT est attribué par défaut.'
+    )]
+    #[OA\Tag(name: 'Authentification')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'nom', type: 'string', example: 'Dupont'),
+                new OA\Property(property: 'prenom', type: 'string', example: 'Marie'),
+                new OA\Property(property: 'telephone', type: 'string', example: '0612345678'),
+                new OA\Property(property: 'email', type: 'string', example: 'marie.dupont@email.com'),
+                new OA\Property(property: 'password', type: 'string', example: 'MonMotDePasse1!'),
+                new OA\Property(property: 'pays', type: 'string', example: 'France'),
+                new OA\Property(property: 'ville', type: 'string', example: 'Bordeaux'),
+                new OA\Property(property: 'code_postal', type: 'string', example: '33000'),
+                new OA\Property(property: 'adresse_postale', type: 'string', example: '12 rue des Roses'),
+                new OA\Property(property: 'site_web', type: 'string', example: '', description: 'Champ honeypot anti-bot, doit rester vide'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: 'Compte créé avec succès')]
+    #[OA\Response(response: 400, description: 'Données manquantes, email invalide, téléphone invalide ou mot de passe trop faible')]
+    #[OA\Response(response: 409, description: 'Email déjà utilisé')]
     public function register(
         Request $request,                            // la requête HTTP entrante (contenant les données JSON du client)
         UserPasswordHasherInterface $passwordHasher, // service qui hashe les mots de passe
@@ -154,6 +197,21 @@ final class AuthController extends AbstractController
     }
 
     #[Route('/forgot-password', name: 'api_forgot_password', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Demande de réinitialisation de mot de passe',
+        description: 'Envoie un lien de réinitialisation par email. Retourne toujours un succès par sécurité (même si l\'email n\'existe pas).'
+    )]
+    #[OA\Tag(name: 'Authentification')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'marie.dupont@email.com'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Lien de réinitialisation envoyé (message générique par sécurité)')]
+    #[OA\Response(response: 400, description: 'Email requis')]
     public function forgotPassword(
         Request $request,
         UtilisateurRepository $utilisateurRepository,
@@ -215,6 +273,23 @@ final class AuthController extends AbstractController
         ], 200);
     }
 
+    #[Route('/reset-password', name: 'api_reset_password', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Réinitialiser le mot de passe',
+        description: 'Valide le token reçu par email et enregistre le nouveau mot de passe. Le token est marqué comme utilisé après usage.'
+    )]
+    #[OA\Tag(name: 'Authentification')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'token', type: 'string', example: 'a1b2c3d4e5f6...'),
+                new OA\Property(property: 'password', type: 'string', example: 'NouveauMotDePasse1!'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Mot de passe réinitialisé avec succès')]
+    #[OA\Response(response: 400, description: 'Token et mot de passe requis, mot de passe invalide, ou token expiré/invalide')]
     /**
      * @description Valide le token et réinitialise le mot de passe
      * 

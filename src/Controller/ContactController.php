@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\DependencyInjection\Attribute\Target;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -28,6 +29,28 @@ class ContactController extends AbstractController
 {
     public function __construct(private SanitizerService $sanitizer) {}
 
+    #[Route('/contact', name: 'api_contact', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Envoyer un message de contact',
+        description: 'Reçoit un message de contact, le valide (email, sujet, message), vérifie les protections de sécurité (rate limiting, honeypot, taille max) et envoie un email à l\'administrateur.'
+    )]
+    #[OA\Tag(name: 'Contact')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'marie.dupont@email.com'),
+                new OA\Property(property: 'sujet', type: 'string', example: 'Demande de renseignement'),
+                new OA\Property(property: 'message', type: 'string', example: 'Bonjour, je souhaite organiser un événement pour 50 personnes...'),
+                new OA\Property(property: 'site_web', type: 'string', example: '', description: 'Champ honeypot anti-bot, doit rester vide'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Message envoyé avec succès')]
+    #[OA\Response(response: 400, description: 'Format JSON invalide ou erreurs de validation (email, sujet, message)')]
+    #[OA\Response(response: 413, description: 'Requête trop volumineuse (>10Ko)')]
+    #[OA\Response(response: 415, description: 'Content-Type invalide, JSON attendu')]
+    #[OA\Response(response: 429, description: 'Trop de requêtes (rate limiting : 25/heure)')]
     /**
      * @description Récupère les données de contact d'un formulaire
      * Reçoit un JSON avec le sujet, email et le message, valide et envoie un email

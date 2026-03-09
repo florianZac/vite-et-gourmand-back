@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -41,6 +42,15 @@ final class ClientController extends BaseController
     // UTILISATEUR
     // =========================================================================
 
+    #[Route('/profil', name: 'api_client_profil', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Profil du client connecté',
+        description: 'Retourne les informations du profil du client authentifié via le token JWT.'
+    )]
+    #[OA\Tag(name: 'Client - Profil')]
+    #[OA\Response(response: 200, description: 'Données du profil retournées avec succès')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé - Rôle CLIENT requis')]
     /**
      * @description Retourne les informations du profil client connecté
      * @param '' auncun parametre requis
@@ -68,6 +78,33 @@ final class ClientController extends BaseController
         return $this->json($utilisateur);
     }
 
+    #[Route('/profil', name: 'api_client_update_profil', methods: ['PUT'])]
+    #[OA\Put(
+        summary: 'Modifier le profil client',
+        description: 'Met à jour les informations du client connecté. Tous les champs sont optionnels.'
+    )]
+    #[OA\Tag(name: 'Client - Profil')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'nom', type: 'string', example: 'Dupont'),
+                new OA\Property(property: 'prenom', type: 'string', example: 'Marie'),
+                new OA\Property(property: 'email', type: 'string', example: 'marie.dupont@email.com'),
+                new OA\Property(property: 'telephone', type: 'string', example: '0612345678'),
+                new OA\Property(property: 'password', type: 'string', example: 'NouveauMdp123!'),
+                new OA\Property(property: 'ville', type: 'string', example: 'Bordeaux'),
+                new OA\Property(property: 'code_postal', type: 'string', example: '33000'),
+                new OA\Property(property: 'adresse_postale', type: 'string', example: '12 rue des Roses'),
+                new OA\Property(property: 'pays', type: 'string', example: 'France'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Profil mis à jour avec succès')]
+    #[OA\Response(response: 400, description: 'Mot de passe invalide')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 409, description: 'Email ou téléphone déjà utilisé')]
     /**
      * @description Met à jour les informations du profil du client connecté
      */
@@ -166,6 +203,16 @@ final class ClientController extends BaseController
         return $this->json(['status' => 'Succès', 'message' => 'Profil mis à jour avec succès']);
     }
 
+    #[Route('/compte/desactivation', name: 'api_client_compte_desactivation', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Demander la désactivation du compte',
+        description: 'Le client demande la désactivation de son compte. Le statut passe à "en_attente_desactivation" et un email est envoyé à l\'administrateur.'
+    )]
+    #[OA\Tag(name: 'Client - Profil')]
+    #[OA\Response(response: 200, description: 'Demande de désactivation prise en compte')]
+    #[OA\Response(response: 400, description: 'Demande déjà en cours ou compte déjà désactivé')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     /**
      * @description Demande de désactivation du compte client et envois d'un mail à l'admin
      */
@@ -215,6 +262,15 @@ final class ClientController extends BaseController
     // COMMANDE
     // =========================================================================
 
+    #[Route('/commandes', name: 'api_client_commandes', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Liste des commandes du client',
+        description: 'Retourne toutes les commandes passées par le client connecté.'
+    )]
+    #[OA\Tag(name: 'Client - Commandes')]
+    #[OA\Response(response: 200, description: 'Liste des commandes retournée')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     /**
      * @description Retourne la liste des commandes du client connecté
      */
@@ -241,6 +297,30 @@ final class ClientController extends BaseController
         return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
     }
 
+    #[Route('/commandes/{id}', name: 'api_client_commande_modifier', methods: ['PUT'])]
+    #[OA\Put(
+        summary: 'Modifier une commande',
+        description: 'Modifie une commande en statut modifiable. Si nombre_personnes ou ville_livraison change, les prix sont recalculés automatiquement.'
+    )]
+    #[OA\Tag(name: 'Client - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'date_prestation', type: 'string', example: '2026-05-01'),
+                new OA\Property(property: 'nombre_personnes', type: 'integer', example: 20),
+                new OA\Property(property: 'adresse_livraison', type: 'string', example: '15 rue de la paix'),
+                new OA\Property(property: 'ville_livraison', type: 'string', example: 'Mérignac'),
+                new OA\Property(property: 'distance_km', type: 'number', example: 8),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Commande modifiée avec succès (prix recalculés si applicable)')]
+    #[OA\Response(response: 400, description: 'Modification impossible (statut non modifiable ou date invalide)')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou commande non autorisée')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     /**
      * @description Modifier une commande existante
      * Modification possible uniquement si la commande est en statut "En attente"
@@ -369,6 +449,26 @@ final class ClientController extends BaseController
         return $this->json($reponse);
     }
 
+    #[Route('/commandes/{id}/annuler', name: 'api_client_commande_annuler', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Annuler une commande',
+        description: 'Annule une commande du client. Remboursement dégressif : >7j = 100%, 3-7j = 50%, <3j = 0%. Un motif est obligatoire.'
+    )]
+    #[OA\Tag(name: 'Client - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'motif_annulation', type: 'string', example: 'Changement de programme'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Commande annulée avec montant remboursé')]
+    #[OA\Response(response: 400, description: 'Annulation impossible, déjà annulée, ou motif manquant')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou commande non autorisée')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     /**
      * @description Annule une commande passée par le client
      * Remboursement dégressif selon le délai avant prestation :
@@ -497,6 +597,17 @@ final class ClientController extends BaseController
     // SUIVIS
     // =========================================================================
 
+    #[Route('/commandes/{id}/suivi', name: 'api_client_commande_suivi', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Suivi d\'une commande',
+        description: 'Retourne l\'historique des statuts d\'une commande du client, trié du plus ancien au plus récent.'
+    )]
+    #[OA\Tag(name: 'Client - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Suivis retournés avec succès')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou commande non autorisée')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     /**
      * @description Afficher le suivis de commande du client
      * L'utilisateur doit être authentifié et avoir le rôle CLIENT pour accéder à cette route. 
@@ -564,6 +675,15 @@ final class ClientController extends BaseController
     // AVIS
     // =========================================================================
 
+    #[Route('/avis', name: 'api_client_avis_list', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Liste des avis du client',
+        description: 'Retourne tous les avis déposés par le client connecté, triés du plus récent au plus ancien.'
+    )]
+    #[OA\Tag(name: 'Client - Avis')]
+    #[OA\Response(response: 200, description: 'Liste des avis retournée')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     /**
      * @description Afficher la liste des avis du client connecté, triés du plus récent au plus ancien
      */
@@ -595,6 +715,28 @@ final class ClientController extends BaseController
         ]);
     }
 
+    #[Route('/commandes/{id}/avis', name: 'api_client_avis', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Poster un avis sur une commande terminée',
+        description: 'Permet au client de déposer un avis (note + description) sur une commande au statut "Terminée". Un seul avis par commande.'
+    )]
+    #[OA\Tag(name: 'Client - Avis')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'note', type: 'integer', example: 5, description: 'Note de 1 à 5'),
+                new OA\Property(property: 'description', type: 'string', example: 'Excellent repas, service impeccable !', description: '255 caractères max'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: 'Avis soumis avec succès')]
+    #[OA\Response(response: 400, description: 'Champs manquants, note invalide, description trop longue, ou commande non terminée')]
+    #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou commande non autorisée')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
+    #[OA\Response(response: 409, description: 'Avis déjà déposé pour cette commande')]
     /**
      * @description Permettre à un client de poster un avis sur une commande au statut "Terminée"
      */

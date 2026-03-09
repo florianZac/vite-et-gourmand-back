@@ -515,7 +515,7 @@ PS D:\wamp64\www\vite-et-gourmand-back> php bin/console debug:router
  ------------------------------------- ---------- -------------------------------------------- 
   Name                                  Method     Path
  ------------------------------------- ---------- -------------------------------------------- 
-  api_doc                               GET|HEAD   /api/docs.{_format}
+api_doc                               GET|HEAD   /api/docs.{_format}
   api_genid                             GET|HEAD   /api/.well-known/genid/{id}
   api_validation_errors                 GET|HEAD   /api/validation_errors/{id}
   api_entrypoint                        GET|HEAD   /api/{index}.{_format}
@@ -533,23 +533,47 @@ PS D:\wamp64\www\vite-et-gourmand-back> php bin/console debug:router
   api_utilisateur_update                PUT        /api/admin/utilisateurs/{id}
   api_utilisateur_update_by_email       PUT        /api/admin/utilisateurs/email/{email}       
   api_admin_utilisateur_desactivation   PUT        /api/admin/utilisateurs/{id}/desactivation  
-  api_admin_utilisateur_reactivation    PUT        /api/admin/utilisateurs/{id}/reactivation   
+  api_admin_utilisateur_reactivation    PUT        /api/admin/utilisateurs/{id}/reactivation
   api_admin_employes_create             POST       /api/admin/employes
-  api_client_commande_delete            DELETE     /api/admin/commandes/{id}
+  api_admin_commande_delete             DELETE     /api/admin/commandes/{id}
   api_admin_avis_list                   GET        /api/admin/avis
   api_admin_avis_delete                 DELETE     /api/admin/avis/{id}
   api_admin_statistiques                GET        /api/admin/statistiques
-  api_admin_logs                        GET        /api/admin/logs
   api_admin_statistiques_graphiques     GET        /api/admin/statistiques/graphiques
-  api_admin_horaires_list               GET        /api/admin/horaires
+  api_admin_logs                        GET        /api/admin/logs
   api_admin_horaires_create             POST       /api/admin/horaires
   api_admin_horaires_update             PUT        /api/admin/horaires/{id}
   api_admin_horaires_delete             DELETE     /api/admin/horaires/{id}
-  api_admin_allergenes_list             GET        /api/admin/allergenes
-  api_admin_allergenes_show             GET        /api/admin/allergenes/{id}
-  api_admin_allergenes_create           POST       /api/admin/allergenes
-  api_admin_allergenes_update           PUT        /api/admin/allergenes/{id}
-  api_admin_allergenes_delete           DELETE     /api/admin/allergenes/{id}
+  api_login                             POST       /api/login
+  api_register                          POST       /api/registerapi_doc                               GET|HEAD   /api/docs.{_format}
+  api_genid                             GET|HEAD   /api/.well-known/genid/{id}
+  api_validation_errors                 GET|HEAD   /api/validation_errors/{id}
+  api_entrypoint                        GET|HEAD   /api/{index}.{_format}
+  api_jsonld_context                    GET|HEAD   /api/contexts/{shortName}.{_format}
+  _api_errors                           GET        /api/errors/{status}.{_format}
+  _api_validation_errors_problem        GET        /api/validation_errors/{id}
+  _api_validation_errors_hydra          GET        /api/validation_errors/{id}
+  _api_validation_errors_jsonapi        GET        /api/validation_errors/{id}
+  _api_validation_errors_xml            GET        /api/validation_errors/{id}
+  _preview_error                        ANY        /_error/{code}.{_format}
+  api_utilisateurs                      GET        /api/admin/utilisateurs
+  api_utilisateur_show                  GET        /api/admin/utilisateurs/{id}
+  api_utilisateur_delete                DELETE     /api/admin/utilisateurs/{id}
+  api_utilisateur_delete_email          DELETE     /api/admin/utilisateurs/email/{email}       
+  api_utilisateur_update                PUT        /api/admin/utilisateurs/{id}
+  api_utilisateur_update_by_email       PUT        /api/admin/utilisateurs/email/{email}       
+  api_admin_utilisateur_desactivation   PUT        /api/admin/utilisateurs/{id}/desactivation  
+  api_admin_utilisateur_reactivation    PUT        /api/admin/utilisateurs/{id}/reactivation
+  api_admin_employes_create             POST       /api/admin/employes
+  api_admin_commande_delete             DELETE     /api/admin/commandes/{id}
+  api_admin_avis_list                   GET        /api/admin/avis
+  api_admin_avis_delete                 DELETE     /api/admin/avis/{id}
+  api_admin_statistiques                GET        /api/admin/statistiques
+  api_admin_statistiques_graphiques     GET        /api/admin/statistiques/graphiques
+  api_admin_logs                        GET        /api/admin/logs
+  api_admin_horaires_create             POST       /api/admin/horaires
+  api_admin_horaires_update             PUT        /api/admin/horaires/{id}
+  api_admin_horaires_delete             DELETE     /api/admin/horaires/{id}
   api_login                             POST       /api/login
   api_register                          POST       /api/register
   api_forgot_password                   POST       /api/forgot-password
@@ -571,15 +595,14 @@ PS D:\wamp64\www\vite-et-gourmand-back> php bin/console debug:router
   api_employe_commandes                 GET        /api/employe/commandes
   api_employe_commandes_recherche       GET        /api/employe/commandes/recherche/{nom}
   api_employe_commande_statut           POST       /api/employe/commandes/{id}/statut
-  api_employe_materiels_en_cours        GET        /api/employe/commandes/materiels-en-cours
+  api_employe_materiels_en_cours        GET        /api/employe/commandes/materiels-en-cours   
   api_employe_materiel_show             GET        /api/employe/commandes/{id}/materiel
   api_employe_materiel_restitution      PUT        /api/employe/commandes/{id}/restitution
   api_employe_commandes_filtres         GET        /api/employe/commandes/filtres
+  api_employe_commande_suivi            GET        /api/employe/commandes/{id}/suivi
   api_employe_avis                      GET        /api/employe/avis
   api_employe_avis_approuver            PUT        /api/employe/avis/{id}/approuver
   api_employe_avis_refuser              PUT        /api/employe/avis/{id}/refuser
-  api_employe_menus_list                GET        /api/employe/menus
-  api_employe_menus_show                GET        /api/employe/menus/{id}
   api_employe_menus_create              POST       /api/employe/menus
   api_employe_menus_update              PUT        /api/employe/menus/{id}
   api_employe_menus_delete              DELETE     /api/employe/menus/{id}
@@ -588,42 +611,184 @@ PS D:\wamp64\www\vite-et-gourmand-back> php bin/console debug:router
   api_employe_menus_images_update       PUT        /api/employe/menus/{id}/images/{imageId}
   api_employe_themes_create             POST       /api/employe/themes
   api_employe_themes_update             PUT        /api/employe/themes/{id}
+  api_employe_themes_delete             DELETE     /api/employe/themes/{id}
   api_employe_regimes_create            POST       /api/employe/regimes
   api_employe_regimes_update            PUT        /api/employe/regimes/{id}
+  api_employe_regimes_delete            DELETE     /api/employe/regimes/{id}
   api_employe_allergenes_create         POST       /api/employe/allergenes
   api_employe_allergenes_update         PUT        /api/employe/allergenes/{id}
+  api_employe_allergenes_delete         DELETE     /api/employe/allergenes/{id}
   api_employe_plats_create              POST       /api/employe/plats
   api_employe_plats_update              PUT        /api/employe/plats/{id}
   api_employe_plats_delete              DELETE     /api/employe/plats/{id}
+  geocode_address                       ANY        /geocode
+  distance_between                      ANY        /distance
+  delivery_cost                         GET        /delivery-cost
   api_horaires                          GET        /api/horaires
   api_menus                             GET        /api/menus
   api_menu_show                         GET        /api/menus/{id}
+  api_themes_list                       GET        /api/themes
+  api_regimes_list                      GET        /api/regimes
+  api_allergenes_list                   GET        /api/allergenes
+  api_plats_list                        GET        /api/plats
   api_avis_public                       GET        /api/avis
-  api_admin_menus_list                  GET        /api/admin/menus
-  api_admin_menus_show                  GET        /api/admin/menus/{id}
-  api_admin_menus_create                POST       /api/admin/menus
-  api_admin_menus_update                PUT        /api/admin/menus/{id}
-  api_admin_menus_delete                DELETE     /api/admin/menus/{id}
+  api_admin_plats_list                  GET        /api/admin/plats
+  api_admin_plats_show                  GET        /api/admin/plats/{id}
+  api_admin_plats_create                POST       /api/admin/plats
+  api_admin_plats_update                PUT        /api/admin/plats/{id}
+  api_admin_plats_delete                DELETE     /api/admin/plats/{id}api_doc                               GET|HEAD   /api/docs.{_format}
+  api_genid                             GET|HEAD   /api/.well-known/genid/{id}
+  api_validation_errors                 GET|HEAD   /api/validation_errors/{id}
+  api_entrypoint                        GET|HEAD   /api/{index}.{_format}
+  api_jsonld_context                    GET|HEAD   /api/contexts/{shortName}.{_format}
+  _api_errors                           GET        /api/errors/{status}.{_format}
+  _api_validation_errors_problem        GET        /api/validation_errors/{id}
+  _api_validation_errors_hydra          GET        /api/validation_errors/{id}
+  _api_validation_errors_jsonapi        GET        /api/validation_errors/{id}
+  _api_validation_errors_xml            GET        /api/validation_errors/{id}
+  _preview_error                        ANY        /_error/{code}.{_format}
+  api_utilisateurs                      GET        /api/admin/utilisateurs
+  api_utilisateur_show                  GET        /api/admin/utilisateurs/{id}
+  api_utilisateur_delete                DELETE     /api/admin/utilisateurs/{id}
+  api_utilisateur_delete_email          DELETE     /api/admin/utilisateurs/email/{email}       
+  api_utilisateur_update                PUT        /api/admin/utilisateurs/{id}
+  api_utilisateur_update_by_email       PUT        /api/admin/utilisateurs/email/{email}       
+  api_admin_utilisateur_desactivation   PUT        /api/admin/utilisateurs/{id}/desactivation  
+  api_admin_utilisateur_reactivation    PUT        /api/admin/utilisateurs/{id}/reactivation
+  api_admin_employes_create             POST       /api/admin/employes
+  api_admin_commande_delete             DELETE     /api/admin/commandes/{id}
+  api_admin_avis_list                   GET        /api/admin/avis
+  api_admin_avis_delete                 DELETE     /api/admin/avis/{id}
+  api_admin_statistiques                GET        /api/admin/statistiques
+  api_admin_statistiques_graphiques     GET        /api/admin/statistiques/graphiques
+  api_admin_logs                        GET        /api/admin/logs
+  api_admin_horaires_create             POST       /api/admin/horaires
+  api_admin_horaires_update             PUT        /api/admin/horaires/{id}
+  api_admin_horaires_delete             DELETE     /api/admin/horaires/{id}
+  api_login                             POST       /api/login
+  api_register                          POST       /api/register
+  api_forgot_password                   POST       /api/forgot-password
+  api_reset_password                    POST       /api/reset-password
+  api_client_profil                     GET        /api/client/profil
+  api_client_update_profil              PUT        /api/client/profil
+  api_client_compte_desactivation       POST       /api/client/compte/desactivation
+  api_client_commandes                  GET        /api/client/commandes
+  api_client_commande_modifier          PUT        /api/client/commandes/{id}
+  api_client_commande_annuler           POST       /api/client/commandes/{id}/annuler
+  api_client_commande_suivi             GET        /api/client/commandes/{id}/suivi
+  api_client_avis_list                  GET        /api/client/avis
+  api_client_avis                       POST       /api/client/commandes/{id}/avis
+  api_admin_commandes_create            POST       /api/admin/commandes
+  api_admin_commandes_list              GET        /api/admin/commandes
+  api_admin_commandes_show              GET        /api/admin/commandes/{id}
+  api_admin_commandes_annuler           PUT        /api/admin/commandes/{id}/annuler
+  api_contact                           POST       /api/contact
+  api_employe_commandes                 GET        /api/employe/commandes
+  api_employe_commandes_recherche       GET        /api/employe/commandes/recherche/{nom}
+  api_employe_commande_statut           POST       /api/employe/commandes/{id}/statut
+  api_employe_materiels_en_cours        GET        /api/employe/commandes/materiels-en-cours   
+  api_employe_materiel_show             GET        /api/employe/commandes/{id}/materiel
+  api_employe_materiel_restitution      PUT        /api/employe/commandes/{id}/restitution
+  api_employe_commandes_filtres         GET        /api/employe/commandes/filtres
+  api_employe_commande_suivi            GET        /api/employe/commandes/{id}/suivi
+  api_employe_avis                      GET        /api/employe/avis
+  api_employe_avis_approuver            PUT        /api/employe/avis/{id}/approuver
+  api_employe_avis_refuser              PUT        /api/employe/avis/{id}/refuser
+  api_employe_menus_create              POST       /api/employe/menus
+  api_employe_menus_update              PUT        /api/employe/menus/{id}
+  api_employe_menus_delete              DELETE     /api/employe/menus/{id}
+  api_employe_menus_images_add          POST       /api/employe/menus/{id}/images
+  api_employe_menus_images_delete       DELETE     /api/employe/menus/{id}/images/{imageId}
+  api_employe_menus_images_update       PUT        /api/employe/menus/{id}/images/{imageId}
+  api_employe_themes_create             POST       /api/employe/themes
+  api_employe_themes_update             PUT        /api/employe/themes/{id}
+  api_employe_themes_delete             DELETE     /api/employe/themes/{id}
+  api_employe_regimes_create            POST       /api/employe/regimes
+  api_employe_regimes_update            PUT        /api/employe/regimes/{id}
+  api_employe_regimes_delete            DELETE     /api/employe/regimes/{id}
+  api_employe_allergenes_create         POST       /api/employe/allergenes
+  api_employe_allergenes_update         PUT        /api/employe/allergenes/{id}
+  api_employe_allergenes_delete         DELETE     /api/employe/allergenes/{id}
+  api_employe_plats_create              POST       /api/employe/plats
+  api_employe_plats_update              PUT        /api/employe/plats/{id}
+  api_employe_plats_delete              DELETE     /api/employe/plats/{id}
+  geocode_address                       ANY        /geocode
+  distance_between                      ANY        /distance
+  delivery_cost                         GET        /delivery-cost
+  api_horaires                          GET        /api/horaires
+  api_menus                             GET        /api/menus
+  api_menu_show                         GET        /api/menus/{id}
+  api_themes_list                       GET        /api/themes
+  api_regimes_list                      GET        /api/regimes
+  api_allergenes_list                   GET        /api/allergenes
+  api_plats_list                        GET        /api/plats
+  api_avis_public                       GET        /api/avis
   api_admin_plats_list                  GET        /api/admin/plats
   api_admin_plats_show                  GET        /api/admin/plats/{id}
   api_admin_plats_create                POST       /api/admin/plats
   api_admin_plats_update                PUT        /api/admin/plats/{id}
   api_admin_plats_delete                DELETE     /api/admin/plats/{id}
-  api_admin_regimes_list                GET        /api/admin/regimes
-  api_admin_regimes_show                GET        /api/admin/regimes/{id}
-  api_admin_regimes_create              POST       /api/admin/regimes
-  api_admin_regimes_update              PUT        /api/admin/regimes/{id}
-  api_admin_regimes_delete              DELETE     /api/admin/regimes/{id}
-  api_admin_roles_list                  GET        /api/admin/roles
-  api_admin_roles_show                  GET        /api/admin/roles/{id}
-  api_admin_roles_create                POST       /api/admin/roles
-  api_admin_roles_update                PUT        /api/admin/roles/{id}
-  api_admin_roles_delete                DELETE     /api/admin/roles/{id}
-  api_admin_themes_list                 GET        /api/admin/themes
-  api_admin_themes_show                 GET        /api/admin/themes/{id}
-  api_admin_themes_create               POST       /api/admin/themes
-  api_admin_themes_update               PUT        /api/admin/themes/{id}
-  api_admin_themes_delete               DELETE     /api/admin/themes/{id}
+  api_forgot_password                   POST       /api/forgot-password
+  api_reset_password                    POST       /api/reset-password
+  api_client_profil                     GET        /api/client/profil
+  api_client_update_profil              PUT        /api/client/profil
+  api_client_compte_desactivation       POST       /api/client/compte/desactivation
+  api_client_commandes                  GET        /api/client/commandes
+  api_client_commande_modifier          PUT        /api/client/commandes/{id}
+  api_client_commande_annuler           POST       /api/client/commandes/{id}/annuler
+  api_client_commande_suivi             GET        /api/client/commandes/{id}/suivi
+  api_client_avis_list                  GET        /api/client/avis
+  api_client_avis                       POST       /api/client/commandes/{id}/avis
+  api_admin_commandes_create            POST       /api/admin/commandes
+  api_admin_commandes_list              GET        /api/admin/commandes
+  api_admin_commandes_show              GET        /api/admin/commandes/{id}
+  api_admin_commandes_annuler           PUT        /api/admin/commandes/{id}/annuler
+  api_contact                           POST       /api/contact
+  api_employe_commandes                 GET        /api/employe/commandes
+  api_employe_commandes_recherche       GET        /api/employe/commandes/recherche/{nom}
+  api_employe_commande_statut           POST       /api/employe/commandes/{id}/statut
+  api_employe_materiels_en_cours        GET        /api/employe/commandes/materiels-en-cours   
+  api_employe_materiel_show             GET        /api/employe/commandes/{id}/materiel
+  api_employe_materiel_restitution      PUT        /api/employe/commandes/{id}/restitution
+  api_employe_commandes_filtres         GET        /api/employe/commandes/filtres
+  api_employe_commande_suivi            GET        /api/employe/commandes/{id}/suivi
+  api_employe_avis                      GET        /api/employe/avis
+  api_employe_avis_approuver            PUT        /api/employe/avis/{id}/approuver
+  api_employe_avis_refuser              PUT        /api/employe/avis/{id}/refuser
+  api_employe_menus_create              POST       /api/employe/menus
+  api_employe_menus_update              PUT        /api/employe/menus/{id}
+  api_employe_menus_delete              DELETE     /api/employe/menus/{id}
+  api_employe_menus_images_add          POST       /api/employe/menus/{id}/images
+  api_employe_menus_images_delete       DELETE     /api/employe/menus/{id}/images/{imageId}
+  api_employe_menus_images_update       PUT        /api/employe/menus/{id}/images/{imageId}
+  api_employe_themes_create             POST       /api/employe/themes
+  api_employe_themes_update             PUT        /api/employe/themes/{id}
+  api_employe_themes_delete             DELETE     /api/employe/themes/{id}
+  api_employe_regimes_create            POST       /api/employe/regimes
+  api_employe_regimes_update            PUT        /api/employe/regimes/{id}
+  api_employe_regimes_delete            DELETE     /api/employe/regimes/{id}
+  api_employe_allergenes_create         POST       /api/employe/allergenes
+  api_employe_allergenes_update         PUT        /api/employe/allergenes/{id}
+  api_employe_allergenes_delete         DELETE     /api/employe/allergenes/{id}
+  api_employe_plats_create              POST       /api/employe/plats
+  api_employe_plats_update              PUT        /api/employe/plats/{id}
+  api_employe_plats_delete              DELETE     /api/employe/plats/{id}
+  geocode_address                       ANY        /geocode
+  distance_between                      ANY        /distance
+  delivery_cost                         GET        /delivery-cost
+  api_horaires                          GET        /api/horaires
+  api_menus                             GET        /api/menus
+  api_menu_show                         GET        /api/menus/{id}
+  api_themes_list                       GET        /api/themes
+  api_regimes_list                      GET        /api/regimes
+  api_allergenes_list                   GET        /api/allergenes
+  api_plats_list                        GET        /api/plats
+  api_avis_public                       GET        /api/avis
+  api_admin_plats_list                  GET        /api/admin/plats
+  api_admin_plats_show                  GET        /api/admin/plats/{id}
+  api_admin_plats_create                POST       /api/admin/plats
+  api_admin_plats_update                PUT        /api/admin/plats/{id}
+  api_admin_plats_delete                DELETE     /api/admin/plats/{id}
  ------------------------------------- ---------- --------------------------------------------
 
 PS D:\wamp64\www\vite-et-gourmand-back> 
@@ -646,3 +811,120 @@ Action : php C:\wamp64\www\mon-projet\bin/console app:check-retour-materiel
 
 
 APP_SECRET génèration par la commande => php bin/console secrets:generate-keys
+
+création de api/doc
+Installer -> composer require nelmio/api-doc-bundle
+dans -> config/packages/nelmio_api_doc.yaml
+ajoute :
+nelmio_api_doc:
+    documentation:
+        info:
+            title: "Vite & Gourmand - API"
+            description: "API REST du service traiteur Vite & Gourmand"
+            version: "1.0.0"
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
+
+    # Une area par rôle
+    areas:
+        # Doc publique : routes sans authentification
+        default:
+            path_patterns:
+                - ^/api/menus
+                - ^/api/themes
+                - ^/api/regimes
+                - ^/api/allergenes
+                - ^/api/plats
+                - ^/api/avis
+                - ^/api/horaires
+                - ^/api/contact
+                - ^/api/register
+                - ^/api/login
+                - ^/api/forgot-password
+                - ^/api/reset-password
+                - ^/geocode
+                - ^/distance
+                - ^/delivery-cost
+
+        # Doc client : routes /api/client/*
+        client:
+            path_patterns:
+                - ^/api/client
+
+        # Doc employé : routes /api/employe/*
+        employe:
+            path_patterns:
+                - ^/api/employe
+
+        # Doc admin : routes /api/admin/*
+        admin:
+            path_patterns:
+                - ^/api/admin
+
+dans -> config/routes/nelmio_api_doc.yaml
+ajoute :
+# Page Swagger pour chaque area
+app.swagger_ui_public:
+    path: /api/doc/public
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: public
+
+app.swagger_ui_client:
+    path: /api/doc/client
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: client
+
+app.swagger_ui_employe:
+    path: /api/doc/employe
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: employe
+
+app.swagger_ui_admin:
+    path: /api/doc/admin
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: admin
+
+# JSON pour chaque area (utile si tu veux exporter)
+app.swagger_public:
+    path: /api/doc/public.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: public
+
+app.swagger_client:
+    path: /api/doc/client.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: client
+
+app.swagger_employe:
+    path: /api/doc/employe.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: employe
+
+app.swagger_admin:
+    path: /api/doc/admin.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: admin
+
+vide le cache : php bin/console cache:clear

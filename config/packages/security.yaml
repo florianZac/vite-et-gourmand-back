@@ -55,6 +55,9 @@ security:
      # Attention : la première règle qui correspond est appliquée
     access_control:
         # Routes publiques — Accessible à tout le monde (visiteurs non connectés)
+        #  Swagger doc accessible à tous
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+        - { path: ^/api/docs.json, roles: PUBLIC_ACCESS }
         - { path: ^/api/login,           roles: PUBLIC_ACCESS }
         - { path: ^/api/register,        roles: PUBLIC_ACCESS }
         - { path: ^/api/forgot-password, roles: PUBLIC_ACCESS } 

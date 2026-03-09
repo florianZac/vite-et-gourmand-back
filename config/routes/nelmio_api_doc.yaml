@@ -1,0 +1,64 @@
+# Page Swagger pour chaque area
+app.swagger_ui_public:
+    path: /api/doc/public
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: public
+
+app.swagger_ui_client:
+    path: /api/doc/client
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: client
+
+app.swagger_ui_employe:
+    path: /api/doc/employe
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: employe
+
+app.swagger_ui_admin:
+    path: /api/doc/admin
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger_ui
+        area: admin
+
+# JSON pour chaque area (utile si tu veux exporter)
+app.swagger_public:
+    path: /api/doc/public.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: public
+
+app.swagger_client:
+    path: /api/doc/client.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: client
+
+app.swagger_employe:
+    path: /api/doc/employe.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: employe
+
+app.swagger_admin:
+    path: /api/doc/admin.json
+    methods: GET
+    defaults:
+        _controller: nelmio_api_doc.controller.swagger
+        area: admin
+
+## Requires the Asset component and the Twig bundle
+## $ composer require twig asset
+#app.swagger_ui:
+#    path: /api/doc
+#    methods: GET
+#    defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
