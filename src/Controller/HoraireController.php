@@ -6,7 +6,7 @@ use App\Repository\HoraireRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-
+use OpenApi\Attributes as OA;
 
 /**
  * @author : florian Aizac
@@ -20,6 +20,26 @@ final class HoraireController extends AbstractController
 {
     // Afficher la liste des horaires d'ouverture de l'entreprise vite & gourmand.
     #[Route('/horaires', name: 'api_horaires', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Liste des horaires d\'ouverture',
+        description: 'Retourne les horaires d\'ouverture du restaurant pour chaque jour de la semaine. Accessible publiquement. Les heures sont formatées en HH:MM, "Fermé" si le restaurant est fermé ce jour.'
+    )]
+    #[OA\Tag(name: 'Public - Horaires')]
+    #[OA\Response(
+        response: 200,
+        description: 'Liste des horaires retournée',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                properties: [
+                    new OA\Property(property: 'horaire_id', type: 'integer', example: 1),
+                    new OA\Property(property: 'jour', type: 'string', example: 'Lundi'),
+                    new OA\Property(property: 'heureOuverture', type: 'string', example: '09:00'),
+                    new OA\Property(property: 'heureFermeture', type: 'string', example: '18:00'),
+                ]
+            )
+        )
+    )]
 
     // équivalent de SELECT * FROM horaire tous les horaires.
     // permet de récupérer tous les horaires et de les retourner au format JSON

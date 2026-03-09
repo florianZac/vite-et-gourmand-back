@@ -9,6 +9,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -37,6 +38,10 @@ final class PlatController extends BaseController
      * @return JsonResponse
      */
     #[Route('', name: 'api_admin_plats_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les plats', description: 'Retourne tous les plats avec leurs allergènes associés. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Plats')]
+    #[OA\Response(response: 200, description: 'Liste des plats retournée')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     public function getAllPlats(PlatRepository $platRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -58,6 +63,12 @@ final class PlatController extends BaseController
      * @return JsonResponse
      */
     #[Route('/{id}', name: 'api_admin_plats_show', methods: ['GET'])]
+    #[OA\Get(summary: 'Détail d\'un plat par ID', description: 'Retourne un plat avec ses allergènes associés. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Plats')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du plat', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Plat trouvé')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Plat non trouvé')]
     public function getPlatById(int $id, PlatRepository $platRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -85,6 +96,21 @@ final class PlatController extends BaseController
      * @return JsonResponse
      */
     #[Route('', name: 'api_admin_plats_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un plat', description: 'Crée un nouveau plat avec ses allergènes. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Plats')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(
+        properties: [
+            new OA\Property(property: 'titre_plat', type: 'string', example: 'Bœuf bourguignon'),
+            new OA\Property(property: 'photo', type: 'string', example: 'boeuf.jpg'),
+            new OA\Property(property: 'categorie', type: 'string', example: 'Plat', description: 'Entrée, Plat ou Dessert'),
+            new OA\Property(property: 'allergenes', type: 'array', items: new OA\Items(type: 'integer'), example: '[1, 3]', description: 'IDs des allergènes (optionnel)'),
+        ]
+    ))]
+    #[OA\Response(response: 201, description: 'Plat créé avec succès')]
+    #[OA\Response(response: 400, description: 'Champs manquants ou catégorie invalide')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Allergène non trouvé')]
+    #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
     public function createPlat(
         Request $request,
         PlatRepository $platRepository,
@@ -155,6 +181,22 @@ final class PlatController extends BaseController
      * @return JsonResponse
      */
     #[Route('/{id}', name: 'api_admin_plats_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un plat', description: 'Met à jour un plat. Les allergènes envoyés REMPLACENT les anciens. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Plats')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du plat', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(
+        properties: [
+            new OA\Property(property: 'titre_plat', type: 'string', example: 'Nouveau titre'),
+            new OA\Property(property: 'photo', type: 'string', example: 'photo.jpg'),
+            new OA\Property(property: 'categorie', type: 'string', example: 'Dessert'),
+            new OA\Property(property: 'allergenes', type: 'array', items: new OA\Items(type: 'integer'), example: '[1, 2]'),
+        ]
+    ))]
+    #[OA\Response(response: 200, description: 'Plat mis à jour')]
+    #[OA\Response(response: 400, description: 'Catégorie invalide')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Plat ou allergène non trouvé')]
+    #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
     public function updatePlat(
         int $id,
         Request $request,
@@ -230,6 +272,12 @@ final class PlatController extends BaseController
      * @return JsonResponse
      */
     #[Route('/{id}', name: 'api_admin_plats_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un plat', description: 'Supprime un plat par son ID. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Plats')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du plat', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Plat supprimé avec succès')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Plat non trouvé')]
     public function deletePlat(int $id, PlatRepository $platRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN

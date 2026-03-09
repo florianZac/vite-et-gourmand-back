@@ -31,6 +31,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -81,12 +82,17 @@ final class EmployeController extends AbstractController
     // COMMANDES
     // =========================================================================
 
+
     /**
      * @description Afficher toutes les commandes en cours
      * @param CommandeRepository $commandeRepository Le repository des commandes
      * @return JsonResponse
      */
     #[Route('/commandes', name: 'api_employe_commandes', methods: ['GET'])]
+    #[OA\Get(summary: 'Commandes en cours', description: 'Retourne toutes les commandes en cours (non terminées, non annulées). Réservé aux employés.')]
+    #[OA\Tag(name: 'Employé - Commandes')]
+    #[OA\Response(response: 200, description: 'Liste des commandes en cours')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     public function getCommandes(CommandeRepository $commandeRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -108,6 +114,12 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/commandes/recherche/{nom}', name: 'api_employe_commandes_recherche', methods: ['GET'])]
+    #[OA\Get(summary: 'Rechercher une commande', description: 'Recherche une commande par son numéro. Réservé aux employés.')]
+    #[OA\Tag(name: 'Employé - Commandes')]
+    #[OA\Parameter(name: 'nom', in: 'path', required: true, description: 'Numéro de commande à rechercher', schema: new OA\Schema(type: 'string'))]
+    #[OA\Response(response: 200, description: 'Commande(s) trouvée(s)')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Aucune commande trouvée')]
     public function rechercherCommande(string $nom, CommandeRepository $commandeRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -136,6 +148,19 @@ final class EmployeController extends AbstractController
      *   - pret_materiel = true  -> passage automatique à En attente du retour matériel + email client
      */
     #[Route('/commandes/{id}/statut', name: 'api_employe_commande_statut', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Changer le statut d\'une commande',
+        description: 'Modifie le statut en respectant le cycle strict : En attente → Acceptée → En préparation → En livraison → Livré → Terminée. Retour en arrière interdit. Si Livré + matériel prêté → En attente retour matériel. Si Livré + pas de matériel → Terminée.'
+    )]
+    #[OA\Tag(name: 'Employé - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(
+        properties: [new OA\Property(property: 'statut', type: 'string', example: 'Acceptée', description: 'Nouveau statut à appliquer')]
+    ))]
+    #[OA\Response(response: 200, description: 'Statut mis à jour')]
+    #[OA\Response(response: 400, description: 'Statut invalide, manquant, ou retour en arrière interdit')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     public function changerStatut(
         int $id,
         Request $request,
@@ -250,6 +275,10 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/commandes/materiels-en-cours', name: 'api_employe_materiels_en_cours', methods: ['GET'])]
+    #[OA\Get(summary: 'Commandes avec matériel non rendu', description: 'Retourne les commandes où le matériel a été prêté mais pas encore restitué.')]
+    #[OA\Tag(name: 'Employé - Matériel')]
+    #[OA\Response(response: 200, description: 'Liste retournée')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     public function getMaterialEnCours(CommandeRepository $commandeRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -279,6 +308,12 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/commandes/{id}/materiel', name: 'api_employe_materiel_show', methods: ['GET'])]
+    #[OA\Get(summary: 'État du matériel d\'une commande', description: 'Retourne si le matériel a été prêté, rendu, et si le mail de pénalité a été envoyé.')]
+    #[OA\Tag(name: 'Employé - Matériel')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'État du matériel retourné')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     public function getMaterielCommande(int $id, CommandeRepository $commandeRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -313,6 +348,22 @@ final class EmployeController extends AbstractController
      * Si les deux conditions sont remplies -> commande passe automatiquement à Terminée
      */
     #[Route('/commandes/{id}/restitution', name: 'api_employe_materiel_restitution', methods: ['PUT'])]
+    #[OA\Put(
+        summary: 'Confirmer la restitution du matériel',
+        description: 'Confirme le retour du matériel et le paiement de la pénalité. Si les deux sont confirmés, la commande passe automatiquement en Terminée.'
+    )]
+    #[OA\Tag(name: 'Employé - Matériel')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(
+        properties: [
+            new OA\Property(property: 'restitution_materiel', type: 'boolean', example: true),
+            new OA\Property(property: 'penalite_payee', type: 'boolean', example: true),
+        ]
+    ))]
+    #[OA\Response(response: 200, description: 'Restitution confirmée (passage en Terminée si conditions remplies)')]
+    #[OA\Response(response: 400, description: 'Commande pas en attente du retour matériel ou champs manquants')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     public function confirmerRestitution(
         int $id,
         Request $request,
@@ -382,6 +433,12 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/commandes/filtres', name: 'api_employe_commandes_filtres', methods: ['GET'])]
+    #[OA\Get(summary: 'Filtrer les commandes', description: 'Filtre les commandes par statut et/ou par ID utilisateur.')]
+    #[OA\Tag(name: 'Employé - Commandes')]
+    #[OA\Parameter(name: 'statut', in: 'query', required: false, description: 'Filtrer par statut', schema: new OA\Schema(type: 'string'))]
+    #[OA\Parameter(name: 'utilisateur_id', in: 'query', required: false, description: 'Filtrer par ID client', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Commandes filtrées')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     public function filtrerCommandes(
         Request $request,
         CommandeRepository $commandeRepository
@@ -417,6 +474,12 @@ final class EmployeController extends AbstractController
      * @description Afficher le suivi de toutes les commandes (sans restriction de propriétaire)
      */
     #[Route('/commandes/{id}/suivi', name: 'api_employe_commande_suivi', methods: ['GET'])]
+    #[OA\Get(summary: 'Suivi d\'une commande', description: 'Retourne l\'historique des statuts d\'une commande (sans restriction de propriétaire).')]
+    #[OA\Tag(name: 'Employé - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Suivi retourné')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     public function getSuiviCommande(
         int $id,
         CommandeRepository $commandeRepository,
@@ -467,6 +530,11 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/avis', name: 'api_employe_avis', methods: ['GET'])]
+    #[OA\Get(summary: 'Avis en attente de validation', description: 'Retourne tous les avis clients au statut "en_attente".')]
+    #[OA\Tag(name: 'Employé - Avis')]
+    #[OA\Response(response: 200, description: 'Liste des avis en attente')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+
     public function getAvisEnAttente(AvisRepository $avisRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -489,6 +557,13 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/avis/{id}/approuver', name: 'api_employe_avis_approuver', methods: ['PUT'])]
+    #[OA\Put(summary: 'Approuver un avis', description: 'Valide un avis client en attente. Le statut passe à "validé".')]
+    #[OA\Tag(name: 'Employé - Avis')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'avis', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Avis approuvé')]
+    #[OA\Response(response: 400, description: 'Avis pas en attente')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Avis non trouvé')]
     public function approuverAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -525,6 +600,13 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/avis/{id}/refuser', name: 'api_employe_avis_refuser', methods: ['PUT'])]
+    #[OA\Put(summary: 'Refuser un avis', description: 'Refuse un avis client en attente. Le statut passe à "refusé".')]
+    #[OA\Tag(name: 'Employé - Avis')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'avis', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Avis refusé')]
+    #[OA\Response(response: 400, description: 'Avis pas en attente')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Avis non trouvé')]
     public function refuserAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -569,6 +651,26 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/menus', name: 'api_employe_menus_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un menu', description: 'Crée un nouveau menu avec régime, thème et plats associés.')]
+    #[OA\Tag(name: 'Employé - Menus')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(
+        properties: [
+            new OA\Property(property: 'titre', type: 'string', example: 'Menu Prestige'),
+            new OA\Property(property: 'nombre_personne_minimum', type: 'integer', example: 10),
+            new OA\Property(property: 'prix_par_personne', type: 'number', example: 75.00),
+            new OA\Property(property: 'description', type: 'string', example: 'Un menu raffiné...'),
+            new OA\Property(property: 'conditions', type: 'string', example: 'Commander 14 jours à l\'avance'),
+            new OA\Property(property: 'quantite_restante', type: 'integer', example: 50),
+            new OA\Property(property: 'regime_id', type: 'integer', example: 2),
+            new OA\Property(property: 'theme_id', type: 'integer', example: 3),
+            new OA\Property(property: 'plats', type: 'array', items: new OA\Items(type: 'integer'), example: '[1, 4, 7]'),
+        ]
+    ))]
+    #[OA\Response(response: 201, description: 'Menu créé')]
+    #[OA\Response(response: 400, description: 'Champs manquants')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Régime, thème ou plat non trouvé')]
+    #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
     public function createMenu(
         Request $request,
         MenuRepository $menuRepository,
@@ -662,6 +764,20 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/menus/{id}', name: 'api_employe_menus_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un menu', description: 'Met à jour un menu. Les plats envoyés REMPLACENT les anciens.')]
+    #[OA\Tag(name: 'Employé - Menus')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [
+        new OA\Property(property: 'titre', type: 'string'), new OA\Property(property: 'nombre_personne_minimum', type: 'integer'),
+        new OA\Property(property: 'prix_par_personne', type: 'number'), new OA\Property(property: 'description', type: 'string'),
+        new OA\Property(property: 'conditions', type: 'string'), new OA\Property(property: 'quantite_restante', type: 'integer'),
+        new OA\Property(property: 'regime_id', type: 'integer'), new OA\Property(property: 'theme_id', type: 'integer'),
+        new OA\Property(property: 'plats', type: 'array', items: new OA\Items(type: 'integer')),
+    ]))]
+    #[OA\Response(response: 200, description: 'Menu mis à jour')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Menu, régime, thème ou plat non trouvé')]
+    #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
     public function updateMenu(
         int $id,
         Request $request,
@@ -767,6 +883,12 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/menus/{id}', name: 'api_employe_menus_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un menu', description: 'Supprime un menu et ses images en cascade.')]
+    #[OA\Tag(name: 'Employé - Menus')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Menu supprimé')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Menu non trouvé')]
     public function deleteMenu(int $id, MenuRepository $menuRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -812,6 +934,19 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/menus/{id}/images', name: 'api_employe_menus_images_add', methods: ['POST'])]
+    #[OA\Post(summary: 'Ajouter une image à un menu', description: 'Upload un fichier image en multipart/form-data. Formats : jpg, jpeg, png, webp. Sauvegarde dans public/uploads/menus/.')]
+    #[OA\Tag(name: 'Employé - Images Menus')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(
+        properties: [
+            new OA\Property(property: 'image', type: 'string', format: 'binary', description: 'Fichier image'),
+            new OA\Property(property: 'ordre', type: 'integer', example: 1, description: 'Position dans la galerie'),
+        ]
+    )))]
+    #[OA\Response(response: 201, description: 'Image ajoutée')]
+    #[OA\Response(response: 400, description: 'Fichier manquant ou format invalide')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Menu non trouvé')]
     public function addImageMenu(
         int $id,
         Request $request,
@@ -898,6 +1033,13 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/menus/{id}/images/{imageId}', name: 'api_employe_menus_images_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer une image d\'un menu', description: 'Supprime le fichier physique et l\'entrée en base.')]
+    #[OA\Tag(name: 'Employé - Images Menus')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'imageId', in: 'path', required: true, description: 'ID de l\'image', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Image supprimée')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou image n\'appartient pas au menu')]
+    #[OA\Response(response: 404, description: 'Menu ou image non trouvé')]
     public function deleteImageMenu(
         int $id,
         int $imageId,
@@ -957,6 +1099,15 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/menus/{id}/images/{imageId}', name: 'api_employe_menus_images_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier l\'ordre d\'une image', description: 'Change la position d\'affichage d\'une image dans la galerie (ordre 1 = photo principale).')]
+    #[OA\Tag(name: 'Employé - Images Menus')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Parameter(name: 'imageId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'ordre', type: 'integer', example: 2)]))]
+    #[OA\Response(response: 200, description: 'Ordre mis à jour')]
+    #[OA\Response(response: 400, description: 'Champ ordre manquant')]
+    #[OA\Response(response: 403, description: 'Accès refusé ou image n\'appartient pas au menu')]
+    #[OA\Response(response: 404, description: 'Menu ou image non trouvé')]
     public function updateOrdreImage(
         int $id,
         int $imageId,
@@ -1022,7 +1173,12 @@ final class EmployeController extends AbstractController
      * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
      * @return JsonResponse
      */
+
     #[Route('/themes', name: 'api_employe_themes_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un thème', description: 'Crée un nouveau thème pour les menus.')]
+    #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Noël')]))]
+    #[OA\Response(response: 201, description: 'Thème créé')]  #[OA\Response(response: 400, description: 'Libellé manquant')]  #[OA\Response(response: 403, description: 'Accès refusé')]  #[OA\Response(response: 409, description: 'Thème déjà existant')]
     public function createTheme(Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1064,6 +1220,14 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/themes/{id}', name: 'api_employe_themes_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un thème', description: 'Met à jour le libellé d\'un thème.')]
+    #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Mariage')]))]
+    #[OA\Response(response: 200, description: 'Thème mis à jour')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]  
+    #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
     public function updateTheme(int $id, Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1103,6 +1267,12 @@ final class EmployeController extends AbstractController
      * @description Supprimer un thème par son id
      */
     #[Route('/themes/{id}', name: 'api_employe_themes_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un thème')]  
+    #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Supprimé')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]
     public function deleteTheme(int $id, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1137,6 +1307,12 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/regimes', name: 'api_employe_regimes_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un régime')]  #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Végétarien')]))]
+    #[OA\Response(response: 201, description: 'Créé')]  
+    #[OA\Response(response: 400, description: 'Libellé manquant')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 409, description: 'Déjà existant')]
     public function createRegime(Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1178,6 +1354,13 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/regimes/{id}', name: 'api_employe_regimes_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un régime')]  #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Vegan')]))]
+    #[OA\Response(response: 200, description: 'Mis à jour')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]  
+    #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
     public function updateRegime(int $id, Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1217,6 +1400,11 @@ final class EmployeController extends AbstractController
      * @description Supprimer un régime par son id
      */
     #[Route('/regimes/{id}', name: 'api_employe_regimes_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un régime')]  #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Supprimé')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]
     public function deleteRegime(int $id, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1247,6 +1435,12 @@ final class EmployeController extends AbstractController
      * Corps JSON attendu : { "libelle": "Gluten" }
      */
     #[Route('/allergenes', name: 'api_employe_allergenes_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un allergène')]  #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Gluten')]))]
+    #[OA\Response(response: 201, description: 'Créé')]  
+    #[OA\Response(response: 400, description: 'Libellé manquant')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 409, description: 'Déjà existant')]
     public function createAllergene(Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1283,6 +1477,13 @@ final class EmployeController extends AbstractController
      * Corps JSON attendu : { "libelle": "Lactose" }
      */
     #[Route('/allergenes/{id}', name: 'api_employe_allergenes_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un allergène')]  #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Lactose')]))]
+    #[OA\Response(response: 200, description: 'Mis à jour')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]  
+    #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
     public function updateAllergene(int $id, Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1323,6 +1524,12 @@ final class EmployeController extends AbstractController
      *  méthode manquante ajoutée (CDC : employé peut créer, modifier ET supprimer les allergènes)
      */
     #[Route('/allergenes/{id}', name: 'api_employe_allergenes_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un allergène')]  
+    #[OA\Tag(name: 'Employé - Référentiels')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Supprimé')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]
     public function deleteAllergene(int $id, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1352,7 +1559,20 @@ final class EmployeController extends AbstractController
      * @description Créer un nouveau plat
      * Corps JSON attendu : { "titre_plat": "Bœuf bourguignon", "photo": "boeuf.jpg", "categorie": "Plat", "allergenes": [1, 2] }
      */
+
     #[Route('/plats', name: 'api_employe_plats_create', methods: ['POST'])]
+    #[OA\Post(summary: 'Créer un plat')]  #[OA\Tag(name: 'Employé - Plats')]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [
+        new OA\Property(property: 'titre_plat', type: 'string', example: 'Bœuf bourguignon'),
+        new OA\Property(property: 'photo', type: 'string', example: 'boeuf.jpg'),
+        new OA\Property(property: 'categorie', type: 'string', example: 'Plat'),
+        new OA\Property(property: 'allergenes', type: 'array', items: new OA\Items(type: 'integer'), example: '[1, 2]'),
+    ]))]
+    #[OA\Response(response: 201, description: 'Créé')]  
+    #[OA\Response(response: 400, description: 'Champs manquants ou catégorie invalide')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Allergène non trouvé')]  
+    #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
     public function createPlat(Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1410,6 +1630,17 @@ final class EmployeController extends AbstractController
      * Corps JSON attendu : { "titre_plat": "...", "photo": "...", "categorie": "...", "allergenes": [1, 2] }
      */
     #[Route('/plats/{id}', name: 'api_employe_plats_update', methods: ['PUT'])]
+    #[OA\Put(summary: 'Modifier un plat')]  #[OA\Tag(name: 'Employé - Plats')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [
+        new OA\Property(property: 'titre_plat', type: 'string'), new OA\Property(property: 'photo', type: 'string'),
+        new OA\Property(property: 'categorie', type: 'string'), new OA\Property(property: 'allergenes', type: 'array', items: new OA\Items(type: 'integer')),
+    ]))]
+    #[OA\Response(response: 200, description: 'Mis à jour')]  
+    #[OA\Response(response: 400, description: 'Catégorie invalide')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]  
+    #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
     public function updatePlat(int $id, Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE
@@ -1481,6 +1712,11 @@ final class EmployeController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/plats/{id}', name: 'api_employe_plats_delete', methods: ['DELETE'])]
+    #[OA\Delete(summary: 'Supprimer un plat')]  #[OA\Tag(name: 'Employé - Plats')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Supprimé')]  
+    #[OA\Response(response: 403, description: 'Accès refusé')]  
+    #[OA\Response(response: 404, description: 'Non trouvé')]
     public function deletePlat(int $id, PlatRepository $platRepository, EntityManagerInterface $em): JsonResponse
     {
         // Étape 1 - Vérifier le rôle EMPLOYE

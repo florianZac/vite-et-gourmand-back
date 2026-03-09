@@ -77,7 +77,6 @@ final class AdminController extends AbstractController
     #[OA\Tag(name: 'Admin - Utilisateurs')]
     #[OA\Response(response: 200, description: 'Liste des utilisateurs retournée avec succès')]
     #[OA\Response(response: 403, description: 'Accès refusé - Rôle ADMIN requis')]
-
     // Fonction qui récupère tous les utilisateurs
     // équivalent de SELECT * FROM utilisateur
     public function getAllUsers(UtilisateurRepository $utilisateurRepository): JsonResponse

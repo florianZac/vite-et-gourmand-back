@@ -28,7 +28,7 @@ class MailerService
         private string $appUrl  // URL de l'application depuis .env
         ) {}
 
-    // Fonction email qui envoie un email de contact à l'administrateur du site lorsque le client remplis le formulaire de contact
+    // Fonction email qui envoie un email à l'administrateur du site lorsque le client remplis le formulaire de contact
     // reçoit un tableau $data contenant les données du formulaire (nom, email, message)
     public function sendContactEmail(array $data): void
     {
@@ -364,7 +364,7 @@ class MailerService
 
     /**
      * @description Envoie les identifiants de connexion à un nouvel employé
-     * Contient le mot de passe temporaire en clair → envoi unique, jamais stocké
+     * Contient le mot de passe temporaire en clair envoi unique, jamais stocké
      * @param Utilisateur $employe Le nouvel employé
      * @param string $motDePasseTemporaire Le mot de passe temporaire généré
      */
@@ -389,6 +389,36 @@ class MailerService
             ->subject('Vos identifiants de connexion - Vite et Gourmand')
             ->html($html);
         // Étape 3 - Envoyer l'email via le service MailerInterface
+        $this->mailer->send($email);
+    }
+
+        /**
+     * @description Envoie un email de confirmation d'annulation de commande au client demandé par l'admin
+     * @param Utilisateur $utilisateur Le client qui annule
+     * @param Commande $commande La commande annulée
+     * @param int $pourcentage Le pourcentage de remboursement
+     * @param float $montant Le montant remboursé au client
+     * @return void retourne rien 
+     */
+    public function sendCommandeAnnuleeEmail(Utilisateur $utilisateur, Commande $commande,float $montant): void
+    {
+        // Étape 1 - Génère le HTML à partir du template Twig
+        $html = $this->twig->render('emails/annulation_commande_admin.html.twig', [
+            'prenom'          => $utilisateur->getPrenom(),
+            'numero_commande' => $commande->getNumeroCommande(),
+            'date_prestation' => $commande->getDatePrestation()->format('d/m/Y'),
+            'motif'           => $commande->getMotifAnnulation(),
+            'montant'         => $montant,
+        ]);
+
+        // Étape 2 - Création de l'email
+        $email = (new Email())
+            ->from('noreply@vite-et-gourmand.fr')
+            ->to($utilisateur->getEmail())
+            ->subject('Annulation de votre commande ' . $commande->getNumeroCommande())
+            ->html($html);
+
+        // Étape 2 - Envoie de l'email
         $this->mailer->send($email);
     }
 

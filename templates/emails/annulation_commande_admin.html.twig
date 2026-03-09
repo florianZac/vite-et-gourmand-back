@@ -1,0 +1,16 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block content %}
+    <h2>Annulation de votre commande</h2>
+
+    <p>Bonjour {{ prenom }},</p>
+
+    <p>Votre commande <strong>{{ numero_commande }}</strong> prévue le <strong>{{ date_prestation }}</strong> a été annulée.</p>
+    
+    <p>Motif : <strong>{{ motif }}</strong></p>
+
+    <hr>
+        <p> Vous serez remboursé à <strong>100%</strong> soit <strong>{{ montant }}€</strong></p>
+    <hr>
+    
+{% endblock %}

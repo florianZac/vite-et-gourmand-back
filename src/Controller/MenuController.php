@@ -12,6 +12,7 @@ use App\Repository\ThemeRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -44,6 +45,9 @@ final class MenuController extends AbstractController
     // Sélectionne tous les menus
     // équivalent de SELECT * FROM menu
     #[Route('/menus', name: 'api_menus', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les menus', description: 'Retourne la liste complète des menus disponibles. Accessible publiquement sans authentification.')]
+    #[OA\Tag(name: 'Public - Menus')]
+    #[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
     public function index(MenuRepository $menuRepository): JsonResponse
     {
         // Étape 1 - Récupère tous les menus depuis la base de données
@@ -64,6 +68,11 @@ final class MenuController extends AbstractController
     // Sélectionne un menu par son id
     // équivalent de SELECT * FROM menu WHERE menu_id = :id
     #[Route('/menus/{id}', name: 'api_menu_show', methods: ['GET'])]
+    #[OA\Get(summary: 'Détail d\'un menu par ID', description: 'Retourne le détail complet d\'un menu (composition, allergènes, prix, galerie photos). Accessible publiquement.')]
+    #[OA\Tag(name: 'Public - Menus')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Menu trouvé')]
+    #[OA\Response(response: 404, description: 'Menu non trouvé')]
     public function show(int $id, MenuRepository $menuRepository): JsonResponse
     {
         // Étape 1 - Récupère le menu par son id
@@ -90,6 +99,9 @@ final class MenuController extends AbstractController
      * @return JsonResponse la liste de tous les thèmes au format JSON
      */
     #[Route('/themes', name: 'api_themes_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les thèmes', description: 'Retourne les thèmes disponibles (Noël, Pâques, Classique, Événement). Utilisé par les filtres de la page "Nos Menus".')]
+    #[OA\Tag(name: 'Public - Référentiels')]
+    #[OA\Response(response: 200, description: 'Liste des thèmes retournée')]
     public function getAllThemes(ThemeRepository $themeRepository): JsonResponse
     {
         // Étape 1 - Récupère tous les thèmes depuis la base de données
@@ -111,6 +123,9 @@ final class MenuController extends AbstractController
      * @return JsonResponse la liste de tous les régimes au format JSON
      */
     #[Route('/regimes', name: 'api_regimes_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les régimes', description: 'Retourne les régimes disponibles (Végétarien, Vegan, Classique, Carnivore). Utilisé par les filtres de la page "Nos Menus".')]
+    #[OA\Tag(name: 'Public - Référentiels')]
+    #[OA\Response(response: 200, description: 'Liste des régimes retournée')]
     public function getAllRegimes(RegimeRepository $regimeRepository): JsonResponse
     {
         // Étape 1 - Récupère tous les régimes depuis la base de données
@@ -132,6 +147,9 @@ final class MenuController extends AbstractController
      * @return JsonResponse la liste de tous les allergènes au format JSON
      */
     #[Route('/allergenes', name: 'api_allergenes_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les allergènes', description: 'Retourne les allergènes disponibles (Lait, Gluten, Œufs...). Affiché sur les fiches menus.')]
+    #[OA\Tag(name: 'Public - Référentiels')]
+    #[OA\Response(response: 200, description: 'Liste des allergènes retournée')]
     public function getAllAllergenes(AllergeneRepository $allergeneRepository): JsonResponse
     {
         // Étape 1 - Récupère tous les allergènes depuis la base de données
@@ -153,6 +171,9 @@ final class MenuController extends AbstractController
      * @return JsonResponse la liste de tous les plats au format JSON
      */
     #[Route('/plats', name: 'api_plats_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de tous les plats', description: 'Retourne les plats disponibles (Entrée, Plat, Dessert). Affiché dans la composition des menus.')]
+    #[OA\Tag(name: 'Public - Référentiels')]
+    #[OA\Response(response: 200, description: 'Liste des plats retournée')]
     public function getAllPlats(PlatRepository $platRepository): JsonResponse
     {
         // Étape 1 - Récupère tous les plats depuis la base de données
@@ -174,6 +195,9 @@ final class MenuController extends AbstractController
      * @return JsonResponse la liste des avis validés au format JSON
      */
     #[Route('/avis', name: 'api_avis_public', methods: ['GET'])]
+    #[OA\Get(summary: 'Avis clients validés', description: 'Retourne uniquement les avis au statut "validé" pour affichage public sur le site.')]
+    #[OA\Tag(name: 'Public - Avis')]
+    #[OA\Response(response: 200, description: 'Liste des avis validés retournée')]
     public function getAvisValides(AvisRepository $avisRepository): JsonResponse
     {
         // Étape 1 - Récupérer uniquement les avis validés

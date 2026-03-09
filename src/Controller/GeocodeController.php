@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Constraints\Json;
-
+use OpenApi\Attributes as OA;
 /**
  * @author      Florian Aizac
  * @created     08/03/2026
@@ -49,6 +49,25 @@ class GeocodeController extends AbstractController
 	 * ]
 	 */
 	#[Route('/geocode', name: 'geocode_address')]
+	#[OA\Get(
+		summary: 'Géocoder une adresse',
+		description: 'Convertit une adresse en coordonnées GPS (latitude/longitude) via l\'API Nominatim (OpenStreetMap). Exemple : /geocode?adresse=22+quai+des+Chartrons,+33000+Bordeaux,France'
+	)]
+	#[OA\Tag(name: 'Géocodage & Livraison')]
+	#[OA\Parameter(name: 'adresse', in: 'query', required: true, description: 'Adresse complète à géocoder', schema: new OA\Schema(type: 'string', example: '22 quai des Chartrons, 33000 Bordeaux, France'))]
+	#[OA\Response(
+		response: 200,
+		description: 'Coordonnées GPS retournées',
+		content: new OA\JsonContent(
+			properties: [
+				new OA\Property(property: 'adresse', type: 'string', example: '22 quai des Chartrons, 33000 Bordeaux, France'),
+				new OA\Property(property: 'latitude', type: 'string', example: '44.8562'),
+				new OA\Property(property: 'longitude', type: 'string', example: '-0.5709'),
+			]
+		)
+	)]
+	#[OA\Response(response: 400, description: 'Aucune adresse fournie')]
+	#[OA\Response(response: 404, description: 'Adresse non trouvée')]
 	public function geocodeUser(NominatimService $nominatimService, Request $request): Response
 	{
 			// On récupère l'adresse depuis l'URL que l'on souhaite géocoder
@@ -143,6 +162,26 @@ class GeocodeController extends AbstractController
 	 * Urilisation : http://127.0.0.1:8000/distance?adresse1=...&adresse2=...
 	 */
 	#[Route('/distance', name: 'distance_between')]
+	#[OA\Get(
+		summary: 'Distance à vol d\'oiseau entre deux adresses',
+		description: 'Calcule la distance en kilomètres entre deux adresses via la formule de Haversine. Exemple : /distance?adresse1=...&adresse2=...'
+	)]
+	#[OA\Tag(name: 'Géocodage & Livraison')]
+	#[OA\Parameter(name: 'adresse1', in: 'query', required: true, description: 'Première adresse', schema: new OA\Schema(type: 'string'))]
+	#[OA\Parameter(name: 'adresse2', in: 'query', required: true, description: 'Deuxième adresse', schema: new OA\Schema(type: 'string'))]
+	#[OA\Response(
+		response: 200,
+		description: 'Distance calculée',
+		content: new OA\JsonContent(
+			properties: [
+				new OA\Property(property: 'adresse1', type: 'string'),
+				new OA\Property(property: 'adresse2', type: 'string'),
+				new OA\Property(property: 'distance_km', type: 'number', example: 5.23),
+			]
+		)
+	)]
+	#[OA\Response(response: 400, description: 'Deux adresses requises')]
+	#[OA\Response(response: 404, description: 'Adresse non trouvée')]
 	public function distance(NominatimService $nominatimService, Request $request): Response
 	{
 		// Récupération de la première adresse passée dans l'URL
@@ -193,6 +232,31 @@ class GeocodeController extends AbstractController
 	 * Urilisation : http://127.0.0.1:8000/delivery-cost?adresse=...
 	 */
 	#[Route('/delivery-cost', name: 'delivery_cost', methods: ['GET'])]
+	#[OA\Get(
+		summary: 'Calculer les frais de livraison',
+		description: 'Calcule les frais de livraison entre le restaurant (22 quai des Chartrons, Bordeaux) et l\'adresse du client. Utilise OSRM pour la distance routière, Haversine en fallback. Gratuit dans un rayon de 50km, sinon 5€ + 0.59€/km.'
+	)]
+	#[OA\Tag(name: 'Géocodage & Livraison')]
+	#[OA\Parameter(name: 'adresse', in: 'query', required: true, description: 'Adresse complète du client', schema: new OA\Schema(type: 'string', example: '12 rue des Roses, 33000 Bordeaux, France'))]
+	#[OA\Response(
+		response: 200,
+		description: 'Frais de livraison calculés',
+		content: new OA\JsonContent(
+			properties: [
+				new OA\Property(property: 'restaurant', type: 'string', example: '22 quai des Chartrons, 33000 Bordeaux, France'),
+				new OA\Property(property: 'client_adresse', type: 'string', example: '12 rue des Roses, 33000 Bordeaux, France'),
+				new OA\Property(property: 'client_lat', type: 'string', example: '44.8378'),
+				new OA\Property(property: 'client_lon', type: 'string', example: '-0.5792'),
+				new OA\Property(property: 'distance_km', type: 'number', example: 5.23),
+				new OA\Property(property: 'distance_type', type: 'string', example: 'routiere', description: 'routiere (OSRM) ou vol_oiseau (Haversine fallback)'),
+				new OA\Property(property: 'rayon_gratuit_km', type: 'integer', example: 50),
+				new OA\Property(property: 'livraison_gratuite', type: 'boolean', example: true),
+				new OA\Property(property: 'frais_livraison', type: 'number', example: 0),
+			]
+		)
+	)]
+	#[OA\Response(response: 400, description: 'Aucune adresse client fournie')]
+	#[OA\Response(response: 404, description: 'Adresse client non trouvée')]
 	public function deliveryCost(
 			NominatimService $nominatimService,
 			OsrmService $osrmService,         

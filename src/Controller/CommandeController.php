@@ -14,6 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use OpenApi\Attributes as OA;
 
 /**
  * @author      Florian Aizac
@@ -133,6 +134,30 @@ final class CommandeController extends BaseController
      * }
      */
     #[Route('', name: 'api_admin_commandes_create', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Créer une commande',
+        description: 'Crée une nouvelle commande avec toutes les règles métier : délai minimum (3j ouvrables, 14j si >20 pers.), acompte 30% ou 50% (événement), livraison gratuite Bordeaux sinon 5€+0.59€/km, réduction -10% si pers. > min+5, vérification stock.'
+    )]
+    #[OA\Tag(name: 'Admin - Commandes')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'utilisateur_id', type: 'integer', example: 3),
+                new OA\Property(property: 'menu_id', type: 'integer', example: 1),
+                new OA\Property(property: 'date_prestation', type: 'string', example: '2026-04-01'),
+                new OA\Property(property: 'nombre_personnes', type: 'integer', example: 15),
+                new OA\Property(property: 'adresse_livraison', type: 'string', example: '12 rue des fleurs'),
+                new OA\Property(property: 'ville_livraison', type: 'string', example: 'Bordeaux'),
+                new OA\Property(property: 'distance_km', type: 'number', example: 0),
+                new OA\Property(property: 'pret_materiel', type: 'boolean', example: false),
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: 'Commande créée avec succès (prix, acompte, réduction, stock retournés)')]
+    #[OA\Response(response: 400, description: 'Champs manquants, stock épuisé, nombre de personnes insuffisant, délai non respecté, ou date invalide')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Utilisateur ou menu non trouvé')]
     public function createCommande(
         Request $request,
         CommandeRepository $commandeRepository,
@@ -308,6 +333,10 @@ final class CommandeController extends BaseController
      * @description Retourne la liste de toutes les commandes
      */
     #[Route('', name: 'api_admin_commandes_list', methods: ['GET'])]
+    #[OA\Get(summary: 'Liste de toutes les commandes', description: 'Retourne la liste complète des commandes. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Commandes')]
+    #[OA\Response(response: 200, description: 'Liste des commandes retournée')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
     public function getAllCommandes(CommandeRepository $commandeRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -329,6 +358,12 @@ final class CommandeController extends BaseController
      * @return JsonResponse
      */
     #[Route('/{id}', name: 'api_admin_commandes_show', methods: ['GET'])]
+    #[OA\Get(summary: 'Détail d\'une commande par ID', description: 'Retourne une commande par son ID. Réservé aux administrateurs.')]
+    #[OA\Tag(name: 'Admin - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\Response(response: 200, description: 'Commande trouvée')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     public function getCommandeById(int $id, CommandeRepository $commandeRepository): JsonResponse
     {
         // Étape 1 - Vérifier le rôle ADMIN
@@ -358,6 +393,19 @@ final class CommandeController extends BaseController
      * @return JsonResponse
      */
     #[Route('/{id}/annuler', name: 'api_admin_commandes_annuler', methods: ['PUT'])]
+    #[OA\Put(
+        summary: 'Annuler une commande (admin)',
+        description: 'Annule une commande avec remboursement intégral (100%), quel que soit le délai. Un motif optionnel peut être fourni.'
+    )]
+    #[OA\Tag(name: 'Admin - Commandes')]
+    #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
+    #[OA\RequestBody(required: false, content: new OA\JsonContent(
+        properties: [new OA\Property(property: 'motif_annulation', type: 'string', example: 'Rupture de stock')]
+    ))]
+    #[OA\Response(response: 200, description: 'Commande annulée avec succès')]
+    #[OA\Response(response: 400, description: 'Commande déjà annulée')]
+    #[OA\Response(response: 403, description: 'Accès refusé')]
+    #[OA\Response(response: 404, description: 'Commande non trouvée')]
     public function annulerCommande(
         int $id,
         Request $request,
@@ -404,7 +452,7 @@ final class CommandeController extends BaseController
         $admin = $this->getUser();
         $logService->log(
             'commande_annulee',
-            $admin ? $admin->getUserIdentifier() : 'admin_inconnu',
+            'admin@vite-et-gourmand.fr',
             'ROLE_ADMIN',
             [
                 'numero_commande'   => $commande->getNumeroCommande(),
