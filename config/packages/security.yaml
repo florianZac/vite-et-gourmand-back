@@ -30,6 +30,10 @@ security:
 
 
     firewalls:
+        cors_preflight:
+            pattern: ^/api/
+            methods: [OPTIONS]
+            security: false
         dev:
             # Les outils de développement Symfony sont toujours accessibles
             pattern: ^/(_profiler|_wdt|assets|build)/

@@ -928,3 +928,5 @@ app.swagger_admin:
         area: admin
 
 vide le cache : php bin/console cache:clear
+
+Ensuite acceder via https://127.0.0.1:8000/api/doc/public

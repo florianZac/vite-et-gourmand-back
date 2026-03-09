@@ -31,22 +31,6 @@ final class AuthController extends AbstractController
 {
     // Fonction qui log tous les utilisateurs
     #[Route('/login', name: 'api_login', methods: ['POST'])]
-    #[OA\Post(
-        summary: 'Connexion utilisateur',
-        description: 'Authentifie un utilisateur via json_login et retourne un token JWT. Géré automatiquement par Symfony (json_login).'
-    )]
-    #[OA\Tag(name: 'Authentification')]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'email', type: 'string', example: 'marie.dupont@email.com'),
-                new OA\Property(property: 'password', type: 'string', example: 'MonMotDePasse1!'),
-            ]
-        )
-    )]
-    #[OA\Response(response: 200, description: 'Connexion réussie, token JWT retourné')]
-    #[OA\Response(response: 401, description: 'Email ou mot de passe incorrect')]
     public function login(): JsonResponse
     {
         // Symfony gère le login automatiquement via json_login
@@ -196,7 +180,7 @@ final class AuthController extends AbstractController
         ], 201);
     }
 
-    #[Route('/forgot-password', name: 'api_forgot_password', methods: ['POST'])]
+    #[Route('/forgot-password', name: 'api_forgot_passwordmail', methods: ['POST'])]
     #[OA\Post(
         summary: 'Demande de réinitialisation de mot de passe',
         description: 'Envoie un lien de réinitialisation par email. Retourne toujours un succès par sécurité (même si l\'email n\'existe pas).'
@@ -212,7 +196,7 @@ final class AuthController extends AbstractController
     )]
     #[OA\Response(response: 200, description: 'Lien de réinitialisation envoyé (message générique par sécurité)')]
     #[OA\Response(response: 400, description: 'Email requis')]
-    public function forgotPassword(
+    public function forgotPasswordmail(
         Request $request,
         UtilisateurRepository $utilisateurRepository,
         PasswordResetTokenRepository $tokenRepository,
@@ -273,23 +257,6 @@ final class AuthController extends AbstractController
         ], 200);
     }
 
-    #[Route('/reset-password', name: 'api_reset_password', methods: ['POST'])]
-    #[OA\Post(
-        summary: 'Réinitialiser le mot de passe',
-        description: 'Valide le token reçu par email et enregistre le nouveau mot de passe. Le token est marqué comme utilisé après usage.'
-    )]
-    #[OA\Tag(name: 'Authentification')]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: 'token', type: 'string', example: 'a1b2c3d4e5f6...'),
-                new OA\Property(property: 'password', type: 'string', example: 'NouveauMotDePasse1!'),
-            ]
-        )
-    )]
-    #[OA\Response(response: 200, description: 'Mot de passe réinitialisé avec succès')]
-    #[OA\Response(response: 400, description: 'Token et mot de passe requis, mot de passe invalide, ou token expiré/invalide')]
     /**
      * @description Valide le token et réinitialise le mot de passe
      * 
@@ -309,6 +276,22 @@ final class AuthController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/reset-password', name: 'api_reset_password', methods: ['POST'])]
+    #[OA\Post(
+        summary: 'Réinitialiser le mot de passe',
+        description: 'Valide le token reçu par email et enregistre le nouveau mot de passe. Le token est marqué comme utilisé après usage.'
+    )]
+    #[OA\Tag(name: 'Authentification')]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'token', type: 'string', example: 'a1b2c3d4e5f6...'),
+                new OA\Property(property: 'password', type: 'string', example: 'NouveauMotDePasse1!'),
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: 'Mot de passe réinitialisé avec succès')]
+    #[OA\Response(response: 400, description: 'Token et mot de passe requis, mot de passe invalide, ou token expiré/invalide')]
     public function resetPassword(
         Request $request,
         PasswordResetTokenRepository $tokenRepository,

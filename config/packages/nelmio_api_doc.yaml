@@ -4,6 +4,30 @@ nelmio_api_doc:
             title: "Vite & Gourmand - API"
             description: "API REST du service traiteur Vite & Gourmand"
             version: "1.0.0"
+        paths:
+            /api/login:
+                post:
+                    summary: "Connexion utilisateur"
+                    description: "Authentifie un utilisateur via json_login et retourne un token JWT"
+                    tags:
+                        - Authentification
+                    requestBody:
+                        required: true
+                        content:
+                            application/json:
+                                schema:
+                                    properties:
+                                        email:
+                                            type: string
+                                            example: "marie.dupont@email.com"
+                                        password:
+                                            type: string
+                                            example: "MonMotDePasse1!"
+                    responses:
+                        '200':
+                            description: "Connexion réussie, token JWT retourné"
+                        '401':
+                            description: "Email ou mot de passe incorrect"
         components:
             securitySchemes:
                 Bearer:
@@ -13,9 +37,25 @@ nelmio_api_doc:
         security:
             - Bearer: []
 
-    # Une area par rôle
     areas:
-        # Doc publique : routes sans authentification
+        default:
+            path_patterns:
+                - ^/api/menus
+                - ^/api/themes
+                - ^/api/regimes
+                - ^/api/allergenes
+                - ^/api/plats
+                - ^/api/avis
+                - ^/api/horaires
+                - ^/api/contact
+                - ^/api/register
+                - ^/api/login
+                - ^/api/forgot-password
+                - ^/api/reset-password
+                - ^/geocode
+                - ^/distance
+                - ^/delivery-cost
+
         public:
             path_patterns:
                 - ^/api/menus
@@ -34,17 +74,14 @@ nelmio_api_doc:
                 - ^/distance
                 - ^/delivery-cost
 
-        # Doc client : routes /api/client/*
         client:
             path_patterns:
                 - ^/api/client
 
-        # Doc employé : routes /api/employe/*
         employe:
             path_patterns:
                 - ^/api/employe
 
-        # Doc admin : routes /api/admin/*
         admin:
             path_patterns:
                 - ^/api/admin
