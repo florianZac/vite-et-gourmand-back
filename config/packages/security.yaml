@@ -29,15 +29,13 @@ security:
         ROLE_ADMIN:    [ROLE_EMPLOYE, ROLE_CLIENT]
 
 
-    firewalls:
+    firewalls:        
+        # OPTIONS global
         cors_preflight:
             pattern: ^/api/
             methods: [OPTIONS]
             security: false
-        dev:
-            # Les outils de développement Symfony sont toujours accessibles
-            pattern: ^/(_profiler|_wdt|assets|build)/
-            security: false
+
         main:
             lazy: true
             provider: app_user_provider  # on utilise notre provider BDD
