@@ -82,7 +82,7 @@ final class MenuController extends AbstractController
 
     // Étape 2 - Si le menu n'existe pas retourner 404
     if (!$menu) {
-        return $this->json(['message' => 'Menu non trouvé'], 404);
+      return $this->json(['message' => 'Menu non trouvé'], 404);
     }
 
     // Étape 3 - Retourne le menu trouvé
@@ -99,8 +99,8 @@ final class MenuController extends AbstractController
    */
   #[Route('/menus/{id}', name: 'api_menu_public_show', methods: ['GET'])]
   #[OA\Get(
-      summary: 'Détail d\'un menu par ID',
-      description: 'Retourne le détail complet d\'un menu : plats, images, catégorie, prix, quantité. Accessible publiquement.'
+    summary: 'Détail d\'un menu par ID',
+    description: 'Retourne le détail complet d\'un menu : plats, images, catégorie, prix, quantité. Accessible publiquement.'
   )]
   #[OA\Tag(name: 'Public - Menus')]
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
@@ -111,7 +111,7 @@ final class MenuController extends AbstractController
     // Étape 1 - Chercher le menu par son ID
     $menu = $menuRepository->find($id);
     if (!$menu) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+      return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
     }
 
     // Étape 2 - Construire le tableau des plats avec images et catégories
@@ -134,8 +134,8 @@ final class MenuController extends AbstractController
       'nombre_personne_minimum'=> $menu->getNombrePersonneMinimum(),
       'quantite_restante'      => $menu->getQuantiteRestante(),
       'theme'                  => $menu->getTheme() ? [
-          'id'    => $menu->getTheme()->getId(),
-          'titre' => $menu->getTheme()->getLibelle()
+        'id'    => $menu->getTheme()->getId(),
+        'titre' => $menu->getTheme()->getLibelle()
       ] : null,
       'regime'                 => $menu->getRegime() ? [
         'id'     => $menu->getRegime()->getId(),
@@ -158,8 +158,8 @@ final class MenuController extends AbstractController
    */
   #[Route('/menus/{id}/plats/images', name: 'api_menu_plats_images', methods: ['GET'])]
   #[OA\Get(
-      summary: 'Images et catégories des plats d’un menu',
-      description: 'Retourne uniquement les images et catégories des plats d’un menu ciblé. Accessible publiquement.'
+    summary: 'Images et catégories des plats d’un menu',
+    description: 'Retourne uniquement les images et catégories des plats d’un menu ciblé. Accessible publiquement.'
   )]
   #[OA\Tag(name: 'Public - Menus')]
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
@@ -170,18 +170,18 @@ final class MenuController extends AbstractController
     // Étape 1 - Chercher le menu
     $menu = $menuRepository->find($id);
     if (!$menu) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+      return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
     }
 
     // Étape 2 - Construire le tableau des images et catégories
     $imagesArray = [];
     foreach ($menu->getPlats() as $plat) {
       $imagesArray[] = [
-        'plat_id'  => $plat->getId(),
-        'titre'    => $plat->getTitrePlat(),
-        'image'    => $plat->getPhoto(),      // image unique du plat
-        'categorie'=> $plat->getCategorie(),  // entrée / plat / dessert
-      ];
+      'plat_id'  => $plat->getId(),
+      'titre'    => $plat->getTitrePlat(),
+      'image'    => $plat->getPhoto(),      // image unique du plat
+      'categorie'=> $plat->getCategorie(),  // entrée / plat / dessert
+     ];
     }
 
     // Étape 3 - Retourner la réponse JSON

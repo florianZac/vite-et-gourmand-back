@@ -18,21 +18,21 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationFailureHandlerI
 */
 class LoginFailureHandler implements AuthenticationFailureHandlerInterface
 {
-    public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
-    {
-        if ($_ENV['APP_ENV'] === 'dev') {
-            // En développement on affiche le détail de l'erreur pour déboguer
-            $reponse = [
-                'error' => 'Email ou mot de passe incorrect',
-                'debug' => $exception->getMessage()
-            ];
-        } else {
-            // En production on cache le détail pour éviter les failles de sécurité
-            $reponse = [
-                'error' => 'Email ou mot de passe incorrect'
-            ];
-        }
-        // ensuite on renvoie une réponse JSON avec le message d'erreur et un code HTTP 401 Unauthorized
-        return new JsonResponse($reponse, Response::HTTP_UNAUTHORIZED);
-    }
+	public function onAuthenticationFailure(Request $request, AuthenticationException $exception): Response
+	{
+		if ($_ENV['APP_ENV'] === 'dev') {
+			// En développement on affiche le détail de l'erreur pour déboguer
+			$reponse = [
+				'error' => 'Email ou mot de passe incorrect',
+				'debug' => $exception->getMessage()
+			];
+		} else {
+			// En production on cache le détail pour éviter les failles de sécurité
+			$reponse = [
+					'error' => 'Email ou mot de passe incorrect'
+			];
+		}
+		// ensuite on renvoie une réponse JSON avec le message d'erreur et un code HTTP 401 Unauthorized
+		return new JsonResponse($reponse, Response::HTTP_UNAUTHORIZED);
+	}
 }

@@ -35,8 +35,8 @@ class OsrmService
   {
     // OSRM attend les coordonnées au format : longitude,latitude
     $url = sprintf(
-        'http://router.project-osrm.org/route/v1/driving/%s,%s;%s,%s?overview=false',
-        $lon1, $lat1, $lon2, $lat2
+      'http://router.project-osrm.org/route/v1/driving/%s,%s;%s,%s?overview=false',
+      $lon1, $lat1, $lon2, $lat2
     );
 
     // Initialisation de la requête cURL
@@ -53,15 +53,15 @@ class OsrmService
 
     // Vérification de la réponse
     if ($httpCode !== 200 || !$response) {
-        return null;
+      return null;
     }
 
     $data = json_decode($response, true);
 
     // OSRM retourne la distance en mètres dans routes[0]['distance']
     if (isset($data['routes'][0]['distance'])) {
-        // Conversion mètres en  kilomètres, arrondi à 2 décimales
-        return round($data['routes'][0]['distance'] / 1000, 2);
+      // Conversion mètres en  kilomètres, arrondi à 2 décimales
+      return round($data['routes'][0]['distance'] / 1000, 2);
     }
 
     return null;

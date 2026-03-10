@@ -39,43 +39,43 @@ use App\Entity\Utilisateur;
  *  */
 class LoginSuccessHandler implements AuthenticationSuccessHandlerInterface
 {
-    // creation de la variable de gestion du service des tokens JWT
-    private JWTTokenManagerInterface $jwtManager;
+	// creation de la variable de gestion du service des tokens JWT
+	private JWTTokenManagerInterface $jwtManager;
 
-    // constructeur de l'objet qui reçoit le service de gestion des tokens JWT
-    public function __construct(JWTTokenManagerInterface $jwtManager)
-    {
-        // on récupere le service injecté par Symfony dans le constructeur de l'objet.
-        // Ensuite on stocke le service de gestion des tokens JWT dans la variable de classe 
-        //pour pouvoir l'utiliser dans la méthode onAuthenticationSuccess() 
-        $this->jwtManager = $jwtManager;
-    }
+	// constructeur de l'objet qui reçoit le service de gestion des tokens JWT
+	public function __construct(JWTTokenManagerInterface $jwtManager)
+	{
+		// on récupere le service injecté par Symfony dans le constructeur de l'objet.
+		// Ensuite on stocke le service de gestion des tokens JWT dans la variable de classe 
+		//pour pouvoir l'utiliser dans la méthode onAuthenticationSuccess() 
+		$this->jwtManager = $jwtManager;
+	}
 
-    /**
-     * @role : florian Aizac
-     * @create : 23/02/2026
-     * @description : cette méthode est appelée par le firewall de Symfony après une authentification réussie.
-     * @param Request $request requête HTTP reçue
-     * @param TokenInterface $token contient l’utilisateur authentifié
-     * @return JsonResponse retourne une réponse JSON contenant le token JWT et les infos de l'utilisateur connecté(email et prénom et role)
-     */
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token): Response
-    {
-        // Étape 1. On récupère l'utilisateur connecté et on le cast en Utilisateur
-        $utilisateur = $token->getUser();
-        assert($utilisateur instanceof Utilisateur);
+	/**
+	 * @role : florian Aizac
+	 * @create : 23/02/2026
+	 * @description : cette méthode est appelée par le firewall de Symfony après une authentification réussie.
+	 * @param Request $request requête HTTP reçue
+	 * @param TokenInterface $token contient l’utilisateur authentifié
+	 * @return JsonResponse retourne une réponse JSON contenant le token JWT et les infos de l'utilisateur connecté(email et prénom et role)
+	 */
+	public function onAuthenticationSuccess(Request $request, TokenInterface $token): Response
+	{
+		// Étape 1. On récupère l'utilisateur connecté et on le cast en Utilisateur
+		$utilisateur = $token->getUser();
+		assert($utilisateur instanceof Utilisateur);
 
-        // Étape 2. On génère le token JWT pour cet utilisateur
-        $jwt = $this->jwtManager->create($utilisateur);
+		// Étape 2. On génère le token JWT pour cet utilisateur
+		$jwt = $this->jwtManager->create($utilisateur);
 
-        // Étape 3. On renvoie le token ainsi que les infos de l'utilisateur
-        return new JsonResponse([
-            'token' => $jwt,
-            'utilisateur' => [
-                'email'  => $utilisateur->getEmail(),
-                'prenom' => $utilisateur->getPrenom(),
-                'role'   => $utilisateur->getRoles()[0],
-            ]
-        ]);
-    }
+		// Étape 3. On renvoie le token ainsi que les infos de l'utilisateur
+		return new JsonResponse([
+			'token' => $jwt,
+			'utilisateur' => [
+				'email'  => $utilisateur->getEmail(),
+				'prenom' => $utilisateur->getPrenom(),
+				'role'   => $utilisateur->getRoles()[0],
+			]
+		]);
+	}
 }

@@ -30,50 +30,50 @@ use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
  */
 class SecuritySubscriber implements EventSubscriberInterface
 {
-    // Injection du LogService via l'autowiring Symfony
-    public function __construct(private LogService $logService) {}
+	// Injection du LogService via l'autowiring Symfony
+	public function __construct(private LogService $logService) {}
 
-    /**
-     * @description Déclare les événements écoutés par ce subscriber
-     * LoginSuccessEvent est déclenché automatiquement par Symfony après chaque connexion réussie
-     * @return array tableau associatif [événement => méthode]
-     */
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            LoginSuccessEvent::class => 'onLoginSuccess',
-        ];
-    }
+	/**
+	 * @description Déclare les événements écoutés par ce subscriber
+	 * LoginSuccessEvent est déclenché automatiquement par Symfony après chaque connexion réussie
+	 * @return array tableau associatif [événement => méthode]
+	 */
+	public static function getSubscribedEvents(): array
+	{
+		return [
+			LoginSuccessEvent::class => 'onLoginSuccess',
+		];
+	}
 
-    /**
-     * @description Méthode appelée automatiquement après une connexion réussie
-     * @param LoginSuccessEvent $event L'événement contenant les infos de l'utilisateur connecté
-     */
-    public function onLoginSuccess(LoginSuccessEvent $event): void
-    {
-        // Étape 1 - Récupère l'utilisateur qui vient de se connecter
-        $utilisateur = $event->getUser();
+	/**
+	 * @description Méthode appelée automatiquement après une connexion réussie
+	 * @param LoginSuccessEvent $event L'événement contenant les infos de l'utilisateur connecté
+	 */
+	public function onLoginSuccess(LoginSuccessEvent $event): void
+	{
+		// Étape 1 - Récupère l'utilisateur qui vient de se connecter
+		$utilisateur = $event->getUser();
 
-        // Étape 2 - Vérifie que c'est bien une instance de notre entité Utilisateur
-        if (!$utilisateur instanceof Utilisateur) {
-            return;
-        }
+		// Étape 2 - Vérifie que c'est bien une instance de notre entité Utilisateur
+		if (!$utilisateur instanceof Utilisateur) {
+			return;
+		}
 
-        // Étape 3 - Récupère le rôle de l'utilisateur pour le contexte du log
-        // getRoles() retourne un tableau, on prend le premier rôle
-        $roles = $utilisateur->getRoles();
-        $role = !empty($roles) ? $roles[0] : 'ROLE_UNKNOWN';
+		// Étape 3 - Récupère le rôle de l'utilisateur pour le contexte du log
+		// getRoles() retourne un tableau, on prend le premier rôle
+		$roles = $utilisateur->getRoles();
+		$role = !empty($roles) ? $roles[0] : 'ROLE_UNKNOWN';
 
-        // Étape 4 - Enregistre le log de connexion dans MongoDB
-        $this->logService->log(
-            'connexion',                                    // type de l'action
-            $utilisateur->getUserIdentifier(),             // email de l'utilisateur
-            $role,                                          // son rôle principal
-            [                                           // contexte libre : infos utiles 
-                'nom'    => $utilisateur->getNom(),
-                'prenom' => $utilisateur->getPrenom(),
-                'ville'  => $utilisateur->getVille(),
-            ]
-        );
-    }
+		// Étape 4 - Enregistre le log de connexion dans MongoDB
+		$this->logService->log(
+			'connexion',                                    // type de l'action
+			$utilisateur->getUserIdentifier(),             // email de l'utilisateur
+			$role,                                          // son rôle principal
+			[                                           // contexte libre : infos utiles 
+				'nom'    => $utilisateur->getNom(),
+				'prenom' => $utilisateur->getPrenom(),
+				'ville'  => $utilisateur->getVille(),
+			]
+		);
+	}
 }

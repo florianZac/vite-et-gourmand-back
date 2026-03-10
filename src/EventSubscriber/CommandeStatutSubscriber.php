@@ -29,35 +29,35 @@ use Doctrine\ORM\Events;
 #[AsDoctrineListener(event: Events::preUpdate)]
 class CommandeStatutSubscriber
 {
-    // SUPPRESSION de getSubscribedEvents() : plus nécessaire avec #[AsDoctrineListener]
-    // L'événement est déclaré directement dans l'attribut au dessus de la classe
+	// SUPPRESSION de getSubscribedEvents() : plus nécessaire avec #[AsDoctrineListener]
+	// L'événement est déclaré directement dans l'attribut au dessus de la classe
 
-    /**
-     * @description Méthode appelée automatiquement AVANT la mise à jour en base
-     * @param PreUpdateEventArgs $args Les arguments contenant l'entité et les champs modifiés
-     */
-    public function preUpdate(PreUpdateEventArgs $args): void
-    {
-        // Étape 1 - Récupérer l'entité en cours de mise à jour
-        $entity = $args->getObject();
+	/**
+	 * @description Méthode appelée automatiquement AVANT la mise à jour en base
+	 * @param PreUpdateEventArgs $args Les arguments contenant l'entité et les champs modifiés
+	 */
+	public function preUpdate(PreUpdateEventArgs $args): void
+	{
+		// Étape 1 - Récupérer l'entité en cours de mise à jour
+		$entity = $args->getObject();
 
-        // Étape 2 - On ne traite QUE les entités Commande
-        if (!$entity instanceof Commande) {
-            return;
-        }
+		// Étape 2 - On ne traite QUE les entités Commande
+		if (!$entity instanceof Commande) {
+			return;
+		}
 
-        // Étape 3 - Vérifier que le champ "statut" a changé
-        if ($args->hasChangedField('statut')) {
+		// Étape 3 - Vérifier que le champ "statut" a changé
+		if ($args->hasChangedField('statut')) {
 
-            // Étape 4 - Récupérer la nouvelle valeur du statut
-            $newStatut = $args->getNewValue('statut');
+			// Étape 4 - Récupérer la nouvelle valeur du statut
+			$newStatut = $args->getNewValue('statut');
 
-            // Étape 5 - Quand la commande passe au statut "En attente du retour matériel"
-            // on enregistre la date de début d'attente
-            // Note : date_statut_livree est gérée dans EmployeController::changerStatut()
-            if ($newStatut === CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL) {
-                $entity->setDateStatutRetourMateriel(new \DateTime());
-            }
-        }
-    }
+			// Étape 5 - Quand la commande passe au statut "En attente du retour matériel"
+			// on enregistre la date de début d'attente
+			// Note : date_statut_livree est gérée dans EmployeController::changerStatut()
+			if ($newStatut === CommandeStatut::EN_ATTENTE_RETOUR_MATERIEL) {
+				$entity->setDateStatutRetourMateriel(new \DateTime());
+			}
+		}
+	}
 }

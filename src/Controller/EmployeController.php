@@ -766,9 +766,9 @@ final class EmployeController extends AbstractController
           ];
         }
         $platsRetour[] = [
-            'id' => $plat->getId(),
-            'nom' => $plat->getNom(),
-            'images' => $imagesPlat,
+          'id' => $plat->getId(),
+          'nom' => $plat->getNom(),
+          'images' => $imagesPlat,
         ];
       }
     }
@@ -996,21 +996,21 @@ final class EmployeController extends AbstractController
   {
       // Étape 1 - Vérifier le rôle EMPLOYE
       if (!$this->isGranted('ROLE_EMPLOYE')) {
-          return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
       }
 
       // Étape 2 - Chercher le menu à supprimer
       $menu = $menuRepository->find($id);
       if (!$menu) {
-          return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+        return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
       }
 
       // Étape 3 - Vérifier si le menu a déjà été commandé
       if ($menu->getCommandes()->count() > 0) {
-          return $this->json([
-              'status' => 'Erreur',
-              'message' => 'Impossible de supprimer ce menu, il a été commandé par des clients'
-          ], 409);
+        return $this->json([
+          'status' => 'Erreur',
+          'message' => 'Impossible de supprimer ce menu, il a été commandé par des clients'
+        ], 409);
       }
 
       // Étape 4 - Supprimer le menu et ses images (cascade sur images uniquement)
@@ -1316,7 +1316,7 @@ final class EmployeController extends AbstractController
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
     // Étape 2 - Récupérer les données JSON
@@ -1324,13 +1324,13 @@ final class EmployeController extends AbstractController
 
     // Étape 3 - Vérifier que le libellé est présent
     if (empty($data['libelle'])) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
+      return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
     }
 
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
     $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
     if ($existant) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Ce thème existe déjà'], 409);
+      return $this->json(['status' => 'Erreur', 'message' => 'Ce thème existe déjà'], 409);
     }
 
     // Étape 5 - Créer et persister le nouveau thème
@@ -1365,7 +1365,7 @@ final class EmployeController extends AbstractController
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
     // Étape 2 - Récupérer les données JSON
@@ -1374,7 +1374,7 @@ final class EmployeController extends AbstractController
     // Étape 3 - Chercher le thème à modifier
     $theme = $themeRepository->find($id);
     if (!$theme) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
+      return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
     }
 
     // Étape 4 - Récupérer les données JSON
@@ -1382,11 +1382,11 @@ final class EmployeController extends AbstractController
 
     // Étape 5 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
-        $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
-        if ($existant && $existant->getId() !== $theme->getId()) {
-            return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
-        }
-        $theme->setLibelle($data['libelle']);
+      $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
+      if ($existant && $existant->getId() !== $theme->getId()) {
+          return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
+      }
+      $theme->setLibelle($data['libelle']);
     }
 
     // Étape 6 - Sauvegarder
@@ -1410,13 +1410,13 @@ final class EmployeController extends AbstractController
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
     // Étape 2 - Chercher le thème à supprimer
     $theme = $themeRepository->find($id);
     if (!$theme) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
+      return $this->json(['status' => 'Erreur', 'message' => 'Thème non trouvé'], 404);
     }
 
     // Étape 3 - Supprimer
@@ -1517,7 +1517,7 @@ final class EmployeController extends AbstractController
     if (isset($data['libelle'])) {
       $existant = $regimeRepository->findOneBy(['libelle' => $data['libelle']]);
       if ($existant && $existant->getId() !== $regime->getId()) {
-          return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
+        return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
       }
       $regime->setLibelle($data['libelle']);
     }

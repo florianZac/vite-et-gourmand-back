@@ -70,31 +70,31 @@ class GeocodeController extends AbstractController
 	#[OA\Response(response: 404, description: 'Adresse non trouvée')]
 	public function geocodeUser(NominatimService $nominatimService, Request $request): Response
 	{
-			// On récupère l'adresse depuis l'URL que l'on souhaite géocoder
-			$adresse = $request->query->get('adresse');
+    // On récupère l'adresse depuis l'URL que l'on souhaite géocoder
+    $adresse = $request->query->get('adresse');
 
-			// Si le service retourne des coordonnées, on les renvoie en JSON
-			if (!$adresse) {
-					// Si l'adresse n'a pas été trouvée, on renvoie une erreur 400
-					return $this->json([
-							'error' => 'Aucune adresse fournie'
-					], 400); // Bad request
-			}
-			// Si le service retourne des coordonnées, on les renvoie en JSON
-			$coords = $nominatimService->geocode($adresse);
+    // Si le service retourne des coordonnées, on les renvoie en JSON
+    if (!$adresse) {
+      // Si l'adresse n'a pas été trouvée, on renvoie une erreur 400
+      return $this->json([
+        'error' => 'Aucune adresse fournie'
+      ], 400); // Bad request
+    }
+    // Si le service retourne des coordonnées, on les renvoie en JSON
+    $coords = $nominatimService->geocode($adresse);
 
-			if ($coords) {
-					return $this->json([
-							'adresse' => $adresse,      // L'adresse originale
-							'latitude' => $coords['lat'], // Latitude retournée par Nominatim
-							'longitude' => $coords['lon'] // Longitude retournée par Nominatim
-					]);
-			} else {
-					// Si l'adresse n'a pas été trouvée, on renvoie une erreur 404
-					return $this->json([
-							'error' => 'Adresse non trouvée'
-					], 404);
-			}
+    if ($coords) {
+      return $this->json([
+        'adresse' => $adresse,      // L'adresse originale
+        'latitude' => $coords['lat'], // Latitude retournée par Nominatim
+        'longitude' => $coords['lon'] // Longitude retournée par Nominatim
+      ]);
+    } else {
+      // Si l'adresse n'a pas été trouvée, on renvoie une erreur 404
+      return $this->json([
+        'error' => 'Adresse non trouvée'
+      ], 404);
+    }
 	}
 
 	/**
@@ -136,9 +136,9 @@ class GeocodeController extends AbstractController
 		// Première partie de la formule de Haversine
 		// a = sin²(Δφ/2) + cos(φ1) * cos(φ2) * sin²(Δλ/2)
 		$a =
-				sin($deltaPhi / 2) * sin($deltaPhi / 2) +
-				cos($phi1) * cos($phi2) *
-				sin($deltaLambda / 2) * sin($deltaLambda / 2);
+      sin($deltaPhi / 2) * sin($deltaPhi / 2) +
+      cos($phi1) * cos($phi2) *
+      sin($deltaLambda / 2) * sin($deltaLambda / 2);
 
 		// Angle central entre les deux points
 		// c = 2 * atan2( √a , √(1-a) )
@@ -192,8 +192,8 @@ class GeocodeController extends AbstractController
 
 		// Vérifie que les deux adresses sont bien fournies
 		if (!$adresse1 || !$adresse2) {
-				// Si ce n'est pas le cas, on retourne une erreur HTTP 400
-				return $this->json(['error' => 'Veuillez fournir deux adresses'], 400);
+      // Si ce n'est pas le cas, on retourne une erreur HTTP 400
+      return $this->json(['error' => 'Veuillez fournir deux adresses'], 400);
 		}
 
 		// Appel du service Nominatim pour convertir l'adresse 1 en coordonnées GPS
@@ -204,21 +204,21 @@ class GeocodeController extends AbstractController
 
 		// Vérifie si une des deux adresses n'a pas pu être géocodée
 		if (!$coords1 || !$coords2) {
-				// Si une adresse est introuvable, on retourne une erreur
-				return $this->json(['error' => 'Adresse non trouvée'], 404);
+      // Si une adresse est introuvable, on retourne une erreur
+      return $this->json(['error' => 'Adresse non trouvée'], 404);
 		}
 
 		// Calcul de la distance entre les deux coordonnées avec la fonction Haversine
 		$distance = $this->distanceHaversine(
-				$coords1['lat'], $coords1['lon'], // coordonnées du point 1
-				$coords2['lat'], $coords2['lon']  // coordonnées du point 2
+  $coords1['lat'], $coords1['lon'], // coordonnées du point 1
+  $coords2['lat'], $coords2['lon']  // coordonnées du point 2
 		);
 
 		// Retour de la réponse au format JSON
 		return $this->json([
-				'adresse1' => $adresse1,  // première adresse
-				'adresse2' => $adresse2,  // deuxième adresse
-				'distance_km' => $distance // distance calculée en kilomètres
+      'adresse1' => $adresse1,  // première adresse
+      'adresse2' => $adresse2,  // deuxième adresse
+      'distance_km' => $distance // distance calculée en kilomètres
 		]);
 	}
 	/**
@@ -263,71 +263,71 @@ class GeocodeController extends AbstractController
 			Request $request
 	): Response {
 
-			// Récupération de l'adresse du client dans les paramètres GET
-			$clientAddress = $request->query->get('adresse');
+    // Récupération de l'adresse du client dans les paramètres GET
+    $clientAddress = $request->query->get('adresse');
 
-			// Vérifie que l'adresse du client est fournie
-			if (!$clientAddress) {
-					// Si elle est absente, on renvoie une erreur
-					return $this->json(['error' => 'Aucune adresse client fournie'], 400);
-			}
+    // Vérifie que l'adresse du client est fournie
+    if (!$clientAddress) {
+      // Si elle est absente, on renvoie une erreur
+      return $this->json(['error' => 'Aucune adresse client fournie'], 400);
+    }
 
-			// Conversion de l'adresse client en coordonnées GPS via Nominatim
-			$clientCoords = $nominatimService->geocode($clientAddress);
+    // Conversion de l'adresse client en coordonnées GPS via Nominatim
+    $clientCoords = $nominatimService->geocode($clientAddress);
 
-			// Vérifie si l'adresse du client a pu être trouvée
-			if (!$clientCoords) {
-					return $this->json(['error' => 'Adresse client non trouvée'], 404);
-			}
+    // Vérifie si l'adresse du client a pu être trouvée
+    if (!$clientCoords) {
+      return $this->json(['error' => 'Adresse client non trouvée'], 404);
+    }
 
-			// Calcul de la distance routière entre le restaurant et le client grâce au service OSRM
-			$distanceKm = $osrmService->getRouteDistance(
-					self::RESTAURANT_LON, self::RESTAURANT_LAT, // coordonnées du restaurant
-					(float) $clientCoords['lon'], (float) $clientCoords['lat'] // coordonnées du client
-			);
+    // Calcul de la distance routière entre le restaurant et le client grâce au service OSRM
+    $distanceKm = $osrmService->getRouteDistance(
+      self::RESTAURANT_LON, self::RESTAURANT_LAT, // coordonnées du restaurant
+      (float) $clientCoords['lon'], (float) $clientCoords['lat'] // coordonnées du client
+    );
 
-			// Si l'API OSRM ne répond pas, on utilise la formule Haversine
-			if ($distanceKm === null) {
+    // Si l'API OSRM ne répond pas, on utilise la formule Haversine
+    if ($distanceKm === null) {
 
-					// On calcule une distance approximative avec Haversine
-					$distanceKm = $this->distanceHaversine(
-							self::RESTAURANT_LAT, self::RESTAURANT_LON,
-							(float) $clientCoords['lat'], (float) $clientCoords['lon']
-					);
+      // On calcule une distance approximative avec Haversine
+      $distanceKm = $this->distanceHaversine(
+        self::RESTAURANT_LAT, self::RESTAURANT_LON,
+        (float) $clientCoords['lat'], (float) $clientCoords['lon']
+      );
 
-					// On indique que la distance est une estimation.
-					$distanceType = 'vol_oiseau';
+      // On indique que la distance est une estimation.
+      $distanceType = 'vol_oiseau';
 
-			} else {
+    } else {
 
-					// Sinon la distance est une distance routière réelle
-					$distanceType = 'routiere';
-			}
+      // Sinon la distance est une distance routière réelle
+      $distanceType = 'routiere';
+    }
 
-			// Calcul du prix de la livraison, si la distance est dans le rayon gratuit la livraison est gratuite
-			// 1. Vérifie si la distance est dans le rayon de livraison gratuite
-			if ($distanceKm <= self::FREE_DELIVERY_RADIUS_KM) {
+    // Calcul du prix de la livraison, si la distance est dans le rayon gratuit la livraison est gratuite
+    // 1. Vérifie si la distance est dans le rayon de livraison gratuite
+    if ($distanceKm <= self::FREE_DELIVERY_RADIUS_KM) {
 
-					// Si la distance est inférieure ou égale au rayon gratuit alors les frais de livraison sont de 0 €
-					$deliveryFee = 0.00;
+      // Si la distance est inférieure ou égale au rayon gratuit alors les frais de livraison sont de 0 €
+      $deliveryFee = 0.00;
 
-			} else {
+    } else {
 
-					// Sinon on calcule le prix de livraison prix de base + prix par kilomètre × distance
-					$deliveryFee = self::DELIVERY_BASE_FEE + (self::DELIVERY_PER_KM_FEE * $distanceKm);
-			}
+      // Sinon on calcule le prix de livraison prix de base + prix par kilomètre × distance
+      $deliveryFee = self::DELIVERY_BASE_FEE + (self::DELIVERY_PER_KM_FEE * $distanceKm);
+    }
 
-			// Retour de toutes les informations en JSON
-			return $this->json([
-					'restaurant' => self::RESTAURANT_ADDRESS, // adresse du restaurant
-					'client_adresse' => $clientAddress,       // adresse du client
-					'client_lat' => $clientCoords['lat'],     // latitude du client
-					'client_lon' => $clientCoords['lon'],     // longitude du client
-					'distance_km' => round($distanceKm, 2),   // distance arrondie à 2 décimales
-					'distance_type' => $distanceType,         // type de distance (route ou vol d'oiseau)
-					'rayon_gratuit_km' => self::FREE_DELIVERY_RADIUS_KM, // rayon gratuit
-					'livraison_gratuite' => $distanceKm <= self::FREE_DELIVERY_RADIUS_KM, // booléen
-					'frais_livraison' => round($deliveryFee, 2) // coût final de livraison
-			]);
+    // Retour de toutes les informations en JSON
+    return $this->json([
+      'restaurant' => self::RESTAURANT_ADDRESS, // adresse du restaurant
+      'client_adresse' => $clientAddress,       // adresse du client
+      'client_lat' => $clientCoords['lat'],     // latitude du client
+      'client_lon' => $clientCoords['lon'],     // longitude du client
+      'distance_km' => round($distanceKm, 2),   // distance arrondie à 2 décimales
+      'distance_type' => $distanceType,         // type de distance (route ou vol d'oiseau)
+      'rayon_gratuit_km' => self::FREE_DELIVERY_RADIUS_KM, // rayon gratuit
+      'livraison_gratuite' => $distanceKm <= self::FREE_DELIVERY_RADIUS_KM, // booléen
+      'frais_livraison' => round($deliveryFee, 2) // coût final de livraison
+    ]);
 	}
 }
