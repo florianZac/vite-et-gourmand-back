@@ -147,56 +147,59 @@ class Commande
 	#[ORM\Column(nullable: true)]
 	private ?float $montant_acompte = null;
 
+	#[ORM\Column(type: 'float', nullable: true)]
+	private ?float $distanceKm = null;
+
 	// ==========================
 	// Getters / Setters
 	// ==========================
 
 	public function getId(): ?int
 	{
-			return $this->id;
+		return $this->id;
 	}
 
 	public function getNumeroCommande(): ?string
 	{
-			return $this->numero_commande;
+		return $this->numero_commande;
 	}
 
 	public function setNumeroCommande(string $numero_commande): static
 	{
-			$this->numero_commande = $numero_commande;
-			return $this;
+		$this->numero_commande = $numero_commande;
+		return $this;
 	}
 
 	public function getDateCommande(): ?\DateTime
 	{
-			return $this->date_commande;
+		return $this->date_commande;
 	}
 
 	public function setDateCommande(\DateTime $date_commande): static
 	{
-			$this->date_commande = $date_commande;
-			return $this;
+		$this->date_commande = $date_commande;
+		return $this;
 	}
 
 	public function getEtatMateriel(): string
 	{
-			// Cas impossible
-			if ($this->pret_materiel === false && $this->restitution_materiel === true) {
-					return 'INCOHERENT';
-			}
+		// Cas impossible
+		if ($this->pret_materiel === false && $this->restitution_materiel === true) {
+			return 'INCOHERENT';
+		}
 
-			// (0,0) → terminé
-			if ($this->pret_materiel === false && $this->restitution_materiel === false) {
-					return 'TERMINEE';
-			}
+		// (0,0) → terminé
+		if ($this->pret_materiel === false && $this->restitution_materiel === false) {
+			return 'TERMINEE';
+		}
 
-			// (1,1) → terminé
-			if ($this->pret_materiel === true && $this->restitution_materiel === true) {
-					return 'TERMINEE';
-			}
+		// (1,1) → terminé
+		if ($this->pret_materiel === true && $this->restitution_materiel === true) {
+				return 'TERMINEE';
+		}
 
-			// (1,0) → attente retour
-			return 'ATTENTE_RESTITUTION';
+		// (1,0) → attente retour
+		return 'ATTENTE_RESTITUTION';
 	}
 
 	// Getter DateStatutRetourMateriel
@@ -208,177 +211,177 @@ class Commande
 	// Setter DateStatutRetourMateriel
 	public function setDateStatutRetourMateriel(\DateTimeInterface $date): self
 	{
-			$this->dateStatutRetourMateriel = $date;
-			return $this;
+		$this->dateStatutRetourMateriel = $date;
+		return $this;
 	}
 
 	public function getDatePrestation(): ?\DateTime
 	{
-			return $this->date_prestation;
+		return $this->date_prestation;
 	}
 
 	public function setDatePrestation(\DateTime $date_prestation): static
 	{
-			$this->date_prestation = $date_prestation;
-			return $this;
+		$this->date_prestation = $date_prestation;
+		return $this;
 	}
 
 	public function getHeureLivraison(): ?\DateTime
 	{
-			return $this->heure_livraison;
+		return $this->heure_livraison;
 	}
 
 	public function setHeureLivraison(\DateTime $heure_livraison): static
 	{
-			$this->heure_livraison = $heure_livraison;
-			return $this;
+		$this->heure_livraison = $heure_livraison;
+		return $this;
 	}
 
 	public function getPrixMenu(): ?float
 	{
-			return $this->prix_menu;
+		return $this->prix_menu;
 	}
 
 	public function setPrixMenu(float $prix_menu): static
 	{
-			$this->prix_menu = $prix_menu;
-			return $this;
+		$this->prix_menu = $prix_menu;
+		return $this;
 	}
 
 	public function getNombrePersonne(): ?int
 	{
-			return $this->nombre_personne;
+		return $this->nombre_personne;
 	}
 
 	public function setNombrePersonne(int $nombre_personne): static
 	{
-			$this->nombre_personne = $nombre_personne;
-			return $this;
+		$this->nombre_personne = $nombre_personne;
+		return $this;
 	}
 
 	public function getPrixLivraison(): ?float
 	{
-			return $this->prix_livraison;
+		return $this->prix_livraison;
 	}
 
 	public function setPrixLivraison(float $prix_livraison): static
 	{
-			$this->prix_livraison = $prix_livraison;
-			return $this;
+		$this->prix_livraison = $prix_livraison;
+		return $this;
 	}
 
 	public function getStatut(): ?string
 	{
-			return $this->statut;
+		return $this->statut;
 	}
 
 	public function setStatut(string $statut): static
 	{
-			$this->statut = $statut;
-			return $this;
+		$this->statut = $statut;
+		return $this;
 	}
 
 	public function isPretMateriel(): ?bool
 	{
-			return $this->pret_materiel;
+		return $this->pret_materiel;
 	}
 
 	public function setPretMateriel(bool $pret_materiel): static
 	{
-			$this->pret_materiel = $pret_materiel;
-			return $this;
+		$this->pret_materiel = $pret_materiel;
+		return $this;
 	}
 
 	public function isRestitutionMateriel(): ?bool
 	{
-			return $this->restitution_materiel;
+		return $this->restitution_materiel;
 	}
 
 	public function setRestitutionMateriel(bool $restitution_materiel): static
 	{
-			$this->restitution_materiel = $restitution_materiel;
-			return $this;
+		$this->restitution_materiel = $restitution_materiel;
+		return $this;
 	}
 
 	public function getUtilisateur(): ?Utilisateur
 	{
-			return $this->utilisateur;
+		return $this->utilisateur;
 	}
 
 	public function setUtilisateur(?Utilisateur $utilisateur): static
 	{
-			$this->utilisateur = $utilisateur;
-			return $this;
+		$this->utilisateur = $utilisateur;
+		return $this;
 	}
 
 	public function getMenu(): ?Menu
 	{
-			return $this->menu;
+		return $this->menu;
 	}
 
 	public function setMenu(?Menu $menu): static
 	{
-			$this->menu = $menu;
-			return $this;
+		$this->menu = $menu;
+		return $this;
 	}
 
 	public function getAdresseLivraison(): ?string
 	{
-			return $this->adresse_livraison;
+		return $this->adresse_livraison;
 	}
 
 	public function setAdresseLivraison(?string $adresse_livraison): static
 	{
-			$this->adresse_livraison = $adresse_livraison;
-			return $this;
+		$this->adresse_livraison = $adresse_livraison;
+		return $this;
 	}
 
 	public function getVilleLivraison(): ?string
 	{
-			return $this->ville_livraison;
+		return $this->ville_livraison;
 	}
 
 	public function setVilleLivraison(?string $ville_livraison): static
 	{
-			$this->ville_livraison = $ville_livraison;
-			return $this;
+		$this->ville_livraison = $ville_livraison;
+		return $this;
 	}
 
 	public function getMontantAcompte(): ?float
 	{
-			return $this->montant_acompte;
+		return $this->montant_acompte;
 	}
 
 	public function setMontantAcompte(?float $montant_acompte): static
 	{
-			$this->montant_acompte = $montant_acompte;
-			return $this;
+		$this->montant_acompte = $montant_acompte;
+		return $this;
 	}
 
 	// Récupération du motif d'annulation des commandes
 	public function getMotifAnnulation(): ?string
 	{
-			return $this->motif_annulation;
+		return $this->motif_annulation;
 	}
 
 	// Mise à jour du motif d'annulation des commandes
 	public function setMotifAnnulation(?string $motif_annulation): static
 	{
-			$this->motif_annulation = $motif_annulation;
-			return $this;
+		$this->motif_annulation = $motif_annulation;
+		return $this;
 	}
 
 	// Récupération du montant remboursé pour les commandes annulées
 	public function getMontantRembourse(): ?float
 	{
-			return $this->montant_rembourse;
+		return $this->montant_rembourse;
 	}
 
 	// Mise à jour du montant remboursé pour les commandes annulées
 	public function setMontantRembourse(?float $montant_rembourse): static
 	{
-			$this->montant_rembourse = $montant_rembourse;
-			return $this;
+		$this->montant_rembourse = $montant_rembourse;
+		return $this;
 	}
 
 	// ==========================
@@ -387,14 +390,14 @@ class Commande
 	// Récupération de la date de livraison pour les commandes
 	public function getDateStatutLivree(): ?\DateTimeInterface
 	{
-			return $this->dateStatutLivree;
+		return $this->dateStatutLivree;
 	}
 
 	// Mise à jour de la date de livraison pour les commandes
 	public function setDateStatutLivree(\DateTimeInterface $date): self
 	{
-			$this->dateStatutLivree = $date;
-			return $this;
+		$this->dateStatutLivree = $date;
+		return $this;
 	}
 
 	// ==========================
@@ -406,12 +409,22 @@ class Commande
 	// si mailPenaliteEnvoye==true -> mail déjà envoyé
 	public function isMailPenaliteEnvoye(): bool
 	{
-			return $this->mailPenaliteEnvoye;
+		return $this->mailPenaliteEnvoye;
 	}
 	// Mise à jour du flag d'envois du mail de pénalité
 	public function setMailPenaliteEnvoye(bool $value): self
 	{
-			$this->mailPenaliteEnvoye = $value;
-			return $this;
+		$this->mailPenaliteEnvoye = $value;
+		return $this;
+	}
+
+	public function getDistanceKm(): ?float
+	{
+		return $this->distanceKm;
+	}
+	public function setDistanceKm(float $distanceKm): self
+	{
+		$this->distanceKm = $distanceKm;
+		return $this;
 	}
 }

@@ -28,6 +28,8 @@ class GeocodeController extends AbstractController
 	private const RESTAURANT_LON = -0.5709;
 	private const RESTAURANT_ADDRESS = '22 quai des Chartrons, 33000 Bordeaux, France';
 
+	private const MAX_DELIVERY_DISTANCE = 200; // distance max de livraison en km	
+
 	// Paramètres de tarification livraison
 	private const FREE_DELIVERY_RADIUS_KM = 50;  // distance pour désigné si c'est gratuit ou non 
 	private const DELIVERY_BASE_FEE = 5.00;     // Frais fixes en €
@@ -115,9 +117,9 @@ class GeocodeController extends AbstractController
 	 *          d = R ⋅ c
 	 * φ is latitude, λ is longitude, R is earth’s radius (mean radius = 6,371km);
 	 */
-	private function distanceHaversine($lat1, $lon1, $lat2, $lon2): float
+	public static function distanceHaversine($lat1, $lon1, $lat2, $lon2): float
 	{
-		// Rayon de la Terre en mètres (6371 km)
+		// Rayon de la Terre en kilomètres (6371 km)
 		$R = 6371;
 		
 		// Conversion des latitudes en radians
@@ -145,7 +147,7 @@ class GeocodeController extends AbstractController
 		$c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
 		// Distance finale = rayon de la Terre × angle central
-		// Résultat en mètres
+		// Résultat en kilomètres
 		$distance = $R * $c;
 
 		// Retourne la distance calculée
@@ -292,7 +294,8 @@ class GeocodeController extends AbstractController
       // On calcule une distance approximative avec Haversine
       $distanceKm = $this->distanceHaversine(
         self::RESTAURANT_LAT, self::RESTAURANT_LON,
-        (float) $clientCoords['lat'], (float) $clientCoords['lon']
+        (float) $clientCoords['lat'],
+				(float) $clientCoords['lon']
       );
 
       // On indique que la distance est une estimation.
@@ -304,30 +307,42 @@ class GeocodeController extends AbstractController
       $distanceType = 'routiere';
     }
 
+		// Vérifie si la distance dépasse la distance maximale de livraison
+		if ($distanceKm > self::MAX_DELIVERY_DISTANCE) {
+			return $this->json([
+				'error' => 'Adresse trop éloignée pour la livraison',
+				'distance_km' => round($distanceKm, 2),
+				'max_distance_livraison_km' => self::MAX_DELIVERY_DISTANCE
+			], 422);
+		}
+
     // Calcul du prix de la livraison, si la distance est dans le rayon gratuit la livraison est gratuite
     // 1. Vérifie si la distance est dans le rayon de livraison gratuite
-    if ($distanceKm <= self::FREE_DELIVERY_RADIUS_KM) {
+		if ($distanceKm <= self::FREE_DELIVERY_RADIUS_KM) {
 
-      // Si la distance est inférieure ou égale au rayon gratuit alors les frais de livraison sont de 0 €
-      $deliveryFee = 0.00;
+			// Livraison gratuite dans le rayon défini
+			$deliveryFee = 0.00;
 
-    } else {
+		} else {
 
-      // Sinon on calcule le prix de livraison prix de base + prix par kilomètre × distance
-      $deliveryFee = self::DELIVERY_BASE_FEE + (self::DELIVERY_PER_KM_FEE * $distanceKm);
-    }
+			// On calcule uniquement la distance au-delà du rayon gratuit
+			$extraDistance = $distanceKm - self::FREE_DELIVERY_RADIUS_KM;
+
+			$deliveryFee = self::DELIVERY_BASE_FEE + (self::DELIVERY_PER_KM_FEE * $extraDistance);
+		}
 
     // Retour de toutes les informations en JSON
-    return $this->json([
-      'restaurant' => self::RESTAURANT_ADDRESS, // adresse du restaurant
-      'client_adresse' => $clientAddress,       // adresse du client
-      'client_lat' => $clientCoords['lat'],     // latitude du client
-      'client_lon' => $clientCoords['lon'],     // longitude du client
-      'distance_km' => round($distanceKm, 2),   // distance arrondie à 2 décimales
-      'distance_type' => $distanceType,         // type de distance (route ou vol d'oiseau)
-      'rayon_gratuit_km' => self::FREE_DELIVERY_RADIUS_KM, // rayon gratuit
-      'livraison_gratuite' => $distanceKm <= self::FREE_DELIVERY_RADIUS_KM, // booléen
-      'frais_livraison' => round($deliveryFee, 2) // coût final de livraison
-    ]);
+		return $this->json([
+			'restaurant' => self::RESTAURANT_ADDRESS, // adresse du restaurant
+			'client_adresse' => $clientAddress,				// adresse du client
+			'client_lat' => $clientCoords['lat'],			// latitude du client
+			'client_lon' => $clientCoords['lon'],			// longitude du client
+			'distance_km' => round($distanceKm, 2),	// distance arrondie à 2 décimales
+			'distance_type' => $distanceType,												// type de distance (route ou vol d'oiseau)
+			'rayon_gratuit_km' => self::FREE_DELIVERY_RADIUS_KM,		// rayon gratuit
+			'max_distance_livraison_km' => self::MAX_DELIVERY_DISTANCE,	// valeur max de la distance de livraison
+			'livraison_gratuite' => $distanceKm <= self::FREE_DELIVERY_RADIUS_KM,	//livraison gratuite
+			'frais_livraison' => round($deliveryFee, 2)		// coût final de livraison
+		]);
 	}
 }

@@ -170,7 +170,7 @@ final class PlatController extends BaseController
   }
 
   /**
-   * @description Met à jour un allergène en le ciblant par son id avec ses allergènes associés
+   * @description Met à jour un plat en le ciblant par son id avec ses allergènes associés
    * Les allergènes envoyés REMPLACENT les anciens (synchronisation complète)
    * Corps JSON attendu : { "titre_plat": "Nouveau titre", "photo": "photo.jpg", "allergenes": [1, 2] }
    * @param int $id L'id du plat à modifier
@@ -290,12 +290,18 @@ final class PlatController extends BaseController
     if (!$plat) {
       return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
     }
-
-    // Étape 3 - Supprimer le plat
+    // Étape 3 - Protection du plat à supprimer
+    if ($plat->getMenus()->count() > 0) {
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => 'Impossible de supprimer ce plat car il est utilisé dans un menu'
+        ], 409);
+    }
+    // Étape 4 - Supprimer le plat
     $em->remove($plat);
     $em->flush();
 
-    // Étape 4 - Retourner une confirmation
+    // Étape 5 - Retourner une confirmation
     return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
   }
 }
