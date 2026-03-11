@@ -70,3 +70,16 @@ SELECT "Jour de l'an"
 WHERE NOT EXISTS (
     SELECT 1 FROM theme WHERE libelle = "Jour de l'an"
 );
+
+
+-- Ajouter la colonne 'date' de type DATETIME, nullable pour commencer
+ALTER TABLE avis
+ADD COLUMN date DATETIME DEFAULT NULL;
+
+-- Remplir tous les enregistrements existants avec la date actuelle
+UPDATE avis
+SET date = NOW();
+
+-- La date ne peut pas etre null
+ALTER TABLE avis
+MODIFY COLUMN date DATETIME NOT NULL;

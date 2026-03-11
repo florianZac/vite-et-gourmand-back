@@ -23,6 +23,9 @@ class Avis
 	#[ORM\Column(length: 50)]
 	private ?string $statut = null;
 
+	#[ORM\Column(type: 'datetime_immutable')]
+	private ?\DateTimeImmutable $date = null;
+
 	#[ORM\ManyToOne]
 	#[ORM\JoinColumn(name: 'utilisateur_id', referencedColumnName: 'utilisateur_id', nullable: false)]
 	private ?Utilisateur $utilisateur = null;
@@ -31,67 +34,81 @@ class Avis
 	#[ORM\JoinColumn(name: 'commande_id', referencedColumnName: 'commande_id', nullable: false)]
 	private ?Commande $commande = null;
 
+  public function __construct()
+  {
+      $this->date = new \DateTimeImmutable();
+  }
 	public function getId(): ?int
 	{
-			return $this->id;
+    return $this->id;
 	}
 
 	public function getNote(): ?int
 	{
-			return $this->note;
+    return $this->note;
 	}
 
 	public function setNote(int $note): static
 	{
-			$this->note = $note;
+    $this->note = $note;
 
-			return $this;
+    return $this;
 	}
 
 	public function getDescription(): ?string
 	{
-			return $this->description;
+    return $this->description;
 	}
 
 	public function setDescription(string $description): static
 	{
-			$this->description = $description;
+    $this->description = $description;
 
-			return $this;
+    return $this;
 	}
 
 	public function getStatut(): ?string
 	{
-			return $this->statut;
+    return $this->statut;
 	}
 
 	public function setStatut(string $statut): static
 	{
-			$this->statut = $statut;
+    $this->statut = $statut;
 
-			return $this;
+    return $this;
 	}
 
 	public function getUtilisateur(): ?Utilisateur
 	{
-			return $this->utilisateur;
+    return $this->utilisateur;
 	}
 
 	public function setUtilisateur(?Utilisateur $utilisateur): static
 	{
-			$this->utilisateur = $utilisateur;
+    $this->utilisateur = $utilisateur;
 
-			return $this;
+    return $this;
 	}
 
 	public function getCommande(): ?Commande
 	{
-			return $this->commande;
+    return $this->commande;
 	}
 
 	public function setCommande(?Commande $commande): static
 	{
-			$this->commande = $commande;
-			return $this;
+    $this->commande = $commande;
+    return $this;
+	}
+
+	public function getDate(): ?\DateTimeInterface
+	{
+		return $this->date;
+	}
+	public function setDate(\DateTimeInterface $date): static
+	{
+		$this->date = $date;
+		return $this;
 	}
 }

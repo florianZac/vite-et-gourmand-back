@@ -27,7 +27,7 @@ use OpenApi\Attributes as OA;
  *  5. getAllRegimes()      : Retourne la liste de tous les régimes utilisé pour les filtres front.
  *  6. getAllAllergenes()   : Retourne la liste de tous les allergènes affiché sur les fiches menus.
  *  7. getAvisValides()     : Retourne les avis clients validés affichage public.
- *  8. getAllPlats()        : Retourne les avis clients validés (affichage public).
+ *  8. getAllPlats()        : Retourne la liste des plats.
  *  9. getAllMenus()        : Retourne la liste complète de tous les menus avec leurs plats et images, structuré pour le front. 
  */
 #[Route('/api')]
@@ -97,7 +97,7 @@ final class MenuController extends AbstractController
    * @param MenuRepository $menuRepository Le repository des menus
    * @return JsonResponse le menu trouvé ou 404 si non trouvé
    */
-  #[Route('/menus/{id}', name: 'api_menu_public_show', methods: ['GET'])]
+  #[Route('/menus/{id}/details', name: 'api_menu_public_show', methods: ['GET'])]
   #[OA\Get(
     summary: 'Détail d\'un menu par ID',
     description: 'Retourne le détail complet d\'un menu : plats, images, catégorie, prix, quantité. Accessible publiquement.'
@@ -263,23 +263,78 @@ final class MenuController extends AbstractController
 	// =========================================================================
 
 	/**
-	 * @description Retourne les avis clients validés pour affichage public sur le site
+	 * @description Retourne les avis clients Publié qui ont était validés pour affichage public sur le site
 	 * Accessible publiquement sans authentification
 	 * Seuls les avis au statut "validé" sont retournés (les avis en attente et refusés sont exclus)
 	 * @param AvisRepository $avisRepository Le repository des avis
-	 * @return JsonResponse la liste des avis validés au format JSON
+	 * @return JsonResponse la liste des avis Publié au format JSON
 	 */
-	#[Route('/avis', name: 'api_avis_public', methods: ['GET'])]
-	#[OA\Get(summary: 'Avis clients validés', description: 'Retourne uniquement les avis au statut "validé" pour affichage public sur le site.')]
-	#[OA\Tag(name: 'Public - Avis')]
-	#[OA\Response(response: 200, description: 'Liste des avis validés retournée')]
+  #[Route('/avis', name: 'api_avis_public', methods: ['GET'])]
+  #[OA\Get(
+      summary: 'Récupérer les avis clients publiés',
+      description: 'Retourne les derniers avis clients ayant le statut "Publié" pour affichage public.'
+  )]
+  #[OA\Tag(name: 'Public - Avis')]
+  #[OA\Response(
+      response: 200,
+      description: 'Liste des avis publiés',
+      content: new OA\JsonContent(
+          type: "object",
+          properties: [
+              new OA\Property(property: "status", type: "string", example: "Succès"),
+              new OA\Property(property: "total", type: "integer", example: 5),
+              new OA\Property(
+                  property: "avis",
+                  type: "array",
+                  items: new OA\Items(
+                      type: "object",
+                      properties: [
+                          new OA\Property(property: "id", type: "integer", example: 57),
+                          new OA\Property(property: "stars", type: "integer", example: 5),
+                          new OA\Property(property: "text", type: "string", example: "Service impeccable et repas délicieux."),
+                          new OA\Property(property: "author", type: "string", example: "Florian A."),
+                          new OA\Property(property: "date", type: "string", example: "2026-03-11 21:10:30")
+                      ]
+                  )
+              )
+          ]
+      )
+  )]
 	public function getAvisValides(AvisRepository $avisRepository): JsonResponse
 	{
-    // Étape 1 - Récupérer uniquement les avis validés
-    $avis = $avisRepository->findBy(['statut' => 'validé']);
+    // Étape 1 - Récupérer les 5 derniers avis au statut "Publié"
+    $avis = $avisRepository->findAvis('Publié', 5);
+
+    // Étape 2 - Conversion en tableau simple
+    $data = array_map(function($user) {
+
+    // Étape 3 - On récupère l'utilisateur 
+    $utilisateur = $user->getUtilisateur();
+    // Étape 4 - Si il existe on récupere la premiere lettre du lastname 
+    // Ensuite on le récupere d'après l'utilisateur actuel est ensuite
+    // On met en majuscule sa première lettre et l'ajoute à author. 
+    if ($utilisateur) {
+      $nomInitiale = strtoupper(substr($utilisateur->getNom(), 0, 1)) . '.'; // première lettre + point
+      $prenom = $utilisateur->getPrenom();  // Récupération de l'user
+      $author = $nomInitiale . ' ' . $prenom;
+    } else {
+      $author = 'Anonyme';
+    }
+    return [
+        'id' => $user->getId(),
+        'stars' => $user->getNote(),
+        'text' => $user->getDescription(),
+        'author' => $author,
+        'date' => $user->getDate() ? $user->getDate()->format('Y-m-d H:i:s') : null,
+      ];
+    }, $avis);
 
     // Étape 2 - Retourner en JSON
-    return $this->json(['status' => 'Succès', 'total' => count($avis), 'avis' => $avis]);
+    return $this->json([
+        'status' => 'Succès',
+        'total' => count($avis),
+        'avis' => $data
+    ]);
 	}
 
 	// =========================================================================
@@ -313,7 +368,7 @@ final class MenuController extends AbstractController
 	 * @param MenuRepository $menuRepository Le repository des menus
 	 * @return JsonResponse la liste de tous les menus au format JSON
 	 */
-	#[Route('/menus', name: 'api_menus_public', methods: ['GET'])]
+	#[Route('/menus/full', name: 'api_menus_public', methods: ['GET'])]
 	#[OA\Get(summary: 'Liste de tous les menus', description: 'Retourne tous les menus disponibles avec leurs plats et leurs images. Accessible publiquement.')]
 	#[OA\Tag(name: 'Public - Menus')]
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
