@@ -26,49 +26,18 @@ INSERT INTO allergene (libelle) VALUES
 --insertion de données dans la table theme
 
 INSERT INTO theme (libelle) VALUES
-('Tous'),
-('Italien'),
+('Noêl'),
+('Classique'),
 ('Asiatique'),
 ('Mexicain'),
 ('Français'),
-('Noêl'),
+('Italien'),
 ('Pâques'),
 ("Jour de l'an"),
-('événement ');
+('événement');
+('solo');
 
---insertion de données dans la table menu
 
-INSERT INTO menu 
-    (titre, nombre_personne_minimum, prix_par_personne, description, quantite_restante, regime_id, theme_id)
-
-VALUES 
-    (
-        'Festin de Noël Traditionnel',
-        10, 
-        45.00, 
-        'Un menu raffiné aux saveurs de Gascogne pour célébrer les fêtes de fin d''année dans la pure tradition du Sud-Ouest.', 
-        50, 
-        1, 
-        6
-    ),
-    (
-        'Réveillon Étoilé de Noël',
-        8, 
-        40.00, 
-        'Un repas de Noël gastronomique digne des plus grandes tables, avec des produits d''exception sélectionnés par nos chefs.', 
-        30, 
-        4, 
-        6
-    ),
-    (
-        'Réveillon de Noël Classique',
-        12, 
-        50.00, 
-        'Un menu traditionnel et généreux pour un réveillon de Noël inoubliable, inspiré des recettes classiques de la Gascogne.', 
-        40, 
-        2, 
-        6
-    );
 
 --insertion de données dans la table horaire
 INSERT INTO horaire (jour, heure_ouverture, heure_fermeture) VALUES
@@ -100,52 +69,4 @@ INSERT INTO theme (libelle)
 SELECT "Jour de l'an"
 WHERE NOT EXISTS (
     SELECT 1 FROM theme WHERE libelle = "Jour de l'an"
-);
--- retour à l'insertion pas le temps de niaiser
-
-
-
---insertion de données dans la table commande
-
-INSERT INTO commande (
-    numero_commande, 
-    date_commande, 
-    date_prestation, 
-    heure_livraison, 
-    prix_menu, 
-    nombre_personne, 
-    prix_livraison, 
-    statut, 
-    pret_materiel, 
-    restitution_materiel, 
-    utilisateur_id, 
-    menu_id)
-VALUES 
-(
-    'CMD-001',
-    '2026-02-24 10:00:00', 
-    '2026-02-25', 
-    '12:00:00', 
-    150.00, 
-    10, 
-    20.00, 
-    'en_cours', 
-    0, 
-    0, 
-    1, 
-    1
-),
-(
-    'CMD-002', 
-    '2026-02-24 11:00:00', 
-    '2026-02-26', 
-    '14:00:00', 
-    200.00, 
-    15, 
-    25.00, 
-    'validée', 
-    1, 
-    0, 
-    1, 
-    2
 );
