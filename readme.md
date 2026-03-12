@@ -1113,7 +1113,8 @@ git add composer.json composer.lock
 git commit -m "régression MongoDB version due à la version Heroku"
 
 # 1.24 Mise à jour du loader symphony 
-composer dump-autoload
+composer update mongodb/mongodb doctrine/mongodb-odm doctrine/mongodb-odm-bundle --with-all-dependencies
+composer install --no-dev --optimize-autoloader
 heroku config:set COMPOSER_MEMORY_LIMIT=-1
 php bin/console cache:clear
 php bin/console cache:warmup
