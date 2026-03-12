@@ -184,7 +184,7 @@ final class AuthController extends AbstractController
   #[OA\Post(
     summary: 'Demande de réinitialisation de mot de passe',
     description: 'Envoie un lien de réinitialisation par email. Retourne toujours un succès par sécurité (même si l\'email n\'existe pas).'
-)]
+  )]
   #[OA\Tag(name: 'Authentification')]
   #[OA\RequestBody(
     required: true,
@@ -243,8 +243,9 @@ final class AuthController extends AbstractController
     // Étape 7 - Construire le lien de réinitialisation
     // Ce lien sera cliqué par l'utilisateur pour se rendre sur la page de réinitialisation
     // #RAPPEL PROD
-    // IMPORTANT NE PAS OUBLIER DE MODIFIER : En production, utiliser le domaine réel (vite-et-gourmand.fr)
-    $resetLink = "http://localhost:3000/reset-password?token=" . $token;
+    
+    $frontUrl = $_ENV['FRONT_URL'] ?? 'http://localhost:3000';
+    $resetLink = $frontUrl . '/reset-password?token=' . $token; 
 
     // Étape 8 - Envoyer l'email contenant le lien
     $mailerService->sendPasswordResetEmail($utilisateur, $resetLink);
@@ -325,10 +326,10 @@ final class AuthController extends AbstractController
     $resetToken = $tokenRepository->findValidToken($data['token']);
 
     if (!$resetToken) {
-      return $this->json([
-        'status'  => 'Erreur',
-        'message' => 'Token invalide ou expiré. Veuillez demander une nouvelle réinitialisation'
-      ], 400);
+        return $this->json([
+            'status'  => 'Erreur',
+            'message' => 'Token invalide ou expiré. Veuillez demander une nouvelle réinitialisation'
+        ], 400);
     }
 
     // Étape 4 - Récupérer l'utilisateur associé au token
@@ -353,6 +354,14 @@ final class AuthController extends AbstractController
       'message' => 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter'
     ], 200);
   }
+
+  /**
+   * @description Récupération des données d'un utilisateur connecté
+   * Retourne l’email et le rôle de l’utilisateur à partir du token JWT envoyé dans l’en-tête Authorization.'
+   * 
+   * @param UtilisateurRepository $utilisateurRepository l'utilisateur connecté
+   * @return JsonResponse
+   */
   // Déclare la route HTTP GET pour l’URL /api/me Pour SWAGGER
   #[Route('/me', name: 'api_me', methods: ['GET'])]
   #[OA\Get(
