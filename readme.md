@@ -1112,3 +1112,6 @@ composer require mongodb/mongodb:^2.1.1 -W // Obligatoire j'ai une version de mo
 git add composer.json composer.lock
 git commit -m "régression MongoDB version due à la version Heroku"
 
+# 1.24 Mise à jour du loader symphony 
+composer dump-autoload
+
