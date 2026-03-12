@@ -962,3 +962,130 @@ heroku login
 heroku create vite-et-gourmand-api
 git remote -v
 heroku git:remote -a vite-et-gourmand-api
+
+# 1.9 Vérifier que tous les fichiers sont commités
+git add .
+git commit -m "Préparer le backend pour Heroku"
+
+# 1.10 configuer le .env avec les données suivantes 
+
+###> symfony/framework-bundle ###
+APP_ENV=prod
+APP_SECRET=METTRE_UN_SECRET_DIFFERENT
+APP_SHARE_DIR=var/share
+###< symfony/framework-bundle ###
+
+###> symfony/routing ###
+DEFAULT_URI=https://vite-et-gourmand-api.herokuapp.com
+###< symfony/routing ###
+
+###> doctrine/doctrine-bundle ###
+# MySQL ou autre DB relationnelle (si tu l'utilises)
+DATABASE_URL="mysql://username:password@host:3306/dbname?serverVersion=8.0&charset=utf8mb4"
+###< doctrine/doctrine-bundle ###
+
+###> nelmio/cors-bundle ###
+# Autoriser ton front Heroku à faire des requêtes
+CORS_ALLOW_ORIGIN='^https://vite-et-gourmand-c36478b4c1b0.herokuapp.com$'
+###< nelmio/cors-bundle ###
+
+###> lexik/jwt-authentication-bundle ###
+JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
+JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
+JWT_PASSPHRASE=vite_et_gourmand_secret
+###< lexik/jwt-authentication-bundle ###
+
+###> symfony/mailer ###
+MAILER_DSN="smtp://USERNAME:PASSWORD@smtp.your-email.com:PORT"
+###< symfony/mailer ###
+
+###> symfony/lock ###
+LOCK_DSN=flock
+###< symfony/lock ###
+
+###> doctrine/mongodb-odm-bundle ###
+# Utiliser ton cluster MongoDB Atlas
+
+MONGODB_URI="mongodb+srv://vite_user:vite_pass@vite-et-gourmand.v51wxj4.mongodb.net/?appName=vite-et-gourmand"
+MONGODB_DB=vite_et_gourmand
+APP_URL=https://vite-et-gourmand-api.herokuapp.com
+###< doctrine/mongodb-odm-bundle ###
+
+# URL du front pour redirections CORS ou notifications
+FRONT_URL=https://vite-et-gourmand-c36478b4c1b0.herokuapp.com
+
+# 1.11 Ensuite configurer les configs variables
+
+heroku config:set APP_ENV=prod -a vite-et-gourmand-api
+heroku config:set APP_SECRET=3f4a8b2c1d9e7f6a5b4c3d2e1f0a9b8c -a vite-et-gourmand-api
+heroku config:set APP_URL=https://vite-et-gourmand-api.herokuapp.com -a vite-et-gourmand-api
+heroku config:set FRONT_URL=https://vite-et-gourmand-c36478b4c1b0.herokuapp.com -a vite-et-gourmand-api
+
+# MongoDB Atlas (remplace USERNAME=, PASSWORD et CLUSTER par tes infos)
+//
+heroku config:set MONGODB_URI="mongodb+srv://vite_user:vite_pass@vite-et-gourmand.v51wxj4.mongodb.net/?appName=vite-et-gourmand" -a vite-et-gourmand-api
+
+heroku config:set MONGODB_DB=vite_et_gourmand -a vite-et-gourmand-api
+
+# Mailer ( Mailtrap)
+heroku config:set MAILER_DSN="smtp://6836c3cc28f364:ed676f5a2fc337@sandbox.smtp.mailtrap.io:2525" -a vite-et-gourmand-api
+
+# 1.12 Vérifier après avoir tout configuré 
+
+heroku config -a vite-et-gourmand-api
+
+# 1.13 créer une base de donnée MySQL avec heroku
+Pour voir la liste des DDB disponible
+https://elements.heroku.com/addons#data-stores
+
+cliqué sur : Data stores
+J'ai choisie : JawsDB MySQL
+Pourquoi ? : gratuit et j'utilise déjà MySQL j'ai pas envie de changer en postgresql
+
+lancer via VsCode avec le terminal dans le dossier vite-et-gourmand-api
+heroku addons:create jawsdb:kitefin
+
+# 1.14 Une fois installer Récuperer l'URL de connection
+
+heroku config:get JAWSDB_URL -a vite-et-gourmand-api
+résultat :
+mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/utp2g4edmtrisl82
+username: z6kfic0nl9ubmba9
+password: lgcy2tt6lhnbg7a8
+rajoute à la fin la version : ?serverVersion=8.4.7&charset=utf8mb4
+devient :"mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/utp2g4edmtrisl82?serverVersion=8.4.7&charset=utf8mb4"
+
+# 1.15 Installation de Mailtrap avec heroku
+https://elements.heroku.com/addons/mailtrap
+
+installer en apputant sur install addons est séléctionné le nom de l'api 
+ou en ligne de commande 
+heroku addons:create mailtrap:unpaid
+
+# 1.15 Affiche la config de toutes les variables heroku
+heroku config -a vite-et-gourmand-api
+
+# 1.16 Récupère la valeur de mailtrap
+heroku config:get "MAILER_DSN" -a "vite-et-gourmand-api"  
+smtp://6836c3cc28f364:ed676f5a2fc337@sandbox.smtp.mailtrap.io:2525
+
+# 1.17 Installation de MongoDB Atlas
+https://www.mongodb.com/products/platform/atlas-database
+
+# 1.18 Créer son cluster avec le plan free un fois le compte crée
+
+nom du cluster :vite-et-gourmand
+
+aller Ensuite dans : database & Network Acess
+crée un nouvelle utilisateur 
+Utilisateur : vite_user
+Description : user
+password: vite_pass
+mettre le role en : Read and write to any database
+
+aller Ensuite dans : IP Access List 
+add ip adresse 
+
+pour les tests rentrer une valeurs à supprimer après (faille de sécurité)
+0.0.0.0/0 // permet l'autorisation de toutes les adresses IP
+
