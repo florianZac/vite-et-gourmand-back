@@ -1114,4 +1114,3 @@ git commit -m "régression MongoDB version due à la version Heroku"
 
 # 1.24 Mise à jour du loader symphony 
 composer dump-autoload
-
