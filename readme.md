@@ -952,4 +952,13 @@ git push origin --delete master
 # 1.6 Merge de main avec les données présent sur dev
 git checkout main
 git pull origin main
+git status
+git push origin main
 
+# 1.7 login sur heroku
+heroku login
+
+# 1.8 Initialiser le remote Heroku
+heroku create vite-et-gourmand-api
+git remote -v
+heroku git:remote -a vite-et-gourmand-api
