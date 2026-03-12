@@ -1,0 +1,48 @@
+sequenceDiagram
+    participant A as Admin / Employe
+    participant P as Page Admin - Gestion Plats
+    participant CTX as AppContext
+    participant D as mockData
+
+    Note over A,P: Lister les plats d un menu
+    A->>P: Clique "Gerer les plats" sur un menu
+    P->>CTX: getDishesByMenu(menuId)
+    CTX->>D: Charge les plats du menu
+    D-->>P: Liste des plats (Entree, Plat, Dessert)
+    P-->>A: Affiche les plats par categorie
+
+    Note over A,P: Ajouter un plat
+    A->>P: Clique "Ajouter un plat"
+    P-->>A: Formulaire (nom, categorie, allergenes, image)
+    A->>P: Remplit le nom du plat
+    A->>P: Selectionne la categorie (Entree / Plat / Dessert)
+    A->>P: Coche les allergenes concernes
+    A->>P: Upload une image du plat
+    P->>P: Validation du fichier (type, taille max)
+    P->>P: Preview de l image
+    A->>P: Clique "Enregistrer"
+    P->>CTX: addDish(menuId, dishData)
+    CTX->>D: Insere le plat avec image en base64 ou URL
+    D-->>CTX: Plat cree
+    P-->>A: Toast "Plat ajoute"
+
+    Note over A,P: Modifier un plat
+    A->>P: Clique "Modifier" sur un plat
+    P-->>A: Formulaire pre-rempli avec image actuelle
+    A->>P: Modifie les champs (ex: change image)
+    alt Nouvelle image uploadee
+        P->>P: Remplace l image existante
+    else Pas de changement image
+        P->>P: Conserve l image actuelle
+    end
+    P->>CTX: updateDish(dishId, dishData)
+    CTX->>D: Met a jour le plat
+    P-->>A: Toast "Plat mis a jour"
+
+    Note over A,P: Supprimer un plat (Admin uniquement)
+    A->>P: Clique "Supprimer" sur un plat
+    P-->>A: Boite de confirmation
+    A->>P: Confirme
+    P->>CTX: deleteDish(dishId)
+    CTX->>D: Supprime le plat
+    P-->>A: Toast "Plat supprime"

@@ -1,0 +1,9 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block content %}
+    <h1>Bonjour {{ prenom }},</h1>
+    <p>Votre commande <strong>{{ numero_commande }}</strong> est en cours de livraison !</p>
+    <p>Date de prestation : <strong>{{ date_prestation }}</strong></p>
+    <p>Notre équipe est en route !</p>
+    <p>Cordialement,<br>L'équipe Vite et Gourmand</p>
+{% endblock %}

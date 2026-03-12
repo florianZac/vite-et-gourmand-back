@@ -1,0 +1,30 @@
+{% extends 'emails/base_email.html.twig' %}
+{% block content %}
+    <h2>Pénalité de retard – Matériel non rendu</h2>
+    <p>Bonjour {{ prenom }},</p>
+    <p>
+        Votre commande <strong>{{ numero_commande }}</strong>
+        prévue le <strong>{{ date_prestation }}</strong>
+        est toujours en attente du retour du matériel.
+    </p>
+    <p style="color: #c0392b;">
+        Le délai de <strong>10 jours ouvrés</strong> accordé pour la restitution du matériel est désormais dépassé.<br>
+        En conséquence, des frais forfaitaires de <strong>{{ montant }} €</strong> vont être appliqués à votre compte.
+    </p>
+    {% if date_restitution %}
+    <p>
+        La date limite de restitution était le <strong>{{ date_restitution }}</strong>.
+    </p>
+    {% endif %}
+    <p>
+        Merci de prendre contact avec nous dans les plus brefs délais afin de régulariser la situation.
+    </p>
+    <p>
+        <a href="mailto:contact@vite-et-gourmand.fr?subject=Restitution%20matériel%20commande%20{{ numero_commande }}" 
+        style="display:inline-block; padding:10px 20px; background:#c0392b; color:white; text-decoration:none; border-radius:5px;">
+        Contacter la société
+        </a>
+    </p>
+    <hr>
+
+{% endblock %}

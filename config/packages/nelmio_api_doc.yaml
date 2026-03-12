@@ -1,0 +1,87 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: "Vite & Gourmand - API"
+            description: "API REST du service traiteur Vite & Gourmand"
+            version: "1.0.0"
+        paths:
+            /api/login:
+                post:
+                    summary: "Connexion utilisateur"
+                    description: "Authentifie un utilisateur via json_login et retourne un token JWT"
+                    tags:
+                        - Authentification
+                    requestBody:
+                        required: true
+                        content:
+                            application/json:
+                                schema:
+                                    properties:
+                                        email:
+                                            type: string
+                                            example: "marie.dupont@email.com"
+                                        password:
+                                            type: string
+                                            example: "MonMotDePasse1!"
+                    responses:
+                        '200':
+                            description: "Connexion réussie, token JWT retourné"
+                        '401':
+                            description: "Email ou mot de passe incorrect"
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
+        security:
+            - Bearer: []
+
+    areas:
+        default:
+            path_patterns:
+                - ^/api/menus
+                - ^/api/themes
+                - ^/api/regimes
+                - ^/api/allergenes
+                - ^/api/plats
+                - ^/api/avis
+                - ^/api/horaires
+                - ^/api/contact
+                - ^/api/register
+                - ^/api/login
+                - ^/api/forgot-password
+                - ^/api/reset-password
+                - ^/geocode
+                - ^/distance
+                - ^/delivery-cost
+
+        public:
+            path_patterns:
+                - ^/api/menus
+                - ^/api/themes
+                - ^/api/regimes
+                - ^/api/allergenes
+                - ^/api/plats
+                - ^/api/avis
+                - ^/api/horaires
+                - ^/api/contact
+                - ^/api/register
+                - ^/api/login
+                - ^/api/forgot-password
+                - ^/api/reset-password
+                - ^/geocode
+                - ^/distance
+                - ^/delivery-cost
+
+        client:
+            path_patterns:
+                - ^/api/client
+
+        employe:
+            path_patterns:
+                - ^/api/employe
+
+        admin:
+            path_patterns:
+                - ^/api/admin

@@ -1,0 +1,47 @@
+sequenceDiagram
+    participant A as Admin / Employe
+    participant P as Page Admin - Onglet Menus
+    participant CTX as AppContext
+    participant D as mockData
+
+    Note over A,P: Lister les menus
+    A->>P: Accede a onglet "Menus"
+    P->>CTX: getMenus()
+    CTX->>D: Charge tous les menus
+    D-->>P: Liste des menus
+    P-->>A: Affiche tableau des menus
+
+    Note over A,P: Creer un menu
+    A->>P: Clique "Ajouter un menu"
+    P-->>A: Affiche formulaire (titre, description, prix, stock, theme, regime, nb personnes min)
+    A->>P: Remplit tous les champs obligatoires
+    A->>P: Selectionne un theme existant
+    A->>P: Selectionne un regime existant
+    P->>P: Validation Zod des champs
+    A->>P: Clique "Enregistrer"
+    P->>CTX: addMenu(menuData)
+    CTX->>D: Insere le menu en base
+    D-->>CTX: Menu cree avec ID
+    CTX-->>P: Succes
+    P-->>A: Toast "Menu cree avec succes"
+
+    Note over A,P: Modifier un menu
+    A->>P: Clique "Modifier" sur un menu
+    P->>CTX: getMenuById(id)
+    CTX->>D: Charge le menu
+    D-->>P: Donnees du menu
+    P-->>A: Formulaire pre-rempli
+    A->>P: Modifie les champs souhaites
+    P->>P: Validation Zod
+    A->>P: Clique "Enregistrer"
+    P->>CTX: updateMenu(id, menuData)
+    CTX->>D: Met a jour le menu
+    P-->>A: Toast "Menu mis a jour"
+
+    Note over A,P: Supprimer un menu (Admin uniquement)
+    A->>P: Clique "Supprimer" sur un menu
+    P-->>A: Boite de confirmation
+    A->>P: Confirme la suppression
+    P->>CTX: deleteMenu(id)
+    CTX->>D: Supprime le menu et ses plats associes
+    P-->>A: Toast "Menu supprime"

@@ -1,0 +1,35 @@
+sequenceDiagram
+    participant A as Administrateur
+    participant P as Page Admin
+    participant CTX as AppContext
+    participant D as mockData
+
+    A->>P: Accede a /admin
+    P->>CTX: Verifie role = admin
+
+    Note over A,P: Onglet Statistiques
+    P->>CTX: getStats()
+    CTX->>D: Calcule statistiques
+    D-->>P: CA, commandes, clients, avis
+    P-->>A: Affiche dashboard Recharts
+
+    Note over A,P: Gestion Menus (CRUD)
+    A->>P: Onglet "Menus"
+    P->>CTX: getMenus()
+    CTX->>D: Liste menus
+    D-->>P: Menus
+    A->>P: Clique "Ajouter un menu"
+    P-->>A: Formulaire creation
+    A->>P: Remplit et valide
+    P->>CTX: addMenu(menuData)
+    CTX->>D: Ajoute menu
+    P-->>A: Toast "Menu ajoute"
+
+    Note over A,P: Gestion Utilisateurs
+    A->>P: Onglet "Utilisateurs"
+    P->>CTX: getUsers()
+    CTX->>D: Liste utilisateurs
+    A->>P: Modifie role d'un utilisateur
+    P->>CTX: updateUser(id, newRole)
+    CTX->>D: Met a jour
+    P-->>A: Toast "Utilisateur modifie"

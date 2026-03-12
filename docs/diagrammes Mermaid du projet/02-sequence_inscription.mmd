@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant U as Utilisateur
+    participant AC as AuthController
+    participant VAL as Validators
+    participant HS as PasswordHasher
+    participant DB as DatabaseMYSQL
+    participant MS as MailerService
+    participant MDB as MongoDB
+
+    Note over U,MDB: Inscription (POST /api/register (JSON))
+
+    U->>AC: POST /api/register (JSON)
+
+    AC->>VAL: Valider champs (email, mdp, etc.)
+    alt Données invalides
+        VAL-->>AC: Erreurs de validation
+        AC-->>U: HTTP 400 (Erreur Request)
+    else Données valides
+        VAL-->>AC: OK
+
+        AC->>DB: findOneBy(email)
+        alt Email déjà utilisé
+            DB-->>AC: Utilisateur trouvé
+            AC-->>U: HTTP 400 (Email déjà existant)
+        else Email libre
+            DB-->>AC: null
+
+            AC->>HS: hash(password)
+            HS-->>AC: passwordHash
+
+            AC->>DB: Sauvegarde utilisateur (email + passwordHash)
+            DB-->>AC: Utilisateur créé
+
+            AC->>MS: sendWelcomeEmail()
+            MS-->>AC: Email envoyé
+
+            AC->>MDB: logService.log("inscription")
+            MDB-->>AC: Log enregistré
+
+            AC-->>U: HTTP 201 (Compte créé avec succès)
+        end
+    end

@@ -26,49 +26,18 @@ INSERT INTO allergene (libelle) VALUES
 --insertion de données dans la table theme
 
 INSERT INTO theme (libelle) VALUES
-('Tous'),
-('Italien'),
+('Noêl'),
+('Classique'),
 ('Asiatique'),
 ('Mexicain'),
 ('Français'),
-('Noêl'),
+('Italien'),
 ('Pâques'),
 ("Jour de l'an"),
-('événement ');
+('événement');
+('solo');
 
---insertion de données dans la table menu
 
-INSERT INTO menu 
-    (titre, nombre_personne_minimum, prix_par_personne, description, quantite_restante, regime_id, theme_id)
-
-VALUES 
-    (
-        'Festin de Noël Traditionnel',
-        10, 
-        45.00, 
-        'Un menu raffiné aux saveurs de Gascogne pour célébrer les fêtes de fin d''année dans la pure tradition du Sud-Ouest.', 
-        50, 
-        1, 
-        6
-    ),
-    (
-        'Réveillon Étoilé de Noël',
-        8, 
-        40.00, 
-        'Un repas de Noël gastronomique digne des plus grandes tables, avec des produits d''exception sélectionnés par nos chefs.', 
-        30, 
-        4, 
-        6
-    ),
-    (
-        'Réveillon de Noël Classique',
-        12, 
-        50.00, 
-        'Un menu traditionnel et généreux pour un réveillon de Noël inoubliable, inspiré des recettes classiques de la Gascogne.', 
-        40, 
-        2, 
-        6
-    );
 
 --insertion de données dans la table horaire
 INSERT INTO horaire (jour, heure_ouverture, heure_fermeture) VALUES
@@ -79,8 +48,6 @@ INSERT INTO horaire (jour, heure_ouverture, heure_fermeture) VALUES
 ('Vendredi', '09:00:00', '18:00:00'),
 ('Samedi', '10:00:00', '16:00:00'),
 ('Dimanche', NULL, NULL);
-
-
 
 
 -- Test de compréhension des requetes SQL
@@ -103,5 +70,16 @@ SELECT "Jour de l'an"
 WHERE NOT EXISTS (
     SELECT 1 FROM theme WHERE libelle = "Jour de l'an"
 );
--- retour à l'insertion pas le temps de niaiser
 
+
+-- Ajouter la colonne 'date' de type DATETIME, nullable pour commencer
+ALTER TABLE avis
+ADD COLUMN date DATETIME DEFAULT NULL;
+
+-- Remplir tous les enregistrements existants avec la date actuelle
+UPDATE avis
+SET date = NOW();
+
+-- La date ne peut pas etre null
+ALTER TABLE avis
+MODIFY COLUMN date DATETIME NOT NULL;

@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant E as Employe
+    participant P as Page Employe
+    participant CTX as AppContext
+    participant D as mockData
+
+    E->>P: Consulte onglet "Avis"
+    P->>CTX: getReviews()
+    CTX->>D: Tous les avis
+    D-->>P: Liste avis par statut
+
+    E->>P: Consulte avis en attente
+    P-->>E: Affiche commentaire + note
+
+    alt Approuver
+        E->>P: Clique "Approuver"
+        P->>CTX: moderateReview(id, "approuve")
+        CTX->>D: Met a jour statut avis
+        P-->>E: Toast "Avis approuve"
+    else Rejeter
+        E->>P: Clique "Rejeter"
+        P->>CTX: moderateReview(id, "rejete")
+        CTX->>D: Met a jour statut avis
+        P-->>E: Toast "Avis rejete"
+    end

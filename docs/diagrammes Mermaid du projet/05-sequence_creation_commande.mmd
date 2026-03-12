@@ -1,0 +1,75 @@
+sequenceDiagram
+    participant U as Client
+    participant P as Page Commande (Front)
+    participant AC as CommandeController (API)
+    participant MR as MenuRepository
+    participant DB as Database
+    participant MS as MailerService
+    participant EM as Email
+
+    %% ======================
+    %% Accès & authentification
+    %% ======================
+    U->>P: Accède à /commande (depuis détail menu)
+    P->>P: Vérifie authentification
+    alt Non connecté
+        P-->>U: Redirect /connexion
+    end
+
+    %% ======================
+    %% ÉTAPE 1 — Sélection menu
+    %% ======================
+    Note over U,P: Étape 1 - Sélection menu
+    P->>AC: GET /api/menus
+    AC->>MR: findAll()
+    MR-->>AC: Menus
+    AC-->>P: Menus
+
+    U->>P: Sélection menu + nb personnes
+    U->>P: Options (prêt matériel, thème)
+    P->>P: Calcul prix provisoire
+
+    %% ======================
+    %% ÉTAPE 2 — Livraison
+    %% ======================
+    Note over U,P: Étape 2 - Livraison
+    U->>P: Choisit Livraison ou Retrait
+    alt Livraison
+        U->>P: Saisit adresse
+        P->>P: Calcul frais livraison
+    else Retrait
+        P->>P: Frais livraison = 0
+    end
+
+    %% ======================
+    %% ÉTAPE 3 — Récapitulatif
+    %% ======================
+    Note over U,P: Étape 3 - Récapitulatif
+    P->>P: Calcul total (prix + livraison - remise)
+    P-->>U: Affiche récapitulatif
+    U->>P: Confirme commande
+
+    %% ======================
+    %% BACKEND — Création commande
+    %% ======================
+    Note over P,EM: Création commande (POST /api/commandes)
+    P->>AC: POST /api/commandes (orderData)
+
+    AC->>MR: find(menu_id)
+    MR-->>AC: Menu entity
+
+    AC->>AC: Vérif délai ≥ 7 jours
+    AC->>AC: Prix = prix/pers × nb_pers
+    AC->>AC: Remise -10% si nb_pers > min+5
+    AC->>AC: Frais livraison (0 ou 5 + 0.59/km)
+    AC->>AC: Acompte 30% ou 50% selon thème
+    AC->>AC: Génère numéro CMD-XXXX
+
+    AC->>DB: persist + flush (Commande + SuiviCommande)
+    DB-->>AC: Commande créée
+
+    AC->>MS: sendCommandeCreeeEmail()
+    MS->>EM: Email confirmation client
+
+    AC-->>P: HTTP 201 + commande + prix + acompte
+    P-->>U: Toast "Commande confirmée"
