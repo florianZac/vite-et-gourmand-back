@@ -1,14 +1,15 @@
 nelmio_cors:
     defaults:
-        allow_origin: ['*']
-        allow_headers: ['*']
-        allow_methods: ['*']
-        max_age: 3600
         allow_credentials: true
+        allow_headers: ['Content-Type', 'Authorization']
+        allow_methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+        max_age: 3600
     paths:
         '^/api/':
             origin_regex: true
-            allow_origin: ['*']
-            allow_headers: ['*']
+            allow_origin: 
+                - '^https://vite-et-gourmand-c36478b4c1b0\.herokuapp\.com$'
+                - '^http://127\.0\.0\.1:8000$'
+            allow_headers: ['Content-Type', 'Authorization']
             allow_methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
             max_age: 3600
