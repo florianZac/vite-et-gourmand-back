@@ -1106,14 +1106,9 @@ php bin/console doctrine:query:sql "SHOW TABLES;" --env=prod
 
 # 1.23 résoudre l'érreur de connexion
 Normal première utilisation 
-1. on migre les données symphony 
-heroku buildpacks:set heroku/php -a vite-et-gourmand-api
+1. on migre les données symphony
+composer require mongodb/mongodb:^2.1.1 -W // Obligatoire j'ai une version de mongo trop recente je doit regresser
 
-heroku buildpacks -a vite-et-gourmand-api
-git add .
-git commit -m "change le buildpack en PHP pour symphony"
-git push heroku main
-heroku run php bin/console doctrine:migrations:migrate -a vite-et-gourmand-api
+git add composer.json composer.lock
+git commit -m "régression MongoDB version due à la version Heroku"
 
-
-heroku config -a vite-et-gourmand-api
