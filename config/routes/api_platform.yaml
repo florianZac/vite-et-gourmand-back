@@ -1,4 +1,4 @@
+# config/routes/api_platform.yaml
 api_platform:
-  resource: .
-  type: api_platform
-  prefix: /api
+    resource: .
+    type: api_platform
