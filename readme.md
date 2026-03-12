@@ -930,3 +930,11 @@ app.swagger_admin:
 vide le cache : php bin/console cache:clear
 
 Ensuite acceder via https://127.0.0.1:8000/api/doc/public
+
+
+# Deploiment sur heroku
+
+# 1.1 Ajouter un fichier Procfile
+echo "web: heroku-php-apache2 public/" > Procfile
+
+
