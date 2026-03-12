@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8a4ae1301ab97f58a9868d3138dbf723",
+    "content-hash": "edf52f9eaeff1f897f9062f5a27e06b0",
     "packages": [
         {
             "name": "api-platform/doctrine-common",
@@ -3117,21 +3117,21 @@
         },
         {
             "name": "mongodb/mongodb",
-            "version": "2.2.0",
+            "version": "2.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mongodb/mongo-php-library.git",
-                "reference": "bbb13f969e37e047fd822527543df55fdc1c9298"
+                "reference": "f399d24905dd42f97dfe0af9706129743ef247ac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/bbb13f969e37e047fd822527543df55fdc1c9298",
-                "reference": "bbb13f969e37e047fd822527543df55fdc1c9298",
+                "url": "https://api.github.com/repos/mongodb/mongo-php-library/zipball/f399d24905dd42f97dfe0af9706129743ef247ac",
+                "reference": "f399d24905dd42f97dfe0af9706129743ef247ac",
                 "shasum": ""
             },
             "require": {
                 "composer-runtime-api": "^2.0",
-                "ext-mongodb": "^2.2",
+                "ext-mongodb": "^2.1",
                 "php": "^8.1",
                 "psr/log": "^1.1.4|^2|^3",
                 "symfony/polyfill-php85": "^1.32"
@@ -3142,9 +3142,9 @@
             "require-dev": {
                 "doctrine/coding-standard": "^12.0",
                 "phpunit/phpunit": "^10.5.35",
-                "rector/rector": "^2.3.4",
+                "rector/rector": "^1.2",
                 "squizlabs/php_codesniffer": "^3.7",
-                "vimeo/psalm": "~6.14.2"
+                "vimeo/psalm": "6.5.*"
             },
             "type": "library",
             "extra": {
@@ -3188,9 +3188,9 @@
             ],
             "support": {
                 "issues": "https://github.com/mongodb/mongo-php-library/issues",
-                "source": "https://github.com/mongodb/mongo-php-library/tree/2.2.0"
+                "source": "https://github.com/mongodb/mongo-php-library/tree/2.1.1"
             },
-            "time": "2026-02-11T11:39:56+00:00"
+            "time": "2025-08-13T20:50:05+00:00"
         },
         {
             "name": "nelmio/api-doc-bundle",
