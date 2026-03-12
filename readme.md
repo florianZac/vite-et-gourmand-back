@@ -1115,5 +1115,29 @@ git commit -m "régression MongoDB version due à la version Heroku"
 # 1.24 Mise à jour du loader symphony 
 composer dump-autoload
 
+# 1.25 vérification des fichiers avant de redeployer sur Heroku 
+composer dump-autoload --optimize
+php bin/console cache:clear
+
 # 1.25 Pousse vers Heroku
 git push heroku main
+
+# 1.26 Modification config/route/api_platform.yaml
+Volontairement j'ai rajouter les lignes ci-dessous pour tester 
+à enlever dans un env prod réel (montre toutes les routes pas sécurisée)
+api_platform:
+    resource: .
+    type: api_platform
+    prefix: /api
+    enable_swagger_ui: true
+    enable_re_doc: true
+
+# 1.27 Lancement et test de l'api 
+heroku open
+
+# 1.28 Test de l'api et de swagger
+si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/ 
+s'ouvre est qu'il y a welcome symfony 7 => l'api fonctionne 
+
+si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/docs
+s'ouvre est qu'il y les routes => swagger fonctionne
