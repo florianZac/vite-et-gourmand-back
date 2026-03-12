@@ -1089,3 +1089,27 @@ add ip adresse
 pour les tests rentrer une valeurs à supprimer après (faille de sécurité)
 0.0.0.0/0 // permet l'autorisation de toutes les adresses IP
 
+# 1.19 Ajout du .env.prod Finale sur git avec les données plus haut 
+
+git add .env.prod
+git commit -m "modification pour le déploiment de l'application sur Heroku "
+
+# 1.20 Configurer le projet Symfony en prod
+composer dump-env prod
+
+# 1.21 Netoyer et vérifier le cache pour l'env de prod ainsi que la connexion
+php bin/console cache:clear --env=prod
+
+# 1.22 Tester le cache et la connexion
+php bin/console cache:clear --env=prod
+php bin/console doctrine:query:sql "SHOW TABLES;" --env=prod
+
+# 1.23 résoudre l'érreur de connexion
+Normal première utilisation 
+1. on migre les données symphony 
+heroku buildpacks:set heroku/php -a vite-et-gourmand-api
+
+heroku run php bin/console doctrine:migrations:migrate -a vite-et-gourmand-api
+
+
+heroku config -a vite-et-gourmand-api
