@@ -1108,6 +1108,7 @@ php bin/console doctrine:query:sql "SHOW TABLES;" --env=prod
 Normal première utilisation 
 1. on migre les données symphony 
 heroku buildpacks:set heroku/php -a vite-et-gourmand-api
+git push heroku main
 
 heroku run php bin/console doctrine:migrations:migrate -a vite-et-gourmand-api
 
