@@ -1122,9 +1122,30 @@ composer validate
 composer install --no-dev
 composer update
 
+
+
+
+# 1.2 Remplir les Config Vars Dans Heroku
+
+APP_ENV = prod
+APP_SECRET = votre secret
+JAWSDB_URL = mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetx
+MAILER_DSN = smtp://6836c3cc28f364:ed676f5a2fc337@sandbox.smtp.mailtrap.io:2525
+MAILTRAP_API_TOKEN = 4ea729412eab9427db4805423616bb83
+MONGODB_DB = vite-et-gourmand_log
+MONGODB_URI = mongodb+srv://vite_user:vite_pass@vite-et-gourmand.v51wxj4.mongodb.net/?appName=vite-et-gourmand-log
+COMPOSER_MEMORY_LIMIT = -1 
+DATABASE_URL = mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/utp2g4edmtrisl82
+CORS_ALLOW_ORIGIN = https://vite-et-gourmand-c36478b4c1b0.herokuapp.com
+JWT_PASSPHRASE = votre secret
+FRONT_URL = https://vite-et-gourmand-c36478b4c1b0.herokuapp.com
+APP_URL = https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/
+JWT_SECRET_KEY = valeur à recuperer sur votre repo lancer la commande suivante : cat config/jwt/private.pem
+JWT_PUBLIC_KEY = valeur à recuperer sur votre repo lancer la commande suivante : cat config/jwt/public.pem
+
 # 1.25 vérification des fichiers avant de redeployer sur Heroku 
 composer dump-autoload --optimize
-php bin/console cache:clear
+php bin/console cache:clear --env=prod
 
 # 1.25 Pousse vers Heroku
 git push heroku main
@@ -1143,23 +1164,7 @@ api_platform:
 heroku open
 
 
-# 1.28 Remplir les Config Vars Dans Heroku
 
-APP_ENV = prod
-APP_SECRET = votre secret
-JAWSDB_URL = mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetx
-MAILER_DSN = smtp://6836c3cc28f364:ed676f5a2fc337@sandbox.smtp.mailtrap.io:2525
-MAILTRAP_API_TOKEN = 4ea729412eab9427db4805423616bb83
-MONGODB_DB = vite-et-gourmand_log
-MONGODB_URI = mongodb+srv://vite_user:vite_pass@vite-et-gourmand.v51wxj4.mongodb.net/?appName=vite-et-gourmand-log
-COMPOSER_MEMORY_LIMIT = -1 
-DATABASE_URL = mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/utp2g4edmtrisl82
-CORS_ALLOW_ORIGIN = https://vite-et-gourmand-c36478b4c1b0.herokuapp.com
-JWT_PASSPHRASE = votre secret
-FRONT_URL = https://vite-et-gourmand-c36478b4c1b0.herokuapp.com
-APP_URL = https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/
-JWT_SECRET_KEY = valeur à recuperer sur votre repo lancer la commande suivante : cat config/jwt/private.pem
-JWT_PUBLIC_KEY = valeur à recuperer sur votre repo lancer la commande suivante : cat config/jwt/public.pem
 
 
 # 1.29 Test de l'api et de swagger
