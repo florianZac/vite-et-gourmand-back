@@ -1123,7 +1123,6 @@ composer validate
 composer install --no-dev
 composer update
 
-
 # 1.25 Remplir les Config Vars Dans Heroku
 
 APP_ENV = prod
@@ -1157,10 +1156,7 @@ mettre dedans :
     RewriteRule ^ index.php [QSA,L]
 </Directory>
 
-# 1.26 Modification config/route/api_platform.yaml
-
-
-# 1.26 Modification config/route/api_platform.yaml
+# 1.27 Modification config/route/api_platform.yaml
 Volontairement j'ai rajouter les lignes ci-dessous pour tester 
 à enlever dans un env prod réel (montre toutes les routes pas sécurisée)
 api_platform:
@@ -1211,3 +1207,114 @@ s'ouvre est qu'il y a welcome symfony 7 => l'api fonctionne
 
 si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/docs
 s'ouvre est qu'il y les routes => swagger fonctionne
+
+# 1.31 Mise en place des données dans la nouvelle DDB JawsDB
+
+1. on supprime l'ancienne migration et on la recréer pour repartir propre 
+Remove-Item migrations\*.php
+ls migrations/  -> est il vide oui on continue 
+$env:APP_ENV="dev"; php bin/console make:migration
+
+# 2 On crée la base de données JawsDB
+
+2. On récupere les informations de connection pour JawsDB
+
+heroku config:get JAWSDB_URL --app vite-et-gourmand-api
+résultat si tout fonctionne :
+mysql://z6kfic0nl9ubmba9:lgcy2tt6lhnbg7a8@l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/utp2g4edmtrisl82
+
+supprime celle existante si sa marche pas :
+heroku run --app vite-et-gourmand-api -- php bin/console doctrine:schema:drop --force
+
+Vérifie que les migrations sont exécutées :
+heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
+
+Vérifie les tables :
+heroku run --app vite-et-gourmand-api -- php bin/console dbal:run-sql "SHOW TABLES;"
+
+Remet à jour la DDB apres une supression :
+heroku run --app vite-et-gourmand-api -- php bin/console doctrine:schema:update --force
+heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
+
+recreer les tables 
+heroku run --app vite-et-gourmand-api -- php bin/console doctrine:schema:create
+
+# 3 Si sa bug toujours Utiliser recréer les tables avec un dump SQL
+
+3.1 Générer le SQL de toutes tes tables depuis Symfony en local
+php bin/console doctrine:schema:update --dump-sql > dump.sql
+
+3.2 Se connecter à JawsDB et Heroku et vider la base
+mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
+Mot de passe : lgcy2tt6lhnbg7a8
+
+3.2.2 Supprime toutes les table
+DROP TABLE IF EXISTS avis, menu, plat, commande, utilisateur, contient, propose, allergene, regime, role, theme, menu_tags, suivi_commande, password_reset_token, horaire;
+
+3.3 Charge les tables depuis le dump SQL
+Get-Content .\dump.sql | mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
+Mot de passe : lgcy2tt6lhnbg7a8
+
+3.4 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
+heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
+
+3.4 Vérifie que les tables existent
+mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
+Mot de passe : lgcy2tt6lhnbg7a8
+pour voir les table tape 
+SHOW TABLES;
+pour sortir exit ou ctrl C
+
+# 3 On affiche la base de donnée crée par DDB JawsDB 
+heroku run --app vite-et-gourmand-api -- php bin/console dbal:run-sql "SHOW TABLES;"
+
+
+devrait répondre :
+ ----------------------
+  TABLE_NAME
+ ----------------------
+  allergene
+  avis
+  commande
+  contient
+  horaire
+  menu
+  menu_tags
+  password_reset_token
+  plat
+  propose
+  regime
+  role
+  suivi_commande
+  theme
+  utilisateur
+ ----------------------
+
+# 4 Importation des données dans la DDB  
+
+J'ai créer un fichier dans le docs pour remplir la base de données 
+
+Fichier présent à l'adresse : docs/creation_database.sql 
+
+4.1 vérifie que le fichier est bien présent 
+
+dir D:\wamp64\www\vite-et-gourmand-back\docs\*.sql
+
+4.2 Lance la commande suivante pour l'insertion des données dans la base de donnée 
+
+cd D:\wamp64\www\vite-et-gourmand-back\docs
+cmd /c "D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -u z6kfic0nl9ubmba9 -plgcy2tt6lhnbg7a8 utp2g4edmtrisl82 < creation_database.sql"
+
+4.3 Vérifications des données via appel des routes 
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/menus
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/horaires
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/plats
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/themes
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/regimes
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/allergenes
+https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/avis
+
+
+
+
+
