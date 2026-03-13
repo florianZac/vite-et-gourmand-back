@@ -74,7 +74,10 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+        "compile": [
+            "@php bin/console lexik:jwt:generate-keypair --overwrite --quiet --env prod"
+        ]
         },
         "post-install-cmd": [
             "@auto-scripts"
