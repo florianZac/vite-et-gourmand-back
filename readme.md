@@ -1116,6 +1116,7 @@ git commit -m "régression MongoDB version due à la version Heroku"
 composer update mongodb/mongodb doctrine/mongodb-odm doctrine/mongodb-odm-bundle --with-all-dependencies
 composer install --no-dev --optimize-autoloader
 heroku config:set COMPOSER_MEMORY_LIMIT=-1
+composer require symfony/apache-pack
 php bin/console cache:clear
 php bin/console cache:warmup
 composer validate
@@ -1123,9 +1124,7 @@ composer install --no-dev
 composer update
 
 
-
-
-# 1.2 Remplir les Config Vars Dans Heroku
+# 1.25 Remplir les Config Vars Dans Heroku
 
 APP_ENV = prod
 APP_SECRET = votre secret
@@ -1143,12 +1142,23 @@ APP_URL = https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/
 JWT_SECRET_KEY = valeur à recuperer sur votre repo lancer la commande suivante : cat config/jwt/private.pem
 JWT_PUBLIC_KEY = valeur à recuperer sur votre repo lancer la commande suivante : cat config/jwt/public.pem
 
-# 1.25 vérification des fichiers avant de redeployer sur Heroku 
-composer dump-autoload --optimize
-php bin/console cache:clear --env=prod
+# 1.26 Création du fichier apache_app.conf pour la redirection apache
+à la racine du projet créer un fichier nommé : apache_app.conf
+Permet de forcer appache à voir le index.html et forcer une route 
+mettre dedans :
+<Directory "/app/public">
+    AllowOverride All
+    Options -Indexes +FollowSymLinks
+    Require all granted
 
-# 1.25 Pousse vers Heroku
-git push heroku main
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</Directory>
+
+# 1.26 Modification config/route/api_platform.yaml
+
 
 # 1.26 Modification config/route/api_platform.yaml
 Volontairement j'ai rajouter les lignes ci-dessous pour tester 
@@ -1160,15 +1170,43 @@ api_platform:
     enable_swagger_ui: true
     enable_re_doc: true
 
-# 1.27 Lancement et test de l'api 
+# 1.27 vérification des fichiers avant de redeployer sur Heroku 
+
+composer dump-autoload --optimize
+1. Vidange du cache
+php bin/console cache:clear --env=prod
+$env:APP_ENV="prod"; php bin/console cache:clear --env=prod
+
+2. Vérification de la relecture des variables d'environnement
+php bin/console debug:dotenv
+
+3. Vérification des variable spécifique
+php bin/console debug:container --env-vars
+
+4. Vérification de la connection Doctrine pour MySQL
+php bin/console doctrine:schema:validate
+
+5. Vérification que les routes sont fonctionnel est correctement chargé
+php bin/console debug:router
+
+6. Vérification de la config CORS
+php bin/console debug:config nelmio_cors
+
+7. Vérification de la config JWT
+php bin/console debug:config lexik_jwt_authentication
+
+8. Dernière Vérification, vérification de la compilation sans érreur
+composer install --no-dev --optimize-autoloader
+
+# 1.28 Pousse vers Heroku si la 1.27 fonctionne 
+git push heroku main
+
+# 1.29 Lancement et test de l'api 
 heroku open
 
+# 1.30 Test de l'api et de swagger
 
-
-
-
-# 1.29 Test de l'api et de swagger
-si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/ 
+si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/
 s'ouvre est qu'il y a welcome symfony 7 => l'api fonctionne 
 
 si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/docs
