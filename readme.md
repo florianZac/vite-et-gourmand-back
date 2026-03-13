@@ -1315,6 +1315,8 @@ https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/allergenes
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/avis
 
 
+4.4 Résolution du probleme de JWT  Exception Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTEncodeFailureException
 
+heroku config:set JWT_PASSPHRASE=vite_et_gourmand_secret --app vite-et-gourmand-api
 
-
+heroku run --app vite-et-gourmand-api -- ls config/jwt
