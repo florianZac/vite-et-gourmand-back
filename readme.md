@@ -1205,7 +1205,7 @@ heroku open
 si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/
 s'ouvre est qu'il y a welcome symfony 7 => l'api fonctionne 
 
-si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/docs
+si https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/doc
 s'ouvre est qu'il y les routes => swagger fonctionne
 
 # 1.31 Mise en place des données dans la nouvelle DDB JawsDB
