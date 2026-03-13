@@ -32,4 +32,4 @@ CREATE TABLE suivi_commande (
         FOREIGN KEY (commande_id) 
         REFERENCES commande(commande_id)
         ON DELETE CASCADE
-);
+);   
