@@ -536,7 +536,7 @@ final class EmployeController extends AbstractController
 
   public function getAvisEnAttente(AvisRepository $avisRepository): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
+     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
@@ -544,8 +544,23 @@ final class EmployeController extends AbstractController
     // Étape 2 - Récupérer tous les avis en attente
     $avis = $avisRepository->findBy(['statut' => 'en_attente']);
 
-    // Étape 3 - Retourner les avis en JSON
-    return $this->json(['status' => 'Succès', 'total' => count($avis), 'avis' => $avis]);
+    // Étape 3 - Formater les données pour éviter la référence circulaire
+    $data = [];
+    foreach ($avis as $a) {
+        $data[] = [
+            'id' => $a->getId(),
+            'note' => $a->getNote(),
+            'description' => $a->getDescription(),
+            'statut' => $a->getStatut(),
+            'date' => $a->getDate()?->format('d/m/Y H:i:s'),
+            'utilisateur_id' => $a->getUtilisateur()?->getId(),
+            'utilisateur_nom' => $a->getUtilisateur()?->getNom(),
+            'commande_id' => $a->getCommande()?->getId(),
+        ];
+    }
+
+    // Étape 4 - Retourner les avis en JSON
+    return $this->json(['status' => 'Succès', 'total' => count($data), 'avis' => $data]);
   }
 
   /**
