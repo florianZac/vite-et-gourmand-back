@@ -55,9 +55,41 @@ final class MenuController extends AbstractController
     // Étape 1 - Récupère tous les menus depuis la base de données
     $menus = $menuRepository->findAll();
 
-    // Étape 2 - Retourne le résultat au format JSON
-    return $this->json($menus);
-	}
+    // Étape 2 - Formate les données pour chaque menus
+    $result = [];
+    foreach ($menus as $menu) {
+      $platsArray = [];
+      foreach ($menu->getPlats() as $plat) {
+        $platsArray[] = [
+          'id' => $plat->getId(),
+          'titre' => $plat->getTitrePlat(),
+          'categorie' => $plat->getCategorie(),
+          'photo' => $plat->getPhoto(),
+        ];
+      }
+
+      $result[] = [
+        'id' => $menu->getId(),
+        'titre' => $menu->getTitre(),
+        'description' => $menu->getDescription(),
+        'prix_par_personne' => $menu->getPrixParPersonne(),
+        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum(),
+        'quantite_restante' => $menu->getQuantiteRestante(),
+        'theme' => $menu->getTheme() ? [
+          'id' => $menu->getTheme()->getId(),
+          'titre' => $menu->getTheme()->getLibelle()
+        ] : null,
+        'regime' => $menu->getRegime() ? [
+          'id' => $menu->getRegime()->getId(),
+          'libelle' => $menu->getRegime()->getLibelle()
+        ] : null,
+        'plats' => $platsArray
+      ];
+    }
+
+    // Étape 3 - Retourne les résultats
+    return $this->json(['status' => 'Succès', 'total' => count($menus), 'menus' => $result]);
+  }
 
 	/**
 	 * @description Retourne le détail d'un menu par son id
@@ -85,66 +117,36 @@ final class MenuController extends AbstractController
       return $this->json(['message' => 'Menu non trouvé'], 404);
     }
 
-    // Étape 3 - Retourne le menu trouvé
-    return $this->json($menu);
-	}
-
-  /**
-   * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
-   * Accessible publiquement sans authentification
-   * Utilisé pour la fiche menu sur le front
-   * @param int $id L'ID du menu à afficher
-   * @param MenuRepository $menuRepository Le repository des menus
-   * @return JsonResponse le menu trouvé ou 404 si non trouvé
-   */
-  #[Route('/menus/{id}/details', name: 'api_menu_public_show', methods: ['GET'])]
-  #[OA\Get(
-    summary: 'Détail d\'un menu par ID',
-    description: 'Retourne le détail complet d\'un menu : plats, images, catégorie, prix, quantité. Accessible publiquement.'
-  )]
-  #[OA\Tag(name: 'Public - Menus')]
-  #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
-  #[OA\Response(response: 200, description: 'Menu trouvé')]
-  #[OA\Response(response: 404, description: 'Menu non trouvé')]
-  public function getMenuById(int $id, MenuRepository $menuRepository): JsonResponse
-  {
-    // Étape 1 - Chercher le menu par son ID
-    $menu = $menuRepository->find($id);
-    if (!$menu) {
-      return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
-    }
-
-    // Étape 2 - Construire le tableau des plats avec images et catégories
+    // Étape 3 - Formate les données du menu
     $platsArray = [];
     foreach ($menu->getPlats() as $plat) {
       $platsArray[] = [
-        'plat_id'  => $plat->getId(),
-        'titre'    => $plat->getTitrePlat(),
-        'image'    => $plat->getPhoto(),       // image unique du plat
-        'categorie'=> $plat->getCategorie(),   // entrée / plat / dessert
+        'id' => $plat->getId(),
+        'titre' => $plat->getTitrePlat(),
+        'categorie' => $plat->getCategorie(),
+        'photo' => $plat->getPhoto(),
       ];
     }
 
-    // Étape 3 - Construire le résultat final
     $result = [
-      'id'                     => $menu->getId(),
-      'titre'                  => $menu->getTitre(),
-      'description'            => $menu->getDescription(),
-      'prix_par_personne'      => $menu->getPrixParPersonne(),
-      'nombre_personne_minimum'=> $menu->getNombrePersonneMinimum(),
-      'quantite_restante'      => $menu->getQuantiteRestante(),
-      'theme'                  => $menu->getTheme() ? [
-        'id'    => $menu->getTheme()->getId(),
+      'id' => $menu->getId(),
+      'titre' => $menu->getTitre(),
+      'description' => $menu->getDescription(),
+      'prix_par_personne' => $menu->getPrixParPersonne(),
+      'nombre_personne_minimum' => $menu->getNombrePersonneMinimum(),
+      'quantite_restante' => $menu->getQuantiteRestante(),
+      'theme' => $menu->getTheme() ? [
+        'id' => $menu->getTheme()->getId(),
         'titre' => $menu->getTheme()->getLibelle()
       ] : null,
-      'regime'                 => $menu->getRegime() ? [
-        'id'     => $menu->getRegime()->getId(),
-        'libelle'=> $menu->getRegime()->getLibelle()
+      'regime' => $menu->getRegime() ? [
+        'id' => $menu->getRegime()->getId(),
+        'libelle' => $menu->getRegime()->getLibelle()
       ] : null,
-      'plats'                  => $platsArray
+      'plats' => $platsArray
     ];
 
-    // Étape 4 - Retourner la réponse JSON
+    // Étape 4 - Retourne le menu
     return $this->json(['status' => 'Succès', 'menu' => $result]);
   }
 
@@ -213,9 +215,15 @@ final class MenuController extends AbstractController
     // Étape 1 - Récupère tous les thèmes depuis la base de données
     $themes = $themeRepository->findAll();
 
-    // Étape 2 - Retourne le résultat au format JSON
-    return $this->json(['status' => 'Succès', 'total' => count($themes), 'themes' => $themes]);
-	}
+    // Étape 2 - Formate les données
+    $result = array_map(fn($t) => [
+      'id' => $t->getId(),
+      'titre' => $t->getLibelle()
+    ], $themes);
+
+    // Étape 3 - Retourne le résultat au format JSON
+    return $this->json(['status' => 'Succès', 'total' => count($themes), 'themes' => $result]);
+  }
 
 	// =========================================================================
 	// REGIMES
@@ -230,7 +238,13 @@ final class MenuController extends AbstractController
     // Étape 1 - Récupère tous les régimes depuis la base de données
     $regimes = $regimeRepository->findAll();
 
-    // Étape 2 - Retourne le résultat au format JSON
+    // Étape 2 - Formate les données
+    $result = array_map(fn($r) => [
+      'id' => $r->getId(),
+      'libelle' => $r->getLibelle()
+    ], $regimes);
+
+    // Étape 3 - Retourne le résultat au format JSON
     return $this->json(['status' => 'Succès', 'total' => count($regimes), 'regimes' => $regimes]);
 	}
 
@@ -254,7 +268,13 @@ final class MenuController extends AbstractController
     // Étape 1 - Récupère tous les allergènes depuis la base de données
     $allergenes = $allergeneRepository->findAll();
 
-    // Étape 2 - Retourne le résultat au format JSON
+    // Étape 2 - Formate les données
+    $result = array_map(fn($a) => [
+      'id' => $a->getId(),
+      'libelle' => $a->getLibelle()
+    ], $allergenes);
+
+    // Étape 3 - Retourne le résultat au format JSON
     return $this->json(['status' => 'Succès', 'total' => count($allergenes), 'allergenes' => $allergenes]);
 	}
 
@@ -357,9 +377,17 @@ final class MenuController extends AbstractController
     // Étape 1 - Récupère tous les plats depuis la base de données
     $plats = $platRepository->findAll();
 
-    // Étape 2 - Retourne le résultat au format JSON
-    return $this->json(['status' => 'Succès', 'total' => count($plats), 'plats' => $plats]);
-	}
+    // Étape 2 - Formate les données
+    $result = array_map(fn($plat) => [
+      'id' => $plat->getId(),
+      'titre' => $plat->getTitrePlat(),
+      'categorie' => $plat->getCategorie(),
+      'photo' => $plat->getPhoto()
+    ], $plats);
+
+    // Étape 3 - Retourne le résultat au format JSON
+    return $this->json(['status' => 'Succès', 'total' => count($plats), 'plats' => $result]);
+  }
 
 	/**
 	 * @description Retourne la liste complète de tous les menus avec leurs plats et images
@@ -414,4 +442,62 @@ final class MenuController extends AbstractController
 		return $this->json(['status' => 'Succès', 'total' => count($menus), 'menus' => $result]);
 	}
 
+  /**
+   * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
+   * Accessible publiquement sans authentification
+   * Utilisé pour la fiche menu sur le front
+   * @param int $id L'ID du menu à afficher
+   * @param MenuRepository $menuRepository Le repository des menus
+   * @return JsonResponse le menu trouvé ou 404 si non trouvé
+   */
+  #[Route('/menus/{id}/details', name: 'api_menu_public_show', methods: ['GET'])]
+  #[OA\Get(
+    summary: 'Détail d\'un menu par ID',
+    description: 'Retourne le détail complet d\'un menu : plats, images, catégorie, prix, quantité. Accessible publiquement.'
+  )]
+  #[OA\Tag(name: 'Public - Menus')]
+  #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
+  #[OA\Response(response: 200, description: 'Menu trouvé')]
+  #[OA\Response(response: 404, description: 'Menu non trouvé')]
+  public function getMenuById(int $id, MenuRepository $menuRepository): JsonResponse
+  {
+    // Étape 1 - Chercher le menu par son ID
+    $menu = $menuRepository->find($id);
+    if (!$menu) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+    }
+
+    // Étape 2 - Construire le tableau des plats avec images et catégories
+    $platsArray = [];
+    foreach ($menu->getPlats() as $plat) {
+      $platsArray[] = [
+        'plat_id'  => $plat->getId(),
+        'titre'    => $plat->getTitrePlat(),
+        'image'    => $plat->getPhoto(),       // image unique du plat
+        'categorie'=> $plat->getCategorie(),   // entrée / plat / dessert
+      ];
+    }
+
+    // Étape 3 - Construire le résultat final
+    $result = [
+      'id'                     => $menu->getId(),
+      'titre'                  => $menu->getTitre(),
+      'description'            => $menu->getDescription(),
+      'prix_par_personne'      => $menu->getPrixParPersonne(),
+      'nombre_personne_minimum'=> $menu->getNombrePersonneMinimum(),
+      'quantite_restante'      => $menu->getQuantiteRestante(),
+      'theme'                  => $menu->getTheme() ? [
+        'id'    => $menu->getTheme()->getId(),
+        'titre' => $menu->getTheme()->getLibelle()
+      ] : null,
+      'regime'                 => $menu->getRegime() ? [
+        'id'     => $menu->getRegime()->getId(),
+        'libelle'=> $menu->getRegime()->getLibelle()
+      ] : null,
+      'plats'                  => $platsArray
+    ];
+
+    // Étape 4 - Retourner la réponse JSON
+    return $this->json(['status' => 'Succès', 'menu' => $result]);
+  }
 }

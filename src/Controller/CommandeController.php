@@ -402,8 +402,45 @@ final class CommandeController extends BaseController
     // Étape 2 - Récupérer toutes les commandes
     $commandes = $commandeRepository->findAll();
 
-    // Étape 3 - Retourner la liste en JSON
-    return $this->json(['status' => 'Succès', 'total' => count($commandes), 'commandes' => $commandes]);
+    // Étape 3 - Formater pour éviter la référence circulaire
+    $data = [];
+    foreach ($commandes as $commande) {
+      $data[] = [
+        'id' => $commande->getId(),
+        'numero_commande' => $commande->getNumeroCommande(),
+        'date_commande' => $commande->getDateCommande()?->format('Y-m-d H:i:s'),
+        'date_prestation' => $commande->getDatePrestation()?->format('Y-m-d'),
+        'heure_livraison' => $commande->getHeureLivraison()?->format('H:i'),
+        'statut' => $commande->getStatut(),
+        'nombre_personne' => $commande->getNombrePersonne(),
+        'prix_menu' => $commande->getPrixMenu(),
+        'prix_livraison' => $commande->getPrixLivraison(),
+        'distance_km' => $commande->getDistanceKm(),
+
+        'adresse_livraison' => $commande->getAdresseLivraison(),
+        'ville_livraison' => $commande->getVilleLivraison(),
+
+        'pret_materiel' => $commande->isPretMateriel(),
+        'restitution_materiel' => $commande->isRestitutionMateriel(),
+        'etat_materiel' => $commande->getEtatMateriel(),
+
+        'utilisateur' => [
+            'id' => $commande->getUtilisateur()?->getId(),
+        ],
+
+        'menu' => [
+            'id' => $commande->getMenu()?->getId(),
+        ]
+      ];
+    }
+
+    // Étape 4 - Retourne les résultats
+    return $this->json([
+        'status' => 'Succès',
+        'total' => count($data),
+        'commandes' => $data
+    ]);
+
   }
 
   /**
@@ -432,8 +469,52 @@ final class CommandeController extends BaseController
       return $this->json(['status' => 'Erreur', 'message' => 'Commande non trouvée'], 404);
     }
 
-    // Étape 3 - Retourner la commande en JSON
-    return $this->json(['status' => 'Succès', 'commande' => $commande]);
+    // Étape 3 - Formater la commande
+    $data = [
+      'id' => $commande->getId(),
+      'numero_commande' => $commande->getNumeroCommande(),
+
+      'date_commande' => $commande->getDateCommande()?->format('Y-m-d H:i:s'),
+      'date_prestation' => $commande->getDatePrestation()?->format('Y-m-d'),
+      'heure_livraison' => $commande->getHeureLivraison()?->format('H:i'),
+
+      'statut' => $commande->getStatut(),
+
+      'nombre_personne' => $commande->getNombrePersonne(),
+      'prix_menu' => $commande->getPrixMenu(),
+      'prix_livraison' => $commande->getPrixLivraison(),
+      'distance_km' => $commande->getDistanceKm(),
+
+      'adresse_livraison' => $commande->getAdresseLivraison(),
+      'ville_livraison' => $commande->getVilleLivraison(),
+
+      'pret_materiel' => $commande->isPretMateriel(),
+      'restitution_materiel' => $commande->isRestitutionMateriel(),
+      'etat_materiel' => $commande->getEtatMateriel(),
+
+      'montant_acompte' => $commande->getMontantAcompte(),
+      'montant_rembourse' => $commande->getMontantRembourse(),
+      'motif_annulation' => $commande->getMotifAnnulation(),
+
+      'date_statut_livree' => $commande->getDateStatutLivree()?->format('Y-m-d H:i:s'),
+      'date_statut_retour_materiel' => $commande->getDateStatutRetourMateriel()?->format('Y-m-d H:i:s'),
+
+      'mail_penalite_envoye' => $commande->isMailPenaliteEnvoye(),
+
+      'utilisateur' => [
+          'id' => $commande->getUtilisateur()?->getId(),
+      ],
+
+      'menu' => [
+          'id' => $commande->getMenu()?->getId(),
+      ]
+    ];
+
+    // Étape 4 - Retourner la réponse
+    return $this->json([
+        'status' => 'Succès',
+        'commande' => $data
+    ]);
   }
 
   /**

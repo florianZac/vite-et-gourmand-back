@@ -102,8 +102,11 @@ final class EmployeController extends AbstractController
     // Étape 2 - Récupérer toutes les commandes en cours
     $commandes = $commandeRepository->findCommandesEnCours();
 
-    // Étape 3 - Retourner les commandes en JSON
-    return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
+    // Étape 3 - Formater pour éviter la référence circulaire
+    $data = array_map([$this, 'formatCommande'], $commandes);
+
+    // Étape 4 - Retourner les commandes en JSON
+    return $this->json(['status' => 'Succès', 'commandes' => $data]);
   }
 
   /**
@@ -134,8 +137,11 @@ final class EmployeController extends AbstractController
       return $this->json(['status' => 'Erreur', 'message' => 'Aucune commande trouvée'], 404);
     }
 
-    // Étape 4 - Retourner les commandes en JSON
-    return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
+    // Étape 4 - Formater pour éviter la référence circulaire
+    $data = array_map([$this, 'formatCommande'], $commandes);
+
+    // Étape 5 - Retourner les commandes en JSON
+    return $this->json(['status' => 'Succès', 'commandes' => $data]);
   }
 
   /**
@@ -288,11 +294,14 @@ final class EmployeController extends AbstractController
     // Étape 2 - Récupérer toutes les commandes avec matériel non rendu
     $commandes = $commandeRepository->findCommandesMaterielARelancer();
 
-    // Étape 3 - Retourner les commandes en JSON
+    // Étape 3 - Formater pour éviter la référence circulaire
+    $data = array_map([$this, 'formatCommande'], $commandes);
+
+    // Étape 4 - Retourner les commandes en JSON
     return $this->json([
       'status'    => 'Succès',
-      'total'     => count($commandes),
-      'commandes' => $commandes
+      'total'     => count($data),
+      'commandes' => $data
     ]);
   }
 
@@ -457,15 +466,18 @@ final class EmployeController extends AbstractController
     // Étape 4 - Appeler le repository avec les filtres
     $commandes = $commandeRepository->findByFiltres($statut, $utilisateurId);
 
-    // Étape 5 - Retourner les résultats
+    // Étape 5 - Formater pour éviter la référence circulaire
+    $data = array_map([$this, 'formatCommande'], $commandes);
+
+    // Étape 6 - Retourner les résultats
     return $this->json([
       'status'    => 'Succès',
-      'total'     => count($commandes),
+      'total'     => count($data),
       'filtres'   => [
           'statut'         => $statut        ?? 'tous',
           'utilisateur_id' => $utilisateurId ?? 'tous',
       ],
-      'commandes' => $commandes,
+      'commandes' => $data,
     ]);
   }
 
@@ -983,8 +995,8 @@ final class EmployeController extends AbstractController
           'description' => $menu->getDescription(),
           'conditions' => $menu->getConditions(),
           'quantite_restante' => $menu->getQuantiteRestante(),
-          'regime' => $menu->getRegime()->getNom(),
-          'theme' => $menu->getTheme()->getNom(),
+          'regime' => $menu->getRegime()->getLibelle(),
+          'theme' => $menu->getTheme()->getLibelle(),
           'plats' => $platsRetour
         ]
       ]);
@@ -2004,4 +2016,45 @@ final class EmployeController extends AbstractController
       'message' => 'Plat supprimé du menu'
     ]);
   }
+
+// =========================================================================
+  // MÉTHODE UTILITAIRE - Formatage des commandes
+  // =========================================================================
+
+  /**
+   * @description Formate une commande en tableau pour éviter la référence circulaire
+   * @param Commande $c L'entité Commande à formater
+   * @return array Les données formatées
+   */
+  private function formatCommande(\App\Entity\Commande $c): array
+  {
+      return [
+          'id' => $c->getId(),
+          'numero_commande' => $c->getNumeroCommande(),
+          'date_commande' => $c->getDateCommande()?->format('d/m/Y H:i'),
+          'date_prestation' => $c->getDatePrestation()?->format('d/m/Y'),
+          'heure_livraison' => $c->getHeureLivraison()?->format('H:i'),
+          'statut' => $c->getStatut(),
+          'prix_menu' => $c->getPrixMenu(),
+          'nombre_personne' => $c->getNombrePersonne(),
+          'prix_livraison' => $c->getPrixLivraison(),
+          'montant_acompte' => $c->getMontantAcompte(),
+          'montant_rembourse' => $c->getMontantRembourse(),
+          'motif_annulation' => $c->getMotifAnnulation(),
+          'adresse_livraison' => $c->getAdresseLivraison(),
+          'ville_livraison' => $c->getVilleLivraison(),
+          'distance_km' => $c->getDistanceKm(),
+          'pret_materiel' => $c->isPretMateriel(),
+          'restitution_materiel' => $c->isRestitutionMateriel(),
+          'mail_penalite_envoye' => $c->isMailPenaliteEnvoye(),
+          'etat_materiel' => $c->getEtatMateriel(),
+          'utilisateur_id' => $c->getUtilisateur()?->getId(),
+          'utilisateur_nom' => $c->getUtilisateur()?->getNom(),
+          'utilisateur_prenom' => $c->getUtilisateur()?->getPrenom(),
+          'utilisateur_email' => $c->getUtilisateur()?->getEmail(),
+          'menu_id' => $c->getMenu()?->getId(),
+          'menu_titre' => $c->getMenu()?->getTitre(),
+      ];
+  }
+
 }

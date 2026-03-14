@@ -52,8 +52,22 @@ final class PlatController extends BaseController
     // Étape 2 - Récupérer tous les plats
     $plats = $platRepository->findAll();
 
+    // Étape 3 - Formate les données
+    $result = array_map(function($plat) {
+      return [
+        'id' => $plat->getId(),
+        'titre_plat' => $plat->getTitrePlat(),
+        'photo' => $plat->getPhoto(),
+        'categorie' => $plat->getCategorie(),
+        'allergenes' => array_map(fn($a) => [
+          'id' => $a->getId(),
+          'libelle' => $a->getLibelle()
+        ], $plat->getAllergenes()->toArray())
+      ];
+    }, $plats);
+
     // Étape 3 - Retourner la liste en JSON
-    return $this->json(['status' => 'Succès', 'total' => count($plats), 'plats' => $plats]);
+    return $this->json(['status' => 'Succès', 'total' => count($plats), 'plats' => $result]);
   }
 
   /**
@@ -82,8 +96,21 @@ final class PlatController extends BaseController
       return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
     }
 
-    // Étape 3 - Retourner le plat en JSON
-    return $this->json(['status' => 'Succès', 'plat' => $plat]);
+    // Étape 3 - Formate les données
+    $result = [
+      'id' => $plat->getId(),
+      'titre_plat' => $plat->getTitrePlat(),
+      'photo' => $plat->getPhoto(),
+      'categorie' => $plat->getCategorie(),
+      'allergenes' => array_map(fn($a) => [
+        'id' => $a->getId(),
+        'libelle' => $a->getLibelle()
+      ], $plat->getAllergenes()->toArray())
+    ];
+
+    // Étape 4 - Retourner le plat en JSON
+    return $this->json(['status' => 'Succès', 'plat' => $result]);
+
   }
 
   /**
@@ -125,6 +152,9 @@ final class PlatController extends BaseController
 
     // Étape 2 - Récupérer les données JSON
     $data = json_decode($request->getContent(), true);
+    if (!is_array($data)) {
+      return $this->json(['status'=>'Erreur','message'=>'JSON invalide'],400);
+    } 
 
     // Étape 3 - Vérifier les champs obligatoires
     if (empty($data['titre_plat']) || empty($data['photo']) || empty($data['categorie'])) {
@@ -137,17 +167,16 @@ final class PlatController extends BaseController
       return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
     }
 
-    // Étape 5 - Créer le plat
-    $plat = new Plat();
-    $plat->setTitrePlat($data['titre_plat']);
-    $plat->setPhoto($data['photo']);
-
-    // Étape 6 - Vérifier que la catégorie est valide
+    // Étape 5 - Vérifier que la catégorie est valide
     $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
     if (!in_array($data['categorie'], $categoriesValides)) {
       return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
     }
-    // Étape 6.1 - Mise à jour la catégorie
+
+    // Étape 6 - Créer le plat
+    $plat = new Plat();
+    $plat->setTitrePlat($data['titre_plat']);
+    $plat->setPhoto($data['photo']);
     $plat->setCategorie($data['categorie']);
 
     // Étape 7 - Associer les allergènes si fournis
@@ -210,14 +239,17 @@ final class PlatController extends BaseController
     return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
   }
 
-  // Étape 2 - Récupérer les données JSON
-  $data = json_decode($request->getContent(), true);
-
-  // Étape 3 - Chercher le plat à modifier
+  // Étape 2 - Chercher le plat à modifier
   $plat = $platRepository->find($id);
   if (!$plat) {
     return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
   }
+
+  // Étape 3 - Récupérer les données JSON
+  $data = json_decode($request->getContent(), true);
+  if (!is_array($data)) {
+    return $this->json(['status'=>'Erreur','message'=>'JSON invalide'],400);
+  } 
 
   // Étape 4 - Mettre à jour le titre si fourni
   if (isset($data['titre_plat'])) {
@@ -249,11 +281,12 @@ final class PlatController extends BaseController
       $plat->removeAllergene($allergeneExistant);
     }
     foreach ($data['allergenes'] as $allergeneId) {
+      $allergeneId = (int)$allergeneId;
+      if ($allergeneId <= 0) continue;
       $allergene = $allergeneRepository->find($allergeneId);
-      if (!$allergene) {
-        return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
+      if ($allergene) {
+        $plat->addAllergene($allergene);
       }
-      $plat->addAllergene($allergene);
     }
   }
 
@@ -290,12 +323,13 @@ final class PlatController extends BaseController
     if (!$plat) {
       return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
     }
+
     // Étape 3 - Protection du plat à supprimer
     if ($plat->getMenus()->count() > 0) {
-        return $this->json([
-            'status' => 'Erreur',
-            'message' => 'Impossible de supprimer ce plat car il est utilisé dans un menu'
-        ], 409);
+      return $this->json([
+        'status' => 'Erreur',
+        'message' => 'Impossible de supprimer ce plat car il est utilisé dans un menu'
+      ], 409);
     }
     // Étape 4 - Supprimer le plat
     $em->remove($plat);
@@ -304,5 +338,7 @@ final class PlatController extends BaseController
     // Étape 5 - Retourner une confirmation
     return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
   }
+
+  
 }
 

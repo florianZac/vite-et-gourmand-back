@@ -74,8 +74,25 @@ final class ClientController extends BaseController
 			return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
 		}
 
-		// Étape 4 - Retourne ses données en JSON
-		return $this->json($utilisateur);
+		// Étape 4 - Formater les données utilisateur
+		$data = [
+			'id' => $utilisateur->getId(),
+			'nom' => $utilisateur->getNom(),
+			'prenom' => $utilisateur->getPrenom(),
+			'email' => $utilisateur->getEmail(),
+			'telephone' => $utilisateur->getTelephone(),
+			'roles' => $utilisateur->getRoles(),
+			'adresse' => $utilisateur->getAdresse(),
+			'ville' => $utilisateur->getVille(),
+			'code_postal' => $utilisateur->getCodePostal()
+		];
+
+		// Étape 5 - Retour JSON
+		return $this->json([
+      'status' => 'Succès',
+      'utilisateur' => $data
+		]);
+
 	}
 
 	#[Route('/profil', name: 'api_client_update_profil', methods: ['PUT'])]
@@ -293,8 +310,35 @@ final class ClientController extends BaseController
 		// Étape 4 - Récupère ses commandes via le repository
 		$commandes = $commandeRepository->findByUtilisateur($utilisateur);
 
-		// Étape 5 - Retourne les commandes en JSON
-			return $this->json(['status' => 'Succès', 'commandes' => $commandes]);
+    // Étape 5 - Formater les commandes
+    $data = [];
+    foreach ($commandes as $commande) {
+      $data[] = [
+        'id' => $commande->getId(),
+        'numero_commande' => $commande->getNumeroCommande(),
+        'date_commande' => $commande->getDateCommande()?->format('Y-m-d H:i:s'),
+        'date_prestation' => $commande->getDatePrestation()?->format('Y-m-d'),
+        'heure_livraison' => $commande->getHeureLivraison()?->format('H:i'),
+        'statut' => $commande->getStatut(),
+        'nombre_personne' => $commande->getNombrePersonne(),
+        'prix_menu' => $commande->getPrixMenu(),
+        'prix_livraison' => $commande->getPrixLivraison(),
+        'distance_km' => $commande->getDistanceKm(),
+        'etat_materiel' => $commande->getEtatMateriel(),
+
+        'menu' => [
+            'id' => $commande->getMenu()?->getId()
+        ]
+      ];
+    }
+
+    // Étape 6 - Retour JSON
+    return $this->json([
+      'status' => 'Succès',
+      'total' => count($data),
+      'commandes' => $data
+    ]);
+
 	}
 
 	#[Route('/commandes/{id}', name: 'api_client_commande_modifier', methods: ['PUT'])]
@@ -707,13 +751,30 @@ final class ClientController extends BaseController
 			['id' => 'DESC']
 		);
 
-		// Étape 4 - Retourner les avis en JSON
-		return $this->json([
-			'status' => 'Succès',
-			'total'  => count($avis),
-			'avis'   => $avis
-		]);
-	}
+    // Étape 4 - Formatter les avis
+    $data = [];
+
+    foreach ($avis as $unAvis) {
+      $data[] = [
+        'id' => $unAvis->getId(),
+        'note' => $unAvis->getNote(),
+        'description' => $unAvis->getDescription(),
+        'statut' => $unAvis->getStatut(),
+        'date' => $unAvis->getDate()?->format('Y-m-d H:i:s'),
+
+        'commande' => [
+            'id' => $unAvis->getCommande()?->getId()
+        ]
+      ];
+    }
+
+    // Étape 5 - Retour JSON
+    return $this->json([
+      'status' => 'Succès',
+      'total' => count($data),
+      'avis' => $data
+    ]);
+}
 
 	#[Route('/commandes/{id}/avis', name: 'api_client_avis', methods: ['POST'])]
 	#[OA\Post(
