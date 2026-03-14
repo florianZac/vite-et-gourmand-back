@@ -88,9 +88,27 @@ final class AdminController extends AbstractController
 
     // Étape 2 - Récupérer tous les utilisateurs
     $utilisateurs = $utilisateurRepository->findAll();
-      
-    // Étape 3 - Retourner la liste des utilisateurs en JSON
-    return $this->json($utilisateurs);
+
+    // Étape 3 - Formater les données pour éviter la référence circulaire
+    $data = [];
+    foreach ($utilisateurs as $u) {
+        $data[] = [
+            'id' => $u->getId(),
+            'nom' => $u->getNom(),
+            'prenom' => $u->getPrenom(),
+            'email' => $u->getEmail(),
+            'telephone' => $u->getTelephone(),
+            'pays' => $u->getPays(),
+            'ville' => $u->getVille(),
+            'adresse_postale' => $u->getAdressePostale(),
+            'code_postal' => $u->getCodePostal(),
+            'statut_compte' => $u->getStatutCompte(),
+            'role' => $u->getRole()?->getLibelle(),
+        ];
+    }
+
+    // Étape 4 - Retourner la liste en JSON
+    return $this->json($data);
   }
 
   #[Route('/utilisateurs/{id}', name: 'api_utilisateur_show', methods: ['GET'])]
@@ -117,9 +135,21 @@ final class AdminController extends AbstractController
     if (!$utilisateur) {
       return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non trouvé'], 404);
     }
-      
-    // Étape 3 - Si l'utilisateur est trouvé, on le retourne en JSON
-    return $this->json($utilisateur);
+
+    // Étape 3 - Formater les données pour éviter la référence circulaire
+    return $this->json([
+        'id' => $utilisateur->getId(),
+        'nom' => $utilisateur->getNom(),
+        'prenom' => $utilisateur->getPrenom(),
+        'email' => $utilisateur->getEmail(),
+        'telephone' => $utilisateur->getTelephone(),
+        'pays' => $utilisateur->getPays(),
+        'ville' => $utilisateur->getVille(),
+        'adresse_postale' => $utilisateur->getAdressePostale(),
+        'code_postal' => $utilisateur->getCodePostal(),
+        'statut_compte' => $utilisateur->getStatutCompte(),
+        'role' => $utilisateur->getRole()?->getLibelle(),
+    ]);
   }
 
   #[Route('/utilisateurs/{id}', name: 'api_utilisateur_delete', methods: ['DELETE'])]
@@ -727,13 +757,29 @@ final class AdminController extends AbstractController
    */
   #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
   public function getAllAvis(AvisRepository $avisRepository): JsonResponse
-  {
+{
+    // Étape 1 — récupere tous les avis des clients
     $avis = $avisRepository->findAll();
 
+    // Étape 2 - Formater les données pour éviter la référence circulaire
+    $data = [];
+    foreach ($avis as $a) {
+        $data[] = [
+            'id' => $a->getId(),
+            'note' => $a->getNote(),
+            'description' => $a->getDescription(),
+            'statut' => $a->getStatut(),
+            'utilisateur_id' => $a->getUtilisateur()?->getId(),
+            'utilisateur_nom' => $a->getUtilisateur()?->getNom(),
+            'commande_id' => $a->getCommande()?->getId(),
+        ];
+    }
+    
+    // Étape 3 - Retourne les données correctement formatée.
     return $this->json([
-      'success' => true,
-      'data' => $avis,
-      'count' => \count($avis),
+        'success' => true,
+        'data' => $data,
+        'count' => count($data),
     ]);
   }
 
