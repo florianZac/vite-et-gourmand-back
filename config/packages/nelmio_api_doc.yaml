@@ -52,9 +52,15 @@ nelmio_api_doc:
                 - ^/api/login
                 - ^/api/forgot-password
                 - ^/api/reset-password
+                - ^/api/client
+                - ^/api/employe
+                - ^/api/admin
+                - ^/api/me
+                - ^/api/commandes
                 - ^/geocode
                 - ^/distance
-                - ^/delivery-cost
+                - ^/delivery-cost    
+
 
         public:
             path_patterns:
@@ -68,16 +74,10 @@ nelmio_api_doc:
                 - ^/api/contact
                 - ^/api/register
                 - ^/api/login
-                - ^/api/forgot-password
-                - ^/api/reset-password
-                - ^/api/client
-                - ^/api/employe
-                - ^/api/admin
                 - ^/api/me
                 - ^/api/commandes
                 - ^/geocode
-                - ^/distance
-                - ^/delivery-cost    
+                - ^/distance  
 
         client:
             path_patterns:
