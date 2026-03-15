@@ -56,7 +56,6 @@ final class ClientController extends BaseController
 	 * @param '' auncun parametre requis
 	 * @return JsonResponse une réponse JSON avec les données de son profil
 	 */
-	#[Route('/profil', name: 'api_client_profil', methods: ['GET'])]
 	// Récupère les données du profil du client connecté
 	public function getProfil(): JsonResponse
 	{
@@ -74,17 +73,19 @@ final class ClientController extends BaseController
 			return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
 		}
 
-		// Étape 4 - Formater les données utilisateur
+		// Étape 4 - Formater les données utilisateur pour éviter la référence circulaire
 		$data = [
 			'id' => $utilisateur->getId(),
 			'nom' => $utilisateur->getNom(),
 			'prenom' => $utilisateur->getPrenom(),
 			'email' => $utilisateur->getEmail(),
 			'telephone' => $utilisateur->getTelephone(),
-			'roles' => $utilisateur->getRoles(),
-			'adresse' => $utilisateur->getAdresse(),
+			'role' => $utilisateur->getRole()?->getLibelle(),
+			'adresse_postale' => $utilisateur->getAdressePostale(),
 			'ville' => $utilisateur->getVille(),
-			'code_postal' => $utilisateur->getCodePostal()
+			'code_postal' => $utilisateur->getCodePostal(),
+			'pays' => $utilisateur->getPays(),
+			'statut_compte' => $utilisateur->getStatutCompte(),
 		];
 
 		// Étape 5 - Retour JSON
@@ -92,7 +93,6 @@ final class ClientController extends BaseController
       'status' => 'Succès',
       'utilisateur' => $data
 		]);
-
 	}
 
 	#[Route('/profil', name: 'api_client_update_profil', methods: ['PUT'])]
@@ -125,7 +125,6 @@ final class ClientController extends BaseController
 	/**
 	 * @description Met à jour les informations du profil du client connecté
 	 */
-	#[Route('/profil', name: 'api_client_update_profil', methods: ['PUT'])]
 	public function updateUserById(
 		Request $request,
 		EntityManagerInterface $em,
@@ -233,7 +232,6 @@ final class ClientController extends BaseController
 	/**
 	 * @description Demande de désactivation du compte client et envois d'un mail à l'admin
 	 */
-	#[Route('/compte/desactivation', name: 'api_client_compte_desactivation', methods: ['POST'])]
 	public function demandeDesactivation(EntityManagerInterface $em, MailerService $mailerService): JsonResponse
 	{
 		// Étape 1 - Vérifier le rôle CLIENT
@@ -282,7 +280,7 @@ final class ClientController extends BaseController
 	#[Route('/commandes', name: 'api_client_commandes', methods: ['GET'])]
 	#[OA\Get(
 		summary: 'Liste des commandes du client',
-		description: 'Retourne toutes les commandes passées par le client connecté.'
+		description: 'Retourne toutes les commandes passées par le client connecté avec le titre du menu, la réduction appliquée et l\'avis si existant.'
 	)]
 	#[OA\Tag(name: 'Client - Commandes')]
 	#[OA\Response(response: 200, description: 'Liste des commandes retournée')]
@@ -290,9 +288,9 @@ final class ClientController extends BaseController
 	#[OA\Response(response: 403, description: 'Accès refusé')]
 	/**
 	 * @description Retourne la liste des commandes du client connecté
+	 * Inclut : titre du menu, montant de la réduction, avis si existant
 	 */
-	#[Route('/commandes', name: 'api_client_commandes', methods: ['GET'])]
-	public function getCommandes(CommandeRepository $commandeRepository): JsonResponse
+	public function getCommandes(CommandeRepository $commandeRepository, AvisRepository $avisRepository): JsonResponse
 	{
 		// Étape 1 - Vérifie le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
@@ -310,35 +308,54 @@ final class ClientController extends BaseController
 		// Étape 4 - Récupère ses commandes via le repository
 		$commandes = $commandeRepository->findByUtilisateur($utilisateur);
 
-    // Étape 5 - Formater les commandes
-    $data = [];
-    foreach ($commandes as $commande) {
-      $data[] = [
-        'id' => $commande->getId(),
-        'numero_commande' => $commande->getNumeroCommande(),
-        'date_commande' => $commande->getDateCommande()?->format('Y-m-d H:i:s'),
-        'date_prestation' => $commande->getDatePrestation()?->format('Y-m-d'),
-        'heure_livraison' => $commande->getHeureLivraison()?->format('H:i'),
-        'statut' => $commande->getStatut(),
-        'nombre_personne' => $commande->getNombrePersonne(),
-        'prix_menu' => $commande->getPrixMenu(),
-        'prix_livraison' => $commande->getPrixLivraison(),
-        'distance_km' => $commande->getDistanceKm(),
-        'etat_materiel' => $commande->getEtatMateriel(),
+		// Étape 5 - Formater les commandes pour éviter la référence circulaire
+		$data = [];
+		foreach ($commandes as $commande) {
 
-        'menu' => [
-            'id' => $commande->getMenu()?->getId()
-        ]
-      ];
-    }
+			// Calcul de la réduction (prix sans réduction - prix avec réduction appliquée)
+			// Si le prix_menu est inférieur au prix théorique, c'est qu'une réduction -10% a été appliquée
+			$menu = $commande->getMenu();
+			$prixSansReduction = $menu ? $menu->getPrixParPersonne() * $commande->getNombrePersonne() : 0;
+			$reductionMontant = round($prixSansReduction - $commande->getPrixMenu(), 2);
 
-    // Étape 6 - Retour JSON
-    return $this->json([
-      'status' => 'Succès',
-      'total' => count($data),
-      'commandes' => $data
-    ]);
+			// Chercher si un avis existe pour cette commande
+			$avisExistant = $avisRepository->findOneBy([
+				'commande' => $commande,
+				'utilisateur' => $utilisateur
+			]);
+			$avisData = null;
+			if ($avisExistant) {
+				$avisData = [
+					'id' => $avisExistant->getId(),
+					'note' => $avisExistant->getNote(),
+					'statut' => $avisExistant->getStatut(),
+				];
+			}
 
+			$data[] = [
+				'id' => $commande->getId(),
+				'numero_commande' => $commande->getNumeroCommande(),
+				'date_commande' => $commande->getDateCommande()?->format('d/m/Y H:i'),
+				'date_prestation' => $commande->getDatePrestation()?->format('d/m/Y'),
+				'heure_livraison' => $commande->getHeureLivraison()?->format('H:i'),
+				'statut' => $commande->getStatut(),
+				'nombre_personne' => $commande->getNombrePersonne(),
+				'prix_menu' => $commande->getPrixMenu(),
+				'prix_livraison' => $commande->getPrixLivraison(),
+				'distance_km' => $commande->getDistanceKm(),
+				'etat_materiel' => $commande->getEtatMateriel(),
+				'menu_titre' => $commande->getMenu()?->getTitre(),
+				'reduction_montant' => $reductionMontant > 0 ? $reductionMontant : 0,
+				'avis' => $avisData,
+			];
+		}
+
+		// Étape 6 - Retour JSON
+		return $this->json([
+			'status' => 'Succès',
+			'total' => count($data),
+			'commandes' => $data
+		]);
 	}
 
 	#[Route('/commandes/{id}', name: 'api_client_commande_modifier', methods: ['PUT'])]
@@ -384,7 +401,6 @@ final class ClientController extends BaseController
 	 * @param EntityManagerInterface $em L'EntityManager
 	 * @return JsonResponse
 	 */
-	#[Route('/commandes/{id}', name: 'api_client_commande_modifier', methods: ['PUT'])]
 	public function modifierCommande(
 		int $id,
 		Request $request,
@@ -520,7 +536,6 @@ final class ClientController extends BaseController
 	 *  - 3 à 7 jours : 50%
 	 *  - < 3 jours   : 0%
 	 */
-	#[Route('/commandes/{id}/annuler', name: 'api_client_commande_annuler', methods: ['POST'])]
 	public function annulerCommande(
 		int $id,
 		Request $request,
@@ -660,7 +675,6 @@ final class ClientController extends BaseController
 	 * @param SuiviCommandeRepository $suiviCommandeRepository les methodes de suivis de commandes
 	 * @return JsonResponse reponse JSON
 	 */
-	#[Route('/commandes/{id}/suivi', name: 'api_client_commande_suivi', methods: ['GET'])]
 	public function getSuiviCommande(
 		int $id,
 		CommandeRepository $commandeRepository,
@@ -697,7 +711,7 @@ final class ClientController extends BaseController
 			['date_statut' => 'ASC']
 		);
 
-		// Étape 7 - Formater les données
+		// Étape 7 - Formater les données pour éviter la référence circulaire
 		$suivisFormates = [];
 		foreach ($suivis as $suivi) {
 			$suivisFormates[] = [
@@ -731,7 +745,6 @@ final class ClientController extends BaseController
 	/**
 	 * @description Afficher la liste des avis du client connecté, triés du plus récent au plus ancien
 	 */
-	#[Route('/avis', name: 'api_client_avis_list', methods: ['GET'])]
 	public function getAvis(AvisRepository $avisRepository): JsonResponse
 	{
 		// Étape 1 - Vérifier le rôle CLIENT
@@ -751,30 +764,27 @@ final class ClientController extends BaseController
 			['id' => 'DESC']
 		);
 
-    // Étape 4 - Formatter les avis
-    $data = [];
+		// Étape 4 - Formater les avis pour éviter la référence circulaire
+		$data = [];
+		foreach ($avis as $unAvis) {
+			$data[] = [
+				'id' => $unAvis->getId(),
+				'note' => $unAvis->getNote(),
+				'description' => $unAvis->getDescription(),
+				'statut' => $unAvis->getStatut(),
+				'date' => $unAvis->getDate()?->format('d/m/Y H:i:s'),
+				'commande_id' => $unAvis->getCommande()?->getId(),
+				'commande_numero' => $unAvis->getCommande()?->getNumeroCommande(),
+			];
+		}
 
-    foreach ($avis as $unAvis) {
-      $data[] = [
-        'id' => $unAvis->getId(),
-        'note' => $unAvis->getNote(),
-        'description' => $unAvis->getDescription(),
-        'statut' => $unAvis->getStatut(),
-        'date' => $unAvis->getDate()?->format('Y-m-d H:i:s'),
-
-        'commande' => [
-            'id' => $unAvis->getCommande()?->getId()
-        ]
-      ];
-    }
-
-    // Étape 5 - Retour JSON
-    return $this->json([
-      'status' => 'Succès',
-      'total' => count($data),
-      'avis' => $data
-    ]);
-}
+		// Étape 5 - Retour JSON
+		return $this->json([
+			'status' => 'Succès',
+			'total' => count($data),
+			'avis' => $data
+		]);
+	}
 
 	#[Route('/commandes/{id}/avis', name: 'api_client_avis', methods: ['POST'])]
 	#[OA\Post(
@@ -801,7 +811,6 @@ final class ClientController extends BaseController
 	/**
 	 * @description Permettre à un client de poster un avis sur une commande au statut "Terminée"
 	 */
-	#[Route('/commandes/{id}/avis', name: 'api_client_avis', methods: ['POST'])]
 	public function createAvis(
 		int $id,
 		Request $request,
