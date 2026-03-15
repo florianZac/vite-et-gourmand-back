@@ -28,12 +28,13 @@ use OpenApi\Attributes as OA;
  *  1. getProfil             : Retourne les informations du profil client connecté
  *  2. updateUserById        : Met à jour les informations d'un client par son id
  *  3. demandeDesactivation  : Demande de désactivation du compte client et envois d'un mail a l'admin
- *  4. getCommandes          : Retourne la liste de ses commandes
- *  5. modifierCommande      : Modifier une commande en statut "En attente"
- *  6. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
- *  7. getSuiviCommande      : Afficher le suivis de commande du client
- *  8. getAvis               : Afficher la liste des avis d'un client connecté
- *  9. createAvis            : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
+ *  4. deleteAccount         : Supprime le compte du client avec toutes ces commandes et ces avis.
+ *  5. getCommandes          : Retourne la liste de ses commandes
+ *  6. modifierCommande      : Modifier une commande en statut "En attente"
+ *  7. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
+ *  8. getSuiviCommande      : Afficher le suivis de commande du client
+ *  9. getAvis               : Afficher la liste des avis d'un client connecté
+ *  10. createAvis           : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
  */
 #[Route('/api/client')]
 final class ClientController extends BaseController
@@ -272,6 +273,64 @@ final class ClientController extends BaseController
 			'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
 		]);
 	}
+
+
+  #[Route('/profil', name: 'api_client_delete_profil', methods: ['DELETE'])]
+  #[OA\Delete(
+    summary: 'Supprimer son compte',
+    description: 'Le client connecté supprime définitivement son propre compte ainsi que toutes ses commandes et avis. Cette action est irréversible.'
+  )]
+  #[OA\Tag(name: 'Client - Profil')]
+  #[OA\Response(response: 200, description: 'Compte supprimé avec succès')]
+  #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  /**
+   * @description Supprime le compte du client connecté ainsi que toutes ses données associées
+   * Ordre de suppression : avis → suivis commande → commandes → utilisateur
+   * Aucun ID dans l'URL : on récupère l'utilisateur depuis le token JWT
+   */
+  public function deleteAccount(
+    EntityManagerInterface $em,
+    CommandeRepository $commandeRepository,
+    AvisRepository $avisRepository,
+    SuiviCommandeRepository $suiviCommandeRepository
+  ): JsonResponse
+  {
+    // Étape 1 - Vérifier le rôle CLIENT
+    if (!$this->isGranted('ROLE_CLIENT')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer l'utilisateur connecté depuis le token JWT
+    $utilisateur = $this->getUser();
+    if (!$utilisateur instanceof Utilisateur) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
+    }
+
+    // Étape 3 - Supprimer les avis de l'utilisateur
+    $avis = $avisRepository->findBy(['utilisateur' => $utilisateur]);
+    foreach ($avis as $unAvis) {
+      $em->remove($unAvis);
+    }
+
+    // Étape 4 - Supprimer les suivis puis les commandes de l'utilisateur
+    $commandes = $commandeRepository->findByUtilisateur($utilisateur);
+    foreach ($commandes as $commande) {
+      // Supprimer les suivis de chaque commande
+      $suivis = $suiviCommandeRepository->findBy(['commande' => $commande]);
+      foreach ($suivis as $suivi) {
+        $em->remove($suivi);
+      }
+      $em->remove($commande);
+    }
+
+    // Étape 5 - Supprimer l'utilisateur
+    $em->remove($utilisateur);
+    $em->flush();
+
+    // Étape 6 - Retourner un message de confirmation
+    return $this->json(['status' => 'Succès', 'message' => 'Votre compte et toutes vos données ont été supprimés']);
+  }
 
 	// =========================================================================
 	// COMMANDE
