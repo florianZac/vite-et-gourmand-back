@@ -386,10 +386,12 @@ final class AuthController extends AbstractController
 
     // Étape 3 - Retourne les infos de l'utilisateur authentifié
     return $this->json([
-      'email' => $utilisateur->getEmail(), // email de l’utilisateur
-      'prenom' => $utilisateur->getPrenom(),
-      'nom'    => $utilisateur->getNom(),
-      'role'  => $utilisateur->getRole()?->getLibelle() ?? 'ROLE_VISITEUR'  // rôle de l’utilisateur
+      'utilisateur' => [
+        'email'  => $utilisateur->getEmail(),
+        'prenom' => $utilisateur->getPrenom(),
+        'nom'    => $utilisateur->getNom(),
+        'role'   => $utilisateur->getRole()?->getLibelle() ?? 'ROLE_VISITEUR',
+      ]
     ]);
   }
 }
