@@ -1290,7 +1290,68 @@ devrait répondre :
   utilisateur
  ----------------------
 
-# 4 Importation des données dans la DDB  
+# 4 Voir les données à l'interieur d'une base de données distante 
+
+4.1 Afficher la table de données
+mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
+
+4.2 Comment voir les éléments d'une table 
+SELECT * FROM utilisateur;
+
+4.3 Comment supprimer les element d'une table données par son id 
+=
+
+4.4 supprimer plusieurs element d'un coup 
+DELETE FROM utilisateur
+WHERE utilisateur_id IN (4 , 5, 6, 7,8,9,10,11,12,13,14,15,16,17,18,19);
+
+4.5 afficher les contraintes liéer à une table donnée
+SELECT
+TABLE_NAME,
+COLUMN_NAME
+FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+WHERE REFERENCED_TABLE_NAME = 'utilisateur';
+
+4.6 Trouve et renvoie les utilisateurs qui n'ont pas de contrainte de clefs avec commande avis et password_reset_token
+SELECT *
+FROM utilisateur
+WHERE utilisateur_id NOT IN (
+    SELECT utilisateur_id FROM password_reset_token
+)
+AND utilisateur_id NOT IN (
+    SELECT utilisateur_id FROM avis
+)
+AND utilisateur_id NOT IN (
+    SELECT utilisateur_id FROM commande
+);
+
+4.7 supprime les utilisateurs qui n'ont pas de contrainte sauf les utilisateurs id
+DELETE FROM utilisateur
+WHERE utilisateur_id NOT IN (
+    SELECT utilisateur_id FROM password_reset_token
+)
+AND utilisateur_id NOT IN (
+    SELECT utilisateur_id FROM avis
+)
+AND utilisateur_id NOT IN (
+    SELECT utilisateur_id FROM commande
+)
+AND utilisateur_id NOT IN (1, 2, 12, 23);
+
+4.8 Comment modifier un code utilisateur
+UPDATE utilisateur
+SET password = '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.';
+
+4.9 Comment cibler les utilisateurs qui ont des commandes
+SELECT u.*
+FROM utilisateur u
+INNER JOIN commande c ON u.utilisateur_id = c.utilisateur_id
+GROUP BY u.utilisateur_id;
+
+4.10 Réinitialiser l’auto-increment (seulement si la table est vide)
+ALTER TABLE utilisateur AUTO_INCREMENT = 1;
+
+# 5 Importation des données dans la DDB  
 
 J'ai créer un fichier dans le docs pour remplir la base de données 
 

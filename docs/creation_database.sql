@@ -31,19 +31,20 @@ INSERT INTO role (libelle) VALUES
 -- ATTENTION : role_id doit correspondre aux IDs auto-générés :
 -- 1 = ROLE_CLIENT, 2 = ROLE_EMPLOYE, 3 = ROLE_ADMIN
 -- creation d'un mdp hacher php bin/console security:hash-password 
--- mdp hashé = 123456
+
+-- mdp hashé = Moncode23+
 INSERT INTO utilisateur
 (nom, prenom, telephone, email, password, pays, ville, adresse_postale, code_postal, statut_compte, role_id)
 VALUES
-('admin', 'admin', '0123456789', 'admin@vite-et-gourmand.fr', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G','France', 'Montpellier', '123 Rue de la Gourmandise', '34400', 'actif', 3),
-('employe', 'employe', '0600000001', 'employe@vite-et-gourmand.fr', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Montpellier', '1 rue de la Fougasse', '34000', 'actif', 2),
-('client', 'client', '0688888888', 'client@gmail.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'LHERM', '1222', '33000', 'actif', 1),
-('Dupont', 'Jean', '0601020304', 'jean.dupont@email.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Paris', '1 rue Exemple', '75001', 'actif', 1),
-('Martin', 'Claire', '0605060708', 'claire.martin@email.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Lyon', '2 rue Exemple', '69001', 'actif', 1),
-('Durand', 'Paul', '0608091011', 'paul.durand@email.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Marseille', '3 rue Exemple', '13001', 'actif', 1),
-('Bernard', 'Sophie', '0612131415', 'sophie.bernard@email.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Toulouse', '4 rue Exemple', '31000', 'actif', 1),
-('Moreau', 'Luc', '0616171819', 'luc.moreau@email.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Nice', '5 rue Exemple', '06000', 'actif', 1),
-('Lefevre', 'Emma', '0620212223', 'emma.lefevre@email.com', '$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G', 'France', 'Bordeaux', '6 rue Exemple', '33000', 'actif', 1);
+('admin', 'admin', '0123456789', 'admin@vite-et-gourmand.fr', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.','France', 'Montpellier', '123 Rue de la Gourmandise', '34400', 'actif', 3),
+('employe', 'employe', '0600000001', 'employe@vite-et-gourmand.fr', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Montpellier', '1 rue de la Fougasse', '34000', 'actif', 2),
+('client', 'client', '0688888888', 'client@gmail.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'LHERM', '1222', '33000', 'actif', 1),
+('Dupont', 'Jean', '0601020304', 'jean.dupont@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Paris', '1 rue Exemple', '75001', 'actif', 1),
+('Martin', 'Claire', '0605060708', 'claire.martin@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Lyon', '2 rue Exemple', '69001', 'actif', 1),
+('Durand', 'Paul', '0608091011', 'paul.durand@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Marseille', '3 rue Exemple', '13001', 'actif', 1),
+('Bernard', 'Sophie', '0612131415', 'sophie.bernard@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Toulouse', '4 rue Exemple', '31000', 'actif', 1),
+('Moreau', 'Luc', '0616171819', 'luc.moreau@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Nice', '5 rue Exemple', '06000', 'actif', 1),
+('Lefevre', 'Emma', '0620212223', 'emma.lefevre@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Bordeaux', '6 rue Exemple', '33000', 'actif', 1);
 
 -- =====================================
 -- REGIMES
