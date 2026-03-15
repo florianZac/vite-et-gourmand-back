@@ -379,15 +379,17 @@ final class AuthController extends AbstractController
     if (!$utilisateur instanceof \App\Entity\Utilisateur) {
       // On renvoie un JSON avec une erreur 401 Unauthorized
       return $this->json([
-          'status' => 'Erreur',
-          'message' => 'Utilisateur non connecté ou JWT mal configuré'
+        'status' => 'Erreur',
+        'message' => 'Utilisateur non connecté ou JWT mal configuré'
       ], 401);
     }
 
     // Étape 3 - Retourne les infos de l'utilisateur authentifié
     return $this->json([
-        'email' => $utilisateur->getEmail(), // email de l’utilisateur
-        'role'  => $utilisateur->getRole()?->getLibelle() ?? 'ROLE_VISITEUR'  // rôle de l’utilisateur
+      'email' => $utilisateur->getEmail(), // email de l’utilisateur
+      'prenom' => $utilisateur->getPrenom(),
+      'nom'    => $utilisateur->getNom(),
+      'role'  => $utilisateur->getRole()?->getLibelle() ?? 'ROLE_VISITEUR'  // rôle de l’utilisateur
     ]);
   }
 }
