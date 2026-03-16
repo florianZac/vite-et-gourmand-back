@@ -417,6 +417,7 @@ final class MenuController extends AbstractController
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
   public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
+    try {
     // Étape 1 - Récupérer tous les menus
     $menus = $menuRepository->findAll();
 
@@ -473,7 +474,15 @@ final class MenuController extends AbstractController
       'total'  => count($menus),
       'menus'  => $result
     ]);
-}
+        } catch (\Throwable $e) {
+        // Retourne l'erreur exacte pour debug
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+  }
   /**
    * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
    * Accessible publiquement sans authentification
