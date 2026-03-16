@@ -417,67 +417,56 @@ final class MenuController extends AbstractController
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
   public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
-    try {
       $menus = $menuRepository->findAll();
-      $result = [];
+    $result = [];
 
-      foreach ($menus ?? [] as $menu) {
+    foreach ($menus as $menu) {
         // Plats
         $platsArray = [];
         foreach ($menu->getPlats() ?? [] as $plat) {
-          $platsArray[] = [
-            'id' => $plat->getId() ?? 0,
-            'titre' => $plat->getTitrePlat() ?? 'N/A',
-            'photo' => $plat->getPhoto() ?? '',
-            'categorie' => $plat->getCategorie() ?? 'Inconnu',
-          ];
+            $platsArray[] = [
+                'id' => $plat->getId() ?? 0,
+                'titre' => $plat->getTitrePlat() ?? 'N/A',
+                'photo' => $plat->getPhoto() ?? '',
+                'categorie' => $plat->getCategorie() ?? 'Inconnu',
+            ];
         }
 
-        // Tags (sécurisé)
+        // Tags
         $tagsArray = [];
         foreach ($menuTagsRepository->findBy(['menu' => $menu]) ?? [] as $menuTag) {
-          if ($menuTag && $menuTag->getTag() !== null) {
             $tagsArray[] = [
-              'id' => $menuTag->getId() ?? 0, // id du MenuTags
-              'libelle' => $menuTag->getTag(), // string
+                'id' => $menuTag->getId() ?? 0,
+                'libelle' => $menuTag->getTag() ?? 'N/A',
             ];
-          }
         }
 
+        // Menu
         $result[] = [
-          'id' => $menu->getId() ?? 0,
-          'titre' => $menu->getTitre() ?? 'N/A',
-          'description' => $menu->getDescription() ?? '',
-          'prix_par_personne' => $menu->getPrixParPersonne() ?? 0,
-          'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
-          'quantite_restante' => $menu->getQuantiteRestante() ?? 0,
-          'theme' => $menu->getTheme() ? [
-              'id' => $menu->getTheme()->getId() ?? 0,
-              'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
-          ] : null,
-          'regime' => $menu->getRegime() ? [
-              'id' => $menu->getRegime()->getId() ?? 0,
-              'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
-          ] : null,
-          'plats' => $platsArray,
-          'tags' => $tagsArray,
+            'id' => $menu->getId() ?? 0,
+            'titre' => $menu->getTitre() ?? 'N/A',
+            'description' => $menu->getDescription() ?? '',
+            'prix_par_personne' => $menu->getPrixParPersonne() ?? 0,
+            'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
+            'quantite_restante' => $menu->getQuantiteRestante() ?? 0,
+            'theme' => $menu->getTheme() ? [
+                'id' => $menu->getTheme()->getId() ?? 0,
+                'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
+            ] : null,
+            'regime' => $menu->getRegime() ? [
+                'id' => $menu->getRegime()->getId() ?? 0,
+                'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
+            ] : null,
+            'plats' => $platsArray,
+            'tags' => $tagsArray,
         ];
-      }
-
-      return $this->json([
-          'status' => 'Succès',
-          'total' => count($menus),
-          'menus' => $result,
-      ]);
-
-    } catch (\Throwable $e) {
-    return $this->json([
-        'status' => 'Erreur',
-        'message' => $e->getMessage(),
-        'class' => get_class($e),
-        'trace' => explode("\n", $e->getTraceAsString())
-    ], 500);
     }
+
+    return $this->json([
+        'status' => 'Succès',
+        'total' => count($menus),
+        'menus' => $result
+    ]);
   }
   /**
    * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
