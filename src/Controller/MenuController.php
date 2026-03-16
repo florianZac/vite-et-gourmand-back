@@ -109,7 +109,7 @@ final class MenuController extends AbstractController
 	 */
 	// Sélectionne un menu par son id
 	// équivalent de SELECT * FROM menu WHERE menu_id = :id
-	#[Route('/menus/{id}', name: 'api_menu_show', methods: ['GET'])]
+	#[Route('/menus/{id<\d+>}', name: 'api_menu_show', methods: ['GET'])]
 	#[OA\Get(summary: 'Détail d\'un menu par ID', description: 'Retourne le détail complet d\'un menu (composition, allergènes, prix, galerie photos). Accessible publiquement.')]
 	#[OA\Tag(name: 'Public - Menus')]
 	#[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
