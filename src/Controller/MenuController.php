@@ -415,47 +415,60 @@ final class MenuController extends AbstractController
 	#[OA\Get(summary: 'Liste de tous les menus', description: 'Retourne tous les menus disponibles avec leurs plats et leurs images. Accessible publiquement.')]
 	#[OA\Tag(name: 'Public - Menus')]
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
-	public function getAllMenus(MenuRepository $menuRepository): JsonResponse
-	{
+  public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
+  {
 		// Étape 1 - Récupérer tous les menus depuis la base
 		$menus = $menuRepository->findAll();
 
-		// Étape 2 - construction d'un tableau JSON structuré pour le front
-		$result = [];
-		foreach ($menus as $menu) {
+    // Étape 2 - Construire le tableau JSON
+    $result = [];
+    foreach ($menus as $menu) {
+      // Plats
       $platsArray = [];
       foreach ($menu->getPlats() as $plat) {
         $platsArray[] = [
-          'id' => $plat->getId(),
-          'titre' => $plat->getTitrePlat(),
-          'photo' => $plat->getPhoto(),
+          'id'        => $plat->getId(),
+          'titre'     => $plat->getTitrePlat(),
+          'photo'     => $plat->getPhoto(),
           'categorie' => $plat->getCategorie()
         ];
       }
 
+      // Tags
+      $tagsArray = [];
+      $tags = $menuTagsRepository->findBy(['menu' => $menu]);
+      foreach ($tags as $menuTag) {
+          $tagsArray[] = $menuTag->getTag();
+      }
+
+      // Menu final
       $result[] = [
-        'id' => $menu->getId(),
-        'titre' => $menu->getTitre(),
-        'description' => $menu->getDescription(),
-        'prix_par_personne' => $menu->getPrixParPersonne(),
-        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum(),
-        'quantite_restante' => $menu->getQuantiteRestante(),
-        'theme' => $menu->getTheme() ? [
-            'id' => $menu->getTheme()->getId(),
+        'id'                     => $menu->getId(),
+        'titre'                  => $menu->getTitre(),
+        'description'            => $menu->getDescription(),
+        'prix_par_personne'      => $menu->getPrixParPersonne(),
+        'nombre_personne_minimum'=> $menu->getNombrePersonneMinimum(),
+        'quantite_restante'      => $menu->getQuantiteRestante(),
+        'theme'                  => $menu->getTheme() ? [
+            'id'    => $menu->getTheme()->getId(),
             'titre' => $menu->getTheme()->getLibelle()
         ] : null,
-        'regime' => $menu->getRegime() ? [
-            'id' => $menu->getRegime()->getId(),
-            'libelle' => $menu->getRegime()->getLibelle()
+        'regime'                 => $menu->getRegime() ? [
+            'id'     => $menu->getRegime()->getId(),
+            'libelle'=> $menu->getRegime()->getLibelle()
         ] : null,
-
-        'plats' => $platsArray
+        'plats'                  => $platsArray,
+        'tags'                   => $tagsArray
       ];
-		}
+    }
 
-		// Étape 3 - Retourner la réponse JSON
-		return $this->json(['status' => 'Succès', 'total' => count($menus), 'menus' => $result]);
-	}
+    // Étape 3 - Retour JSON
+    return $this->json([
+      'status' => 'Succès',
+      'total'  => count($menus),
+      'menus'  => $result
+    ]);
+  }
 
   /**
    * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
@@ -467,14 +480,14 @@ final class MenuController extends AbstractController
    */
   #[Route('/menus/{id}/details', name: 'api_menu_public_show', methods: ['GET'])]
   #[OA\Get(
-    summary: 'Détail d\'un menu par ID',
-    description: 'Retourne le détail complet d\'un menu : plats, images, catégorie, prix, quantité. Accessible publiquement.'
+      summary: 'Détail complet d’un menu par ID',
+      description: 'Retourne le détail complet d’un menu : plats, images, catégories, allergènes, tags, prix, quantité. Accessible publiquement.'
   )]
   #[OA\Tag(name: 'Public - Menus')]
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
   #[OA\Response(response: 200, description: 'Menu trouvé')]
   #[OA\Response(response: 404, description: 'Menu non trouvé')]
-  public function getMenuById(int $id, MenuRepository $menuRepository): JsonResponse
+  public function getMenuById(int $id, MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
     // Étape 1 - Chercher le menu par son ID
     $menu = $menuRepository->find($id);
@@ -485,15 +498,31 @@ final class MenuController extends AbstractController
     // Étape 2 - Construire le tableau des plats avec images et catégories
     $platsArray = [];
     foreach ($menu->getPlats() as $plat) {
+      $allergenesArray = [];
+      foreach ($plat->getAllergenes() as $allergene) {
+        $allergenesArray[] = [
+          'id'      => $allergene->getId(),
+          'libelle' => $allergene->getLibelle()
+        ];
+      }
+
       $platsArray[] = [
-        'plat_id'  => $plat->getId(),
-        'titre'    => $plat->getTitrePlat(),
-        'image'    => $plat->getPhoto(),       // image unique du plat
-        'categorie'=> $plat->getCategorie(),   // entrée / plat / dessert
+        'plat_id'   => $plat->getId(),
+        'titre'     => $plat->getTitrePlat(),
+        'image'     => $plat->getPhoto(),
+        'categorie' => $plat->getCategorie(),
+        'allergenes'=> $allergenesArray
       ];
     }
 
-    // Étape 3 - Construire le résultat final
+    // Étape 3 - Récupérer les tags du menu
+    $tagsArray = [];
+    $tags = $menuTagsRepository->findBy(['menu' => $menu]);
+    foreach ($tags as $menuTag) {
+      $tagsArray[] = $menuTag->getTag();
+    }
+
+    // Étape 4 - Construire le résultat final
     $result = [
       'id'                     => $menu->getId(),
       'titre'                  => $menu->getTitre(),
@@ -509,10 +538,11 @@ final class MenuController extends AbstractController
         'id'     => $menu->getRegime()->getId(),
         'libelle'=> $menu->getRegime()->getLibelle()
       ] : null,
-      'plats'                  => $platsArray
+      'plats'                  => $platsArray,
+      'tags'                   => $tagsArray
     ];
 
-    // Étape 4 - Retourner la réponse JSON
+    // Étape 5 - Retourner la réponse JSON
     return $this->json(['status' => 'Succès', 'menu' => $result]);
   }
 }
