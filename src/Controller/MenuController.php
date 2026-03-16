@@ -471,12 +471,12 @@ final class MenuController extends AbstractController
       ]);
 
     } catch (\Throwable $e) {
-        // DEBUG : affiche l'erreur réelle pour identifier le problème exact
-        return $this->json([
-            'status' => 'Erreur',
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ], 500);
+    return $this->json([
+        'status' => 'Erreur',
+        'message' => $e->getMessage(),
+        'class' => get_class($e),
+        'trace' => explode("\n", $e->getTraceAsString())
+    ], 500);
     }
   }
   /**
