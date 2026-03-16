@@ -429,9 +429,9 @@ final class MenuController extends AbstractController
       foreach ($menu->getPlats() as $plat) {
         $platsArray[] = [
           'id'        => $plat->getId(),
-          'titre'     => $plat->getTitrePlat(),
-          'photo'     => $plat->getPhoto(),
-          'categorie' => $plat->getCategorie(),
+          'titre'     => $plat->getTitrePlat() ?? 'N/A',
+          'photo'     => $plat->getPhoto() ?? '',
+          'categorie' => $plat->getCategorie() ?? 'Inconnu',
         ];
       }
 
@@ -450,21 +450,21 @@ final class MenuController extends AbstractController
       // Menu final
      $result[] = [
         'id'                      => $menu->getId(),
-        'titre'                   => $menu->getTitre(),
-        'description'             => $menu->getDescription(),
-        'prix_par_personne'       => $menu->getPrixParPersonne(),
-        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum(),
-        'quantite_restante'       => $menu->getQuantiteRestante(),
-        'theme'                   => $menu->getTheme() ? [
+        'titre'                   => $menu->getTitre() ?? 'N/A',
+        'description'             => $menu->getDescription() ?? '',
+        'prix_par_personne'       => $menu->getPrixParPersonne() ?? 0,
+        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
+        'quantite_restante'       => $menu->getQuantiteRestante() ?? 0,
+        'theme' => $menu->getTheme() ? [
           'id'    => $menu->getTheme()->getId(),
-          'titre' => $menu->getTheme()->getLibelle()
+          'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
         ] : null,
-        'regime'                  => $menu->getRegime() ? [
+        'regime' => $menu->getRegime() ? [
           'id'      => $menu->getRegime()->getId(),
-          'libelle' => $menu->getRegime()->getLibelle()
+          'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
         ] : null,
         'plats' => $platsArray,
-        'tags'  => $tagsArray
+        'tags'  => $tagsArray,
       ];
     }
 
