@@ -8,6 +8,7 @@ use App\Repository\MenuRepository;
 use App\Repository\PlatRepository;
 use App\Repository\RegimeRepository;
 use App\Repository\ThemeRepository;
+use App\Repository\MenuTagsRepository;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -50,7 +51,7 @@ final class MenuController extends AbstractController
 	#[OA\Get(summary: 'Liste de tous les menus', description: 'Retourne la liste complète des menus disponibles. Accessible publiquement sans authentification.')]
 	#[OA\Tag(name: 'Public - Menus')]
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
-	public function index(MenuRepository $menuRepository): JsonResponse
+	public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
 	{
     // Étape 1 - Récupère tous les menus depuis la base de données
     $menus = $menuRepository->findAll();
@@ -66,6 +67,12 @@ final class MenuController extends AbstractController
           'categorie' => $plat->getCategorie(),
           'photo' => $plat->getPhoto(),
         ];
+        // Récupère les tags associés au menu
+        $tagsArray = [];
+        $tags = $menuTagsRepository->findBy(['menu' => $menu]);
+        foreach ($tags as $menuTag) {
+          $tagsArray[] = $menuTag->getTag();
+        }
       }
 
       $result[] = [
@@ -83,7 +90,8 @@ final class MenuController extends AbstractController
           'id' => $menu->getRegime()->getId(),
           'libelle' => $menu->getRegime()->getLibelle()
         ] : null,
-        'plats' => $platsArray
+        'plats' => $platsArray,
+        'tags' => $tagsArray,
       ];
     }
 
