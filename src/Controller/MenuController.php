@@ -417,69 +417,63 @@ final class MenuController extends AbstractController
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
   public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
-    try {
-    // Étape 1 - Récupérer tous les menus
-    $menus = $menuRepository->findAll();
+  try {
+        $menus = $menuRepository->findAll();
+        $result = [];
 
-    // Étape 2 - Construire le tableau JSON
-    $result = [];
-    foreach ($menus as $menu) {
-        // Plats
-      $platsArray = [];
-      foreach ($menu->getPlats() as $plat) {
-        $platsArray[] = [
-          'id'        => $plat->getId(),
-          'titre'     => $plat->getTitrePlat() ?? 'N/A',
-          'photo'     => $plat->getPhoto() ?? '',
-          'categorie' => $plat->getCategorie() ?? 'Inconnu',
-        ];
-      }
+        foreach ($menus ?? [] as $menu) {
+            $platsArray = [];
+            foreach ($menu->getPlats() ?? [] as $plat) {
+                $platsArray[] = [
+                    'id' => $plat->getId() ?? 0,
+                    'titre' => $plat->getTitrePlat() ?? 'N/A',
+                    'photo' => $plat->getPhoto() ?? '',
+                    'categorie' => $plat->getCategorie() ?? 'Inconnu',
+                ];
+            }
 
-      // Tags sécurisés
-      $tagsArray = [];
-      $tags = $menuTagsRepository->findBy(['menu' => $menu]);
-      foreach ($tags as $menuTag) {
-        if ($menuTag->getTag()) {
-          $tagsArray[] = [
-            'id' => $menuTag->getId(),       // ID du MenuTag
-            'libelle' => $menuTag->getTag() // le string réel
-          ];
+            $tagsArray = [];
+            foreach ($menuTagsRepository->findBy(['menu' => $menu]) ?? [] as $menuTag) {
+                if ($menuTag && $menuTag->getTag() !== null) {
+                    $tagsArray[] = [
+                        'id' => $menuTag->getId() ?? 0,
+                        'libelle' => $menuTag->getTag(),
+                    ];
+                }
+            }
+
+            $result[] = [
+                'id' => $menu->getId() ?? 0,
+                'titre' => $menu->getTitre() ?? 'N/A',
+                'description' => $menu->getDescription() ?? '',
+                'prix_par_personne' => $menu->getPrixParPersonne() ?? 0,
+                'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
+                'quantite_restante' => $menu->getQuantiteRestante() ?? 0,
+                'theme' => $menu->getTheme() ? [
+                    'id' => $menu->getTheme()->getId() ?? 0,
+                    'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
+                ] : null,
+                'regime' => $menu->getRegime() ? [
+                    'id' => $menu->getRegime()->getId() ?? 0,
+                    'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
+                ] : null,
+                'plats' => $platsArray,
+                'tags' => $tagsArray,
+            ];
         }
-      }
 
-      // Menu final
-     $result[] = [
-        'id'                      => $menu->getId(),
-        'titre'                   => $menu->getTitre() ?? 'N/A',
-        'description'             => $menu->getDescription() ?? '',
-        'prix_par_personne'       => $menu->getPrixParPersonne() ?? 0,
-        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
-        'quantite_restante'       => $menu->getQuantiteRestante() ?? 0,
-        'theme' => $menu->getTheme() ? [
-          'id'    => $menu->getTheme()->getId(),
-          'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
-        ] : null,
-        'regime' => $menu->getRegime() ? [
-          'id'      => $menu->getRegime()->getId(),
-          'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
-        ] : null,
-        'plats' => $platsArray,
-        'tags'  => $tagsArray,
-      ];
-    }
+        return $this->json([
+            'status' => 'Succès',
+            'total' => count($menus),
+            'menus' => $result,
+        ]);
 
-    // Étape 3 - Retour JSON
-    return $this->json([
-      'status' => 'Succès',
-      'total'  => count($menus),
-      'menus'  => $result
-    ]);
-        } catch (\Throwable $e) {
-        // Retourne l'erreur exacte pour debug
+    } catch (\Throwable $e) {
+        // Affiche l'erreur réelle pour debug
         return $this->json([
             'status' => 'Erreur',
             'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
         ], 500);
     }
   }
