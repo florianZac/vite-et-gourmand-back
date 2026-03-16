@@ -67,12 +67,12 @@ final class MenuController extends AbstractController
           'categorie' => $plat->getCategorie(),
           'photo' => $plat->getPhoto(),
         ];
-        // Récupère les tags associés au menu
-        $tagsArray = [];
-        $tags = $menuTagsRepository->findBy(['menu' => $menu]);
-        foreach ($tags as $menuTag) {
+      }
+      // Récupère les tags associés au menu **une seule fois par menu**
+      $tagsArray = [];
+      $tags = $menuTagsRepository->findBy(['menu' => $menu]);
+      foreach ($tags as $menuTag) {
           $tagsArray[] = $menuTag->getTag();
-        }
       }
 
       $result[] = [
