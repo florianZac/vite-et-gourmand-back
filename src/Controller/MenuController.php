@@ -405,75 +405,72 @@ final class MenuController extends AbstractController
   }
 
 	#[Route('/menus/full', name: 'api_menus_public', methods: ['GET'])]
-#[OA\Get(
-    summary: 'Liste de tous les menus',
-    description: 'Retourne tous les menus disponibles avec leurs plats et leurs images. Accessible publiquement.'
-)]
-#[OA\Tag(name: 'Public - Menus')]
-#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
-public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
-{
-    try {
-        $menus = $menuRepository->findAll();
-        $result = [];
+  #[OA\Get(
+      summary: 'Liste de tous les menus',
+      description: 'Retourne tous les menus disponibles avec leurs plats et leurs images. Accessible publiquement.'
+  )]
+  #[OA\Tag(name: 'Public - Menus')]
+  #[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
+  public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
+  {
+    
+    // Étape 1 - Récupérer tous les menus
+    $menus = $menuRepository->findAll();
 
-        foreach ($menus as $menu) {
-            // Plats
-            $platsArray = [];
-            foreach ($menu->getPlats() as $plat) {
-                $platsArray[] = [
-                    'id' => $plat->getId() ?? 0,
-                    'titre' => $plat->getTitrePlat() ?? 'N/A',
-                    'photo' => $plat->getPhoto() ?? '',
-                    'categorie' => $plat->getCategorie() ?? 'Inconnu',
-                ];
-            }
-
-            // Tags
-            $tagsArray = [];
-            foreach ($menuTagsRepository->findBy(['menu' => $menu]) as $menuTag) {
-                if ($menuTag && $menuTag->getTag() !== null) {
-                    $tagsArray[] = [
-                        'id' => $menuTag->getId() ?? 0,
-                        'libelle' => $menuTag->getTag(), // c'est une string, pas un objet
-                    ];
-                }
-            }
-
-            $result[] = [
-                'id' => $menu->getId() ?? 0,
-                'titre' => $menu->getTitre() ?? 'N/A',
-                'description' => $menu->getDescription() ?? '',
-                'prix_par_personne' => $menu->getPrixParPersonne() ?? 0,
-                'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
-                'quantite_restante' => $menu->getQuantiteRestante() ?? 0,
-                'theme' => $menu->getTheme() ? [
-                    'id' => $menu->getTheme()->getId() ?? 0,
-                    'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
-                ] : null,
-                'regime' => $menu->getRegime() ? [
-                    'id' => $menu->getRegime()->getId() ?? 0,
-                    'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
-                ] : null,
-                'plats' => $platsArray,
-                'tags' => $tagsArray,
-            ];
+    // Étape 2  - Récupère tous les menus depuis la base de données
+    $result = [];
+    foreach ($menus as $menu) {
+        // Plats
+        $platsArray = [];
+        foreach ($menu->getPlats() as $plat) {
+          $platsArray[] = [
+            'id' => $plat->getId() ?? 0,
+            'titre' => $plat->getTitrePlat() ?? 'N/A',
+            'photo' => $plat->getPhoto() ?? '',
+            'categorie' => $plat->getCategorie() ?? 'Inconnu',
+          ];
         }
 
-        return $this->json([
-            'status' => 'Succès',
-            'total' => count($menus),
-            'menus' => $result,
-        ]);
-    } catch (\Throwable $e) {
-        // Pour debug côté serveur uniquement, à enlever en prod
-        return $this->json([
-            'status' => 'Erreur',
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ], 500);
+      // Tags
+      $tagsArray = [];
+      foreach ($menuTagsRepository->findBy(['menu' => $menu]) as $menuTag) {
+        if ($menuTag && $menuTag->getTag() !== null) {
+          $tagsArray[] = [
+              'id' => $menuTag->getId() ?? 0,
+              'libelle' => $menuTag->getTag(),
+          ];
+        }
+      }
+
+      // Étape 3  - Formate le résulat de tous les menus
+      $result[] = [
+        'id' => $menu->getId() ?? 0,
+        'titre' => $menu->getTitre() ?? 'N/A',
+        'description' => $menu->getDescription() ?? '',
+        'prix_par_personne' => $menu->getPrixParPersonne() ?? 0,
+        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
+        'quantite_restante' => $menu->getQuantiteRestante() ?? 0,
+        'theme' => $menu->getTheme() ? [
+          'id' => $menu->getTheme()->getId() ?? 0,
+          'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
+        ] : null,
+        'regime' => $menu->getRegime() ? [
+          'id' => $menu->getRegime()->getId() ?? 0,
+          'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
+        ] : null,
+          'plats' => $platsArray,
+          'tags' => $tagsArray,
+      ];
     }
-  }
+
+    // Étape 4  - Retourne le résulat
+    return $this->json([
+        'status' => 'Succès',
+        'total' => count($menus),
+        'menus' => $result,
+      ]);
+  } 
+
   /**
    * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
    * Accessible publiquement sans authentification
