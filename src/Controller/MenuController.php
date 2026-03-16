@@ -115,7 +115,7 @@ final class MenuController extends AbstractController
 	#[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
 	#[OA\Response(response: 200, description: 'Menu trouvé')]
 	#[OA\Response(response: 404, description: 'Menu non trouvé')]
-	public function show(int $id, MenuRepository $menuRepository): JsonResponse
+	public function show(int $id, MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
 	{
     // Étape 1 - Récupère le menu par son id
     $menu = $menuRepository->find($id);
@@ -135,6 +135,12 @@ final class MenuController extends AbstractController
         'photo' => $plat->getPhoto(),
       ];
     }
+    // Récupère les tags associés au menu
+    $tagsArray = [];
+    $tags = $menuTagsRepository->findBy(['menu' => $menu]);
+    foreach ($tags as $menuTag) {
+      $tagsArray[] = $menuTag->getTag();
+    }
 
     $result = [
       'id' => $menu->getId(),
@@ -151,7 +157,8 @@ final class MenuController extends AbstractController
         'id' => $menu->getRegime()->getId(),
         'libelle' => $menu->getRegime()->getLibelle()
       ] : null,
-      'plats' => $platsArray
+      'plats' => $platsArray,
+      'tags' => $tagsArray,
     ];
 
     // Étape 4 - Retourne le menu
