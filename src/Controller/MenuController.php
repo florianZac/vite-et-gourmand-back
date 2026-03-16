@@ -417,48 +417,53 @@ final class MenuController extends AbstractController
 	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
   public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
-		// Étape 1 - Récupérer tous les menus depuis la base
-		$menus = $menuRepository->findAll();
+    // Étape 1 - Récupérer tous les menus
+    $menus = $menuRepository->findAll();
 
     // Étape 2 - Construire le tableau JSON
     $result = [];
     foreach ($menus as $menu) {
-      // Plats
+        // Plats
       $platsArray = [];
       foreach ($menu->getPlats() as $plat) {
         $platsArray[] = [
           'id'        => $plat->getId(),
           'titre'     => $plat->getTitrePlat(),
           'photo'     => $plat->getPhoto(),
-          'categorie' => $plat->getCategorie()
+          'categorie' => $plat->getCategorie(),
         ];
       }
 
-      // Tags
+      // Tags sécurisés
       $tagsArray = [];
       $tags = $menuTagsRepository->findBy(['menu' => $menu]);
       foreach ($tags as $menuTag) {
-          $tagsArray[] = $menuTag->getTag();
+        if ($menuTag->getTag()) {
+          $tagsArray[] = [
+            'id' => $menuTag->getId(),       // ID du MenuTag
+            'libelle' => $menuTag->getTag() // le string réel
+          ];
+        }
       }
 
       // Menu final
-      $result[] = [
-        'id'                     => $menu->getId(),
-        'titre'                  => $menu->getTitre(),
-        'description'            => $menu->getDescription(),
-        'prix_par_personne'      => $menu->getPrixParPersonne(),
-        'nombre_personne_minimum'=> $menu->getNombrePersonneMinimum(),
-        'quantite_restante'      => $menu->getQuantiteRestante(),
-        'theme'                  => $menu->getTheme() ? [
-            'id'    => $menu->getTheme()->getId(),
-            'titre' => $menu->getTheme()->getLibelle()
+     $result[] = [
+        'id'                      => $menu->getId(),
+        'titre'                   => $menu->getTitre(),
+        'description'             => $menu->getDescription(),
+        'prix_par_personne'       => $menu->getPrixParPersonne(),
+        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum(),
+        'quantite_restante'       => $menu->getQuantiteRestante(),
+        'theme'                   => $menu->getTheme() ? [
+          'id'    => $menu->getTheme()->getId(),
+          'titre' => $menu->getTheme()->getLibelle()
         ] : null,
-        'regime'                 => $menu->getRegime() ? [
-            'id'     => $menu->getRegime()->getId(),
-            'libelle'=> $menu->getRegime()->getLibelle()
+        'regime'                  => $menu->getRegime() ? [
+          'id'      => $menu->getRegime()->getId(),
+          'libelle' => $menu->getRegime()->getLibelle()
         ] : null,
-        'plats'                  => $platsArray,
-        'tags'                   => $tagsArray
+        'plats' => $platsArray,
+        'tags'  => $tagsArray
       ];
     }
 
@@ -468,8 +473,7 @@ final class MenuController extends AbstractController
       'total'  => count($menus),
       'menus'  => $result
     ]);
-  }
-
+}
   /**
    * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
    * Accessible publiquement sans authentification
