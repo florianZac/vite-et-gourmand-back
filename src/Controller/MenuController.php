@@ -154,6 +154,7 @@ final class MenuController extends AbstractController
         'titre' => $plat->getTitrePlat(),
         'categorie' => $plat->getCategorie(),
         'photo' => $plat->getPhoto(),
+        'allergenes' => $allergenesArray,
       ];
     }
 
@@ -282,7 +283,7 @@ final class MenuController extends AbstractController
     ], $regimes);
 
     // Étape 3 - Retourne le résultat au format JSON
-    return $this->json(['status' => 'Succès', 'total' => count($regimes), 'regimes' => $regimes]);
+    return $this->json(['status' => 'Succès', 'total' => count($regimes), 'regimes' => $result]);
 	}
 
 	// =========================================================================
@@ -312,7 +313,11 @@ final class MenuController extends AbstractController
     ], $allergenes);
 
     // Étape 3 - Retourne le résultat au format JSON
-    return $this->json(['status' => 'Succès', 'total' => count($allergenes), 'allergenes' => $allergenes]);
+    return $this->json([
+      'status' => 'Succès',
+      'total' => count($allergenes),
+      'allergenes' => $result
+    ]);
 	}
 
 	// =========================================================================
