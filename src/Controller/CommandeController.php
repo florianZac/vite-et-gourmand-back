@@ -155,12 +155,13 @@ final class CommandeController extends BaseController
   #[OA\Tag(name: 'Client - Commandes')]
   #[OA\RequestBody(
     required: true,
-      content: new OA\JsonContent(
-    properties: [
+    content: new OA\JsonContent(
+      properties: [
         new OA\Property(property: 'menu_id', type: 'integer', example: 1),
         new OA\Property(property: 'date_prestation', type: 'string', example: '2026-04-01'),
         new OA\Property(property: 'nombre_personnes', type: 'integer', example: 15),
         new OA\Property(property: 'adresse_livraison', type: 'string', example: '12 rue des fleurs'),
+        new OA\Property(property: 'heure_livraison', type: 'string', example: '12:30'),
         new OA\Property(property: 'ville_livraison', type: 'string', example: 'Bordeaux'),
         new OA\Property(property: 'distance_km', type: 'number', example: 0),
         new OA\Property(property: 'pret_materiel', type: 'boolean', example: false),
@@ -188,27 +189,26 @@ final class CommandeController extends BaseController
       return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
     }
 
-    // Étape 2 - Vérifierson role (ROLE_CLIENT)
-		if (!$this->isGranted('ROLE_CLIENT')) {
-			return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-		}
+    // Étape 2 - Vérifier le rôle
+    if (!$this->isGranted('ROLE_CLIENT')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
 
     // Étape 3 - Récupérer les données JSON
     $data = json_decode($request->getContent(), true);
     if ($data === null) {
-        return $this->json(['status' => 'Erreur', 'message' => 'JSON invalide'], 400);
+      return $this->json(['status' => 'Erreur', 'message' => 'JSON invalide'], 400);
     }
 
     // Étape 4 - Vérifier les champs obligatoires
-    $champsObligatoires = ['menu_id', 'date_prestation', 'nombre_personnes', 'ville_livraison'];
+    $champsObligatoires = ['menu_id', 'date_prestation', 'heure_livraison', 'nombre_personnes', 'ville_livraison'];
     foreach ($champsObligatoires as $champ) {
-        if (empty($data[$champ])) {
-            return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
-        }
+      if (empty($data[$champ])) {
+        return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
+      }
     }
 
     // Étape 5 - Récupérer l'adresse de l'utilisateur
-        /** @var Utilisateur $utilisateur */
     $adresseClient = $utilisateur->getAdressePostale() ?? '';
     $villeClient = $utilisateur->getVille() ?? '';
     $adresseCompleteClient = $adresseClient . ', ' . $villeClient . ', France';
@@ -216,11 +216,8 @@ final class CommandeController extends BaseController
     // Étape 6 - Géocodage
     $clientCoords = $nominatimService->geocode($adresseCompleteClient);
     if (!$clientCoords) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Adresse client introuvable'], 400);
+      return $this->json(['status' => 'Erreur', 'message' => 'Adresse client introuvable'], 400);
     }
-
-    // Étape 7 - construction de l'adresse de l'utilisateur pour envoie à geocode
-    $adresseCompleteClient = $adresseClient . ', ' . $villeClient . ', France';
 
     // Étape 8 - Calcule de la distance entre le restaurant et le client
     $distanceKm = $osrmService->getRouteDistance(
@@ -230,7 +227,7 @@ final class CommandeController extends BaseController
       (float)$clientCoords['lat']
     );
 
-    // Étape 9 - Ajouter le fallback Haversine si OSRM déconne
+    // Étape 9 - Fallback Haversine si OSRM déconne
     if ($distanceKm === null) {
       $distanceKm = $this->distanceService->distanceHaversine(
         self::RESTAURANT_LAT,
@@ -240,20 +237,18 @@ final class CommandeController extends BaseController
       );
     }
 
-    // Étape 10 Récupérer le menu
+    // Étape 10 - Récupérer le menu
     $menu = $menuRepository->find($data['menu_id']);
     if (!$menu) {
       return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
     }
 
-    // Étape 11 - Vérifier stock (quantite_restante > 0)
-    // Si le stock est épuisé, on refuse la commande avant tout calcul
+    // Étape 11 - Vérifier stock
     if ($menu->getQuantiteRestante() <= 0) {
       return $this->json(['status' => 'Erreur', 'message' => 'Ce menu n\'est plus disponible (stock épuisé)'], 400);
     }
 
-    // Étape 12 - Vérifier le nombre minimum de personnes requis par le menu
-    // Ex: si le menu requiert minimum 10 personnes, on ne peut pas commander pour 5
+    // Étape 12 - Vérifier le nombre minimum de personnes requis
     $nombrePersonnes = (int)$data['nombre_personnes'];
     $minimumPersonnes = $menu->getNombrePersonneMinimum();
     if ($nombrePersonnes < $minimumPersonnes) {
@@ -263,25 +258,44 @@ final class CommandeController extends BaseController
       ], 400);
     }
 
-    // Étape 13 - Valider la date de prestation
+    // Étape 13 - Vérification stock suffisant pour le nombre de personnes commandées
+    if ($menu->getQuantiteRestante() < $nombrePersonnes) {
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => "Stock insuffisant : il reste {$menu->getQuantiteRestante()} menus disponibles, {$nombrePersonnes} requis"
+        ], 400);
+    }
+
+    // Étape 14 - Valider la date de prestation
     try {
       $datePrestation = new \DateTime($data['date_prestation']);
     } catch (\Exception $e) {
       return $this->json(['status' => 'Erreur', 'message' => 'Date de prestation invalide'], 400);
     }
 
-    // Étape 14 - Calculer le délai minimum en jours ouvrables
-    $nombrePersonnes = (int) $data['nombre_personnes'];
-    if ($nombrePersonnes > 20) {
-      $delaiMinimum = 14;
-    } else {
-      $delaiMinimum = 3;
+    // Étape 15 - Valider l'heure de livraison strictement (HH:mm)
+    $heureLivraison = \DateTime::createFromFormat('H:i', $data['heure_livraison']);
+    if (!$heureLivraison) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Heure de livraison invalide (format attendu : HH:mm)'], 400);
     }
 
-    // Étape 15 - Calcul des jours ouvrables entre aujourd'hui et la date de prestation
+    // Étape 16 - Vérifier que l'heure est dans le créneau d'ouverture
+    $heureMin = new \DateTime('10:00');
+    $heureMax = new \DateTime('20:00');
+    if ($heureLivraison < $heureMin || $heureLivraison > $heureMax) {
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => 'Heure de livraison en dehors des horaires d\'ouverture (10:00-20:00)'
+        ], 400);
+    }
+
+    // Étape 17 - Calculer le délai minimum
+    $delaiMinimum = $nombrePersonnes > 20 ? 14 : 3;
+
+    // Étape 18 - Calcul des jours ouvrables
     $joursOuvrables = $this->calculerJoursOuvrables($datePrestation);
 
-    // Étape 16 - Vérifier que le délai minimum est respecté
+    // Étape 19 - Vérifier délai minimum
     if ($joursOuvrables < $delaiMinimum) {
       return $this->json([
         'status' => 'Erreur',
@@ -289,71 +303,68 @@ final class CommandeController extends BaseController
       ], 400);
     }
 
-    // Étape 17 - Calculer le prix de base
+    // Étape 20 - Calcul du prix de base
     $prixParPersonne = $menu->getPrixParPersonne();
-    $prixMenu        = $prixParPersonne * $nombrePersonnes;
+    $prixMenu = $prixParPersonne * $nombrePersonnes;
 
-    // Étape 18 - Appliquer la réduction de -10% si nécessaire
-   if ($nombrePersonnes > ($minimumPersonnes + 5)) {
-      $prixMenu = $prixMenu * 0.90;// réduction -10%
+    // Étape 21 - Appliquer réduction si > min+5
+    if ($nombrePersonnes > ($minimumPersonnes + 5)) {
+      $prixMenu *= 0.90;
     }
 
-    // Étape 19 - Calculer le prix de livraison
-    if ($distanceKm <= 50) {
-      $prixLivraison = 0;
-    } else {
-      $extraDistance = $distanceKm - 50;
-      $prixLivraison = 5 + (0.59 * $extraDistance);
+    // Étape 22 - Calculer le prix de livraison
+    $prixLivraison = 0;
+    if ($distanceKm > 50) {
+      $prixLivraison = 5 + 0.59 * ($distanceKm - 50);
+      $prixLivraison = round($prixLivraison, 2); // arrondi à 2 décimales
     }
-    
-    // Étape 20 - Calculer l'acompte (50% événement, 30% sinon) 
+
+    // Étape 23 - Calcul de l'acompte
     $libelleTheme = strtolower($menu->getTheme()->getLibelle());
-    if (($libelleTheme === 'événement')||($libelleTheme === 'mariage')) {
-      $tauxAcompte = 0.50;
-    } else {
-      $tauxAcompte = 0.30;
-    }
+    $tauxAcompte = in_array($libelleTheme, ['événement', 'mariage']) ? 0.50 : 0.30;
     $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
-
-    // Étape 21 - Générer le numéro de commande unique
+    $prixTotal = round($prixMenu + $prixLivraison, 2);
+    // Étape 24 - Générer numéro de commande
     $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
 
-    // Étape 22 - Créer la commande
+    // Étape 25 - Créer la commande
     $commande = new Commande();
     $commande->setUtilisateur($utilisateur)
-              ->setMenu($menu)
-              ->setDatePrestation($datePrestation)
-              ->setNombrePersonne($nombrePersonnes)
-              ->setAdresseLivraison($data['adresse_livraison'] ?? '')
-              ->setVilleLivraison($data['ville_livraison'])
-              ->setPrixMenu(round($prixMenu, 2))
-              ->setPrixLivraison(round($prixLivraison, 2))
-              ->setMontantAcompte(round($montantAcompte, 2))
-              ->setDistanceKm($distanceKm)
-              ->setStatut(CommandeStatut::EN_ATTENTE)
-              ->setDateCommande(new \DateTime())
-              ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
-              ->setNumeroCommande($numeroCommande);
+            ->setMenu($menu)
+            ->setDatePrestation($datePrestation)
+            ->setHeureLivraison($heureLivraison)
+            ->setNombrePersonne($nombrePersonnes)
+            ->setAdresseLivraison($data['adresse_livraison'] ?? '')
+            ->setVilleLivraison($data['ville_livraison'])
+            ->setPrixMenu(round($prixMenu, 2))
+            ->setPrixLivraison(round($prixLivraison, 2))
+            ->setMontantAcompte(round($montantAcompte, 2))
+            ->setDistanceKm($distanceKm)
+            ->setPrixTotal($prixTotal) // <- nouveau champ ajouté
+            ->setStatut(CommandeStatut::EN_ATTENTE)
+            ->setDateCommande(new \DateTime())
+            ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
+            ->setNumeroCommande($numeroCommande);
 
-    // Étape 23 - Créer le suivi initial
+    // Étape 26 - Créer le suivi initial
     $suivi = new SuiviCommande();
-    $suivi->setStatut(CommandeStatut::EN_ATTENTE);
-    $suivi->setDateStatut(new \DateTime());
-    $suivi->setCommande($commande);
+    $suivi->setStatut(CommandeStatut::EN_ATTENTE)
+      ->setDateStatut(new \DateTime())
+      ->setCommande($commande);
 
-    // Étape 24 - Persister et sauvegarder
+    // Étape 27 - Persister et sauvegarder
     $em->persist($commande);
     $em->persist($suivi);
     $em->flush();
 
-    // Étape 25 - Décrémenter le stock du menu et sauvegarde
-    $menu->setQuantiteRestante($menu->getQuantiteRestante() - 1);
+    // Étape 28 - Décrémenter le stock en fonction du nombre de personnes commandées
+    $menu->setQuantiteRestante($menu->getQuantiteRestante() - $nombrePersonnes);
     $em->flush();
 
-    // Étape 26 - Envoyer un mail de confirmation au client
+    // Étape 29 - Envoyer mail de confirmation
     $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-    // Étape 27 - Enregistrer le log MongoDB
+    // Étape 30 - Log MongoDB
     $logService->log(
       'commande_creee',
       $utilisateur->getEmail(),
@@ -368,19 +379,21 @@ final class CommandeController extends BaseController
         'distanceKm' => round($distanceKm, 2),
       ]
     );
-
-    // Étape 28 - Retourner la confirmation
+    
+    // Étape 31 - Retourner la confirmation
     return $this->json([
-        'status' => 'Succès',
-        'message' => 'Commande créée avec succès',
-        'numero_commande' => $numeroCommande,
-        'prix_menu' => round($prixMenu, 2),
-        'prix_livraison' => round($prixLivraison, 2),
-        'montant_acompte' => round($montantAcompte, 2),
-        'pret_materiel' => $commande->isPretMateriel(),
-        'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
-        'stock_restant' => $menu->getQuantiteRestante(),
-        'distanceKm' => round($distanceKm, 2),
+      'status' => 'Succès',
+      'message' => 'Commande créée avec succès',
+      'numero_commande' => $numeroCommande,
+      'prix_menu' => round($prixMenu, 2),
+      'prix_livraison' => round($prixLivraison, 2),
+      'prix_total' => $prixTotal,
+      'montant_acompte' => round($montantAcompte, 2),
+      'heure_livraison' => $heureLivraison->format('H:i'),
+      'pret_materiel' => $commande->isPretMateriel(),
+      'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
+      'stock_restant' => $menu->getQuantiteRestante(),
+      'distanceKm' => round($distanceKm, 2),
     ], 201);
   }
 

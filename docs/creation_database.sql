@@ -549,18 +549,37 @@ INSERT IGNORE INTO menu_tags (tag, menu_id) VALUES
 -- utilisateur_id 3 = client
 -- =====================================
 INSERT IGNORE INTO commande (
-    numero_commande, date_commande, date_prestation, statut,
-    pret_materiel, restitution_materiel, date_statut_retour_materiel, date_statut_livree,
-    mail_penalite_envoye, heure_livraison, prix_menu, nombre_personne, prix_livraison,
-    motif_annulation, montant_rembourse, adresse_livraison, ville_livraison,
-    montant_acompte, distance_km, utilisateur_id, menu_id
+    commande_id,
+    numero_commande,
+    date_commande,
+    date_prestation,
+    statut,
+    pret_materiel,
+    restitution_materiel,
+    date_statut_retour_materiel,
+    date_statut_livree,
+    mail_penalite_envoye,
+    heure_livraison,
+    prix_menu,
+    nombre_personne,
+    prix_livraison,
+    montant_acompte,
+    prix_total,
+    distance_km,
+    motif_annulation,
+    montant_rembourse,
+    adresse_livraison,
+    ville_livraison,
+    utilisateur_id,
+    menu_id
 ) VALUES
-('CMD-001', STR_TO_DATE('01-01-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('15-01-2026', '%d-%m-%Y'), 'Terminée', 1, 1, NULL, STR_TO_DATE('15-01-2026', '%d-%m-%Y'), 0, '12:00:00', 150.00, 10, 20.00, NULL, 0.00, '1 rue Exemple', 'Paris', 50.00, 10, 3, 1),
-('CMD-002', STR_TO_DATE('05-01-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('20-01-2026', '%d-%m-%Y'), 'Acceptée', 1, 1, NULL, STR_TO_DATE('20-01-2026', '%d-%m-%Y'), 0, '12:00:00', 200.00, 15, 25.00, NULL, 0.00, '2 rue Exemple', 'Lyon', 60.00, 15, 3, 1),
-('CMD-003', STR_TO_DATE('10-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('25-02-2026', '%d-%m-%Y'), 'En livraison', 1, 1, NULL, NULL, 0, '12:00:00', 180.00, 12, 20.00, NULL, 0.00, '3 rue Exemple', 'Marseille', 40.00, 12, 3, 1),
-('CMD-004', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '4 rue Exemple', 'Toulouse', 70.00, 20, 3, 1),
-('CMD-005', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente de retour', 0, 0, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '5 rue Exemple', 'Nice', 70.00, 20, 3, 1),
-('CMD-006', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '6 rue Exemple', 'Bordeaux', 70.00, 20, 3, 1);
+(1, 'CMD-001', '2026-01-01 10:00:00', '2026-01-15', 'Terminée', 1, 1, NULL, '2026-01-15 00:00:00', 0, '12:00:00', 150, 10, 20, 50, 120, 10, NULL, 0, '1 rue Exemple', 'Paris', 3, 1),
+(2, 'CMD-002', '2026-01-05 10:00:00', '2026-01-20', 'Acceptée', 1, 1, NULL, '2026-01-20 00:00:00', 0, '12:00:00', 200, 15, 25, 60, 165, 15, NULL, 0, '2 rue Exemple', 'Lyon', 3, 1),
+(3, 'CMD-003', '2026-02-10 10:00:00', '2026-02-25', 'En livraison', 1, 1, NULL, NULL, 0, '12:00:00', 180, 12, 20, 40, 160, 12, NULL, 0, '3 rue Exemple', 'Marseille', 3, 1),
+(4, 'CMD-004', '2026-02-15 10:00:00', '2026-02-28', 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250, 20, 30, 70, 210, 20, NULL, 0, '4 rue Exemple', 'Toulouse', 3, 1),
+(5, 'CMD-005', '2026-02-15 10:00:00', '2026-02-28', 'En attente de retour', 0, 0, NULL, NULL, 0, '12:00:00', 250, 20, 30, 70, 210, 20, NULL, 0, '5 rue Exemple', 'Nice', 3, 1),
+(6, 'CMD-006', '2026-02-15 10:00:00', '2026-02-28', 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250, 20, 30, 70, 210, 20, NULL, 0, '6 rue Exemple', 'Bordeaux', 3, 1),
+(7, 'CMD-TEST01', '2026-03-17 17:01:54', '2026-04-20', 'EN_ATTENTE', 0, 0, NULL, NULL, 0, '12:30:00', 120, 0, 0, 36, 84, 5, NULL, NULL, '12 rue des fleurs', 'Bordeaux', 1, 1);
 
 -- ============================================
 -- RÉACTIVATION DES CONTRAINTES

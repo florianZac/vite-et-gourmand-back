@@ -1246,6 +1246,7 @@ heroku run php bin/console doctrine:migrations:migrate  --app vite-et-gourmand-a
 heroku run php bin/console doctrine:schema:create --app vite-et-gourmand-api 
 heroku run php bin/console doctrine:migrations:status --app vite-et-gourmand-api
 cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -pjuemmdoy7baw5xkg mh5niaxni11vqgfn < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
+heroku run php bin/console doctrine:schema:validate -a vite-et-gourmand-api
 
 3.2 Recréer une DB JawsDB
 heroku addons:create jawsdb:kitefin --app vite-et-gourmand-api
@@ -1265,6 +1266,8 @@ heroku config:unset JAWSDB_COBALT_URL --app vite-et-gourmand-api
 
 3.7 Vérifier qu'il n'y à qu'une ddb 
 heroku config --app vite-et-gourmand-api
+migration comme exécutée
+php bin/console doctrine:migrations:version --add --all
 
 3.8 Se connecter à JawsDB et Heroku et vider la base
 mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn

@@ -35,7 +35,7 @@ class Commande
 	* Date de prestation de la commande
 	*/
 	#[ORM\Column(type: Types::DATE_MUTABLE)]
-	private ?\DateTime $date_prestation = null; // correction de la faute de frappe date_prestattion -> date_prestation
+	private ?\DateTime $date_prestation = null; 
 
 	/**
 	* Statut de la commande (ex: Livré, Terminée, etc.)
@@ -149,6 +149,12 @@ class Commande
 
 	#[ORM\Column(type: 'float', nullable: true)]
 	private ?float $distanceKm = null;
+
+	/**
+	 * Prix total de la commande (prix menu + livraison)
+	 */
+	#[ORM\Column(nullable: true)]
+	private ?float $prix_total = null;
 
 	// ==========================
 	// Getters / Setters
@@ -425,6 +431,16 @@ class Commande
 	public function setDistanceKm(float $distanceKm): self
 	{
 		$this->distanceKm = $distanceKm;
+		return $this;
+	}
+	public function getPrixTotal(): ?float
+	{
+		return $this->prix_total;
+	}
+
+	public function setPrixTotal(?float $prix_total): self
+	{
+		$this->prix_total = $prix_total;
 		return $this;
 	}
 }

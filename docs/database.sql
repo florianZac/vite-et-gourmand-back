@@ -137,3 +137,43 @@ CREATE TABLE suivi_commande (
         FOREIGN KEY (commande_id) 
         REFERENCES commande(commande_id)
         ON DELETE CASCADE  -- si la commande est supprimée, ses suivis sont supprimés aussi
+
+--Affiche commande avec ces noms présent en bdd
+SELECT
+    commande_id,
+    numero_commande,
+    date_commande,
+    date_prestation,
+    statut,
+    utilisateur_id,
+    menu_id,
+    motif_annulation,
+    montant_rembourse,
+    pret_materiel,
+    heure_livraison,
+    prix_menu,
+    nombre_personne,
+    prix_livraison,
+    montant_acompte,
+    adresse_livraison,
+    ville_livraison,
+    distanceKm,
+    prix_total
+FROM commande
+ORDER BY commande_id;
+
+--Met à jour la ligne prix menu + prix livraison pointant des id particulier
+UPDATE commande
+SET 
+    prix_total = prix_menu + prix_livraison,
+    distanceKm = CASE commande_id
+        WHEN 1 THEN 12
+        WHEN 2 THEN 15
+        WHEN 3 THEN 20
+        WHEN 4 THEN 25
+        WHEN 5 THEN 30
+        WHEN 6 THEN 10
+        WHEN 7 THEN 36
+        ELSE distanceKm
+    END
+WHERE commande_id IN (1,2,3,4,5,6,7);
