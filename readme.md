@@ -279,7 +279,6 @@ php bin/console doctrine:migrations:diff
 6.3.6 Voir la version de doctrine-bundle 
 composer show doctrine/doctrine-bundle | grep versions
 
-
 6.4 Installation est mise en place de MongoDB sur un projet symfony
 
 Quelle interet ? : Je vais utiliser MongoDB pour gérer les logs d'activité de la sociétée
@@ -1439,3 +1438,6 @@ https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/avis
 heroku config:set JWT_PASSPHRASE=vite_et_gourmand_secret --app vite-et-gourmand-api
 
 heroku run --app vite-et-gourmand-api -- ls config/jwt
+
+6.5 AFFICHE LE LOG
+heroku logs --num 100 --app NOM_DE_TON_APP
