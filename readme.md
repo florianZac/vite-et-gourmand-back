@@ -1243,8 +1243,9 @@ php bin/console doctrine:schema:update --dump-sql > dump.sql
 
 METTRE A JOUR SA DDB
 heroku run php bin/console doctrine:migrations:migrate  --app vite-et-gourmand-api
-
+heroku run php bin/console doctrine:schema:create --app vite-et-gourmand-api 
 heroku run php bin/console doctrine:migrations:status --app vite-et-gourmand-api
+cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -pjuemmdoy7baw5xkg mh5niaxni11vqgfn < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
 
 3.2 Recréer une DB JawsDB
 heroku addons:create jawsdb:kitefin --app vite-et-gourmand-api
@@ -1333,10 +1334,9 @@ mysql> DESCRIBE allergene;
 
 IMPORTANT DE VERIFIER TOUTES LES TABLES AVANT D'UTILISER CETTE COMMANDE
 4.3 METTRE A JOUR LES DONNEE DE LA BASE D'APRES le fichier create_database.sql
-Sur linux : 
-"D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -pzljkqdfbr7l21x5j y1gtp5y6q1qq2atq < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql
+
 Sur windows :
-cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -pzljkqdfbr7l21x5j y1gtp5y6q1qq2atq < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
+cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -pjuemmdoy7baw5xkg mh5niaxni11vqgfn < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
 
 ou si on et deja connecter sur SQL
 SOURCE docs/creation_database.sql;
@@ -1344,7 +1344,7 @@ SOURCE docs/creation_database.sql;
 # 5 Voir les données à l'interieur d'une base de données distante 
 
 5.1 Afficher la table de données
-mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
+mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
 
 5.2 Comment voir les éléments d'une table 
 SELECT * FROM utilisateur;
