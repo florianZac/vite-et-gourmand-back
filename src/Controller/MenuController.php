@@ -460,7 +460,7 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
     return $this->json(['status' => 'Succès', 'total' => count($plats), 'plats' => $result]);
   }
 
-	#[Route('/menus/full', name: 'api_menus_public', methods: ['GET'])]
+  #[Route('/menus/full', name: 'api_menus_public', methods: ['GET'])]
   #[OA\Get(
       summary: 'Liste de tous les menus',
       description: 'Retourne tous les menus disponibles avec leurs plats et leurs images. Accessible publiquement.'
@@ -469,30 +469,45 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
   #[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
   public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
-    
     // Étape 1 - Récupérer tous les menus
     $menus = $menuRepository->findAll();
 
-    // Étape 2  - Récupère tous les menus depuis la base de données
     $result = [];
     foreach ($menus as $menu) {
       // Plats
       $platsArray = [];
       foreach ($menu->getPlats() as $plat) {
-        $platsArray[] = $this->formatPlat($plat);
-      }   
-      // Tags
-      $tagsArray = [];
-      foreach ($menuTagsRepository->findBy(['menu' => $menu]) as $menuTag) {
-        if ($menuTag && $menuTag->getTag() !== null) {
-          $tagsArray[] = [
-            'id' => $menuTag->getId() ?? 0,
-            'libelle' => $menuTag->getTag(),
+        if (!$plat) continue; // protection contre null
+          $allergenesArray = [];
+          foreach ($plat->getAllergenes() as $allergene) {
+            if (!$allergene) continue; // protection contre null
+            $allergenesArray[] = [
+              'id' => $allergene->getId(),
+              'libelle' => $allergene->getLibelle(),
+            ];
+          }
+
+          $platsArray[] = [
+            'id' => $plat->getId(),
+            'titre' => $plat->getTitrePlat(),
+            'categorie' => $plat->getCategorie(),
+            'photo' => $plat->getPhoto(),
+            'description' => $plat->getDescriptionPlat(),
+            'allergenes' => $allergenesArray,
           ];
         }
+
+        // Tags
+        $tagsArray = [];
+        foreach ($menuTagsRepository->findBy(['menu' => $menu]) as $menuTag) {
+          if ($menuTag && $menuTag->getTag() !== null) {
+            $tagsArray[] = [
+              'id' => $menuTag->getId() ?? 0,
+              'libelle' => $menuTag->getTag(),
+            ];
+          }
       }
 
-      // Étape 3  - Formate le résulat de tous les menus
       $result[] = [
         'id' => $menu->getId() ?? 0,
         'titre' => $menu->getTitre() ?? 'N/A',
@@ -508,18 +523,17 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
           'id' => $menu->getRegime()->getId() ?? 0,
           'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
         ] : null,
-          'plats' => $platsArray,
-          'tags' => $tagsArray,
+        'plats' => $platsArray,
+        'tags' => $tagsArray,
       ];
     }
 
-    // Étape 4  - Retourne le résulat
     return $this->json([
-        'status' => 'Succès',
-        'total' => count($menus),
-        'menus' => $result,
-      ]);
-  } 
+      'status' => 'Succès',
+      'total' => count($menus),
+      'menus' => $result,
+    ]);
+  }
 
   /**
    * @description Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
