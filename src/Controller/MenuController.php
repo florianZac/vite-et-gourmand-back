@@ -71,23 +71,25 @@ final class MenuController extends AbstractController
 	// Sélectionne tous les menus
 	// équivalent de SELECT * FROM menu
 	#[Route('/menus', name: 'api_menus', methods: ['GET'])]
-	#[OA\Get(summary: 'Liste de tous les menus', description: 'Retourne la liste complète des menus disponibles. Accessible publiquement sans authentification.')]
-	#[OA\Tag(name: 'Public - Menus')]
-	#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
-	public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
-	{
+#[OA\Get(summary: 'Liste de tous les menus', description: 'Retourne la liste complète des menus disponibles. Accessible publiquement sans authentification.')]
+#[OA\Tag(name: 'Public - Menus')]
+#[OA\Response(response: 200, description: 'Liste des menus retournée avec succès')]
+public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
+{
     // Étape 1 - Récupère tous les menus depuis la base de données
     $menus = $menuRepository->findAll();
 
-    // Étape 2 - Formate les données pour chaque menus
+    // Étape 2 - Formate les données pour chaque menu
     $result = [];
     foreach ($menus as $menu) {
       $platsArray = [];
       foreach ($menu->getPlats() as $plat) {
-        
-        // Récupère les les allergènes associés a un plat
+        if (!$plat) continue; // protection contre null
+
+        // Récupère les allergènes associés à un plat
         $allergenesArray = [];
         foreach ($plat->getAllergenes() as $allergene) {
+          if (!$allergene) continue; // protection contre null
           $allergenesArray[] = [
             'id' => $allergene->getId(),
             'libelle' => $allergene->getLibelle(),
@@ -103,11 +105,14 @@ final class MenuController extends AbstractController
           'allergenes' => $allergenesArray,
         ];
       }
-      // Récupère les tags associés au menu **une seule fois par menu**
+
+      // Récupère les tags associés au menu
       $tagsArray = [];
       $tags = $menuTagsRepository->findBy(['menu' => $menu]);
       foreach ($tags as $menuTag) {
-          $tagsArray[] = $menuTag->getTag();
+        if ($menuTag && $menuTag->getTag() !== null) {
+            $tagsArray[] = $menuTag->getTag();
+        }
       }
 
       $result[] = [
