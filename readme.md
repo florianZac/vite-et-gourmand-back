@@ -1241,6 +1241,11 @@ heroku run --app vite-et-gourmand-api -- php bin/console doctrine:schema:create
 3.1 Générer le SQL de toutes tes tables depuis Symfony en local
 php bin/console doctrine:schema:update --dump-sql > dump.sql
 
+METTRE A JOUR SA DDB
+heroku run php bin/console doctrine:migrations:migrate  --app vite-et-gourmand-api
+
+heroku run php bin/console doctrine:migrations:status --app vite-et-gourmand-api
+
 3.2 Recréer une DB JawsDB
 heroku addons:create jawsdb:kitefin --app vite-et-gourmand-api
 
@@ -1248,7 +1253,7 @@ heroku addons:create jawsdb:kitefin --app vite-et-gourmand-api
 JAWSDB_YELLOW_URL:     mysql://ue3gbfbhdm68zc42:zljkqdfbr7l21x5j@muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/y1gtp5y6q1qq2atq
 
 3.4 Remttre à jour la ddb
-heroku config:set DATABASE_URL="mysql://ue3gbfbhdm68zc42:zljkqdfbr7l21x5j@muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/y1gtp5y6q1qq2atq" --app vite-et-gourmand-api
+heroku config:set DATABASE_URL="mysql://t5f5ela0eyr3yxrf:juemmdoy7baw5xkg@rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/mh5niaxni11vqgfn" --app vite-et-gourmand-api
 
 3.4 définir comme DB principale
 heroku config:set DATABASE_URL="$(heroku config:get JAWSDB_YELLOW_URL -a vite-et-gourmand-api)" --app vite-et-gourmand-api
@@ -1261,22 +1266,23 @@ heroku config:unset JAWSDB_COBALT_URL --app vite-et-gourmand-api
 heroku config --app vite-et-gourmand-api
 
 3.8 Se connecter à JawsDB et Heroku et vider la base
-mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
-Mot de passe : zljkqdfbr7l21x5j
+mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
+Mot de passe : juemmdoy7baw5xkg
 
 3.9 Supprime toutes les table (ATTENTION A NE PAS FAIRE)
 DROP TABLE IF EXISTS avis, menu, plat, commande, utilisateur, contient, propose, allergene, regime, role, theme, menu_tags, suivi_commande, password_reset_token, horaire;
 
+
 3.10 Charge les tables depuis le dump SQL
-Get-Content .\dump.sql | mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
-Mot de passe : zljkqdfbr7l21x5j
+Get-Content .\dump.sql | mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
+Mot de passe : juemmdoy7baw5xkg
 
 3.11 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
 heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
 
 3.12 Vérifie que les tables existent
-mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
-Mot de passe : zljkqdfbr7l21x5j
+mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
+Mot de passe : juemmdoy7baw5xkg
 pour voir les table tape 
 SHOW TABLES;
 pour sortir exit ou ctrl C
