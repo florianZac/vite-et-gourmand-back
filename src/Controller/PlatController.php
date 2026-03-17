@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Plat;
+use App\Entity\Allergene;
 use App\Repository\PlatRepository;
 use App\Repository\AllergeneRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,7 +20,7 @@ use OpenApi\Attributes as OA;
  *  1. getAllPlats : Retourner la liste de tous les plats avec ses allergènes associés
  *  2. getPlatById : Retourner un plat par son id avec ses allergènes associés
  *  3. createPlat : Créer un nouveau plat avec ses allergènes associés
- *  4. updatePlat : Met à jour un allergène en le ciblant par son id avec ses allergènes associés
+ *  4. updatePlat : Met à jour un plat en le ciblant par son id avec ses allergènes associés
  *  5. deletePlat : Supprimer un plat avec ses allergènes associés en le ciblant par son id 
  *  Corps JSON pour POST/PUT :
  *  {
@@ -59,6 +60,7 @@ final class PlatController extends BaseController
         'titre_plat' => $plat->getTitrePlat(),
         'photo' => $plat->getPhoto(),
         'categorie' => $plat->getCategorie(),
+        'description' => $plat->getDescriptionPlat(), // <-- ajout
         'allergenes' => array_map(fn($a) => [
           'id' => $a->getId(),
           'libelle' => $a->getLibelle()
@@ -102,6 +104,7 @@ final class PlatController extends BaseController
       'titre_plat' => $plat->getTitrePlat(),
       'photo' => $plat->getPhoto(),
       'categorie' => $plat->getCategorie(),
+      'description' => $plat->getDescriptionPlat(),
       'allergenes' => array_map(fn($a) => [
         'id' => $a->getId(),
         'libelle' => $a->getLibelle()
@@ -178,6 +181,11 @@ final class PlatController extends BaseController
     $plat->setTitrePlat($data['titre_plat']);
     $plat->setPhoto($data['photo']);
     $plat->setCategorie($data['categorie']);
+
+    // Ajouter la description si fournie
+    if (!empty($data['description'])) {
+      $plat->setDescriptionPlat($data['description']);
+    }
 
     // Étape 7 - Associer les allergènes si fournis
     if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
@@ -274,7 +282,12 @@ final class PlatController extends BaseController
     $plat->setCategorie($data['categorie']);
   }
 
-  // Étape 7 - Synchroniser les allergènes si fournis
+  // Étape 7 - Mise à jour de la description si fournie
+  if (isset($data['description'])) {
+      $plat->setDescriptionPlat($data['description']);
+  }
+
+  // Étape 8 - Synchroniser les allergènes si fournis
   // On retire tous les anciens et on remet les nouveaux
   if (isset($data['allergenes']) && is_array($data['allergenes'])) {
     foreach ($plat->getAllergenes() as $allergeneExistant) {
@@ -290,10 +303,10 @@ final class PlatController extends BaseController
     }
   }
 
-  // Étape 8 - Sauvegarder (pas besoin de persist() pour une mise à jour)
+  // Étape 9 - Sauvegarder (pas besoin de persist() pour une mise à jour)
   $em->flush();
 
-  // Étape 9 - Retourner une confirmation
+  // Étape 10 - Retourner une confirmation
   return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
   }
 

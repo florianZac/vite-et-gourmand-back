@@ -5,6 +5,7 @@ use App\Repository\AllergeneRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Plat;
 
 #[ORM\Entity(repositoryClass: AllergeneRepository::class)]
 #[ORM\Table(name: 'allergene')]

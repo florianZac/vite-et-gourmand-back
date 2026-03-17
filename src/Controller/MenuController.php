@@ -33,8 +33,31 @@ use OpenApi\Attributes as OA;
  */
 #[Route('/api')]
 final class MenuController extends AbstractController
-{
-	// =========================================================================
+  {
+  // =========================================
+  // Méthode privée pour formater un plat
+  // =========================================
+  private function formatPlat($plat): array
+  {
+    $allergenesArray = [];
+    foreach ($plat->getAllergenes() as $allergene) {
+      $allergenesArray[] = [
+        'id' => $allergene->getId(),
+        'libelle' => $allergene->getLibelle(),
+      ];
+    }
+
+    return [
+      'id' => $plat->getId(),
+      'titre' => $plat->getTitrePlat(),
+      'categorie' => $plat->getCategorie(),
+      'photo' => $plat->getPhoto(),
+      'description' => $plat->getDescriptionPlat(), // <-- ajout
+      'allergenes' => $allergenesArray,
+    ];
+  }
+  
+  // =========================================================================
 	// MENUS
 	// =========================================================================
 
@@ -76,6 +99,7 @@ final class MenuController extends AbstractController
           'titre' => $plat->getTitrePlat(),
           'categorie' => $plat->getCategorie(),
           'photo' => $plat->getPhoto(),
+          'description' => $plat->getDescriptionPlat(),
           'allergenes' => $allergenesArray,
         ];
       }
@@ -154,6 +178,7 @@ final class MenuController extends AbstractController
         'titre' => $plat->getTitrePlat(),
         'categorie' => $plat->getCategorie(),
         'photo' => $plat->getPhoto(),
+        'description' => $plat->getDescriptionPlat(),
         'allergenes' => $allergenesArray,
       ];
     }
@@ -220,6 +245,7 @@ final class MenuController extends AbstractController
       'plat_id'  => $plat->getId(),
       'titre'    => $plat->getTitrePlat(),
       'image'    => $plat->getPhoto(),      // image unique du plat
+      'description' => $plat->getDescriptionPlat(), // description du plat
       'categorie'=> $plat->getCategorie(),  // entrée / plat / dessert
      ];
     }
@@ -420,28 +446,14 @@ final class MenuController extends AbstractController
     $plats = $platRepository->findAll();
 
     // Étape 2 - Formate les données
-    $result = [];
-    foreach ($plats as $plat) {
-      $allergenesArray = [];
-      foreach ($plat->getAllergenes() as $allergene) {
-        $allergenesArray[] = [
-          'id' => $allergene->getId(),
-          'libelle' => $allergene->getLibelle(),
-        ];
+      $result = [];
+      foreach ($plats as $plat) {
+        $result[] = $this->formatPlat($plat);
       }
-      $result[] = [
-        'id' => $plat->getId(),
-        'titre' => $plat->getTitrePlat(),
-        'categorie' => $plat->getCategorie(),
-        'photo' => $plat->getPhoto(),
-        'allergenes' => $allergenesArray,
-      ];
-    }
 
     // Étape 3 - Retourne le résultat au format JSON
     return $this->json(['status' => 'Succès', 'total' => count($plats), 'plats' => $result]);
   }
-
 
 	#[Route('/menus/full', name: 'api_menus_public', methods: ['GET'])]
   #[OA\Get(
@@ -459,32 +471,18 @@ final class MenuController extends AbstractController
     // Étape 2  - Récupère tous les menus depuis la base de données
     $result = [];
     foreach ($menus as $menu) {
-        // Plats
-        $platsArray = [];
-        foreach ($menu->getPlats() as $plat) {
-          $allergenesArray = [];
-          foreach ($plat->getAllergenes() as $allergene) {
-            $allergenesArray[] = [
-              'id' => $allergene->getId(),
-              'libelle' => $allergene->getLibelle(),
-            ];
-          }
-          $platsArray[] = [
-            'id' => $plat->getId() ?? 0,
-            'titre' => $plat->getTitrePlat() ?? 'N/A',
-            'photo' => $plat->getPhoto() ?? '',
-            'categorie' => $plat->getCategorie() ?? 'Inconnu',
-            'allergenes' => $allergenesArray,
-          ];
-        }
-
+      // Plats
+      $platsArray = [];
+      foreach ($menu->getPlats() as $plat) {
+        $platsArray[] = $this->formatPlat($plat);
+      }   
       // Tags
       $tagsArray = [];
       foreach ($menuTagsRepository->findBy(['menu' => $menu]) as $menuTag) {
         if ($menuTag && $menuTag->getTag() !== null) {
           $tagsArray[] = [
-              'id' => $menuTag->getId() ?? 0,
-              'libelle' => $menuTag->getTag(),
+            'id' => $menuTag->getId() ?? 0,
+            'libelle' => $menuTag->getTag(),
           ];
         }
       }
@@ -546,21 +544,7 @@ final class MenuController extends AbstractController
     // Étape 2 - Construire le tableau des plats avec images et catégories
     $platsArray = [];
     foreach ($menu->getPlats() as $plat) {
-      $allergenesArray = [];
-      foreach ($plat->getAllergenes() as $allergene) {
-        $allergenesArray[] = [
-          'id'      => $allergene->getId(),
-          'libelle' => $allergene->getLibelle()
-        ];
-      }
-
-      $platsArray[] = [
-        'plat_id'   => $plat->getId(),
-        'titre'     => $plat->getTitrePlat(),
-        'image'     => $plat->getPhoto(),
-        'categorie' => $plat->getCategorie(),
-        'allergenes'=> $allergenesArray
-      ];
+      $platsArray[] = $this->formatPlat($plat);
     }
 
     // Étape 3 - Récupérer les tags du menu

@@ -1351,6 +1351,22 @@ GROUP BY u.utilisateur_id;
 4.10 Réinitialiser l’auto-increment (seulement si la table est vide)
 ALTER TABLE utilisateur AUTO_INCREMENT = 1;
 
+4.11 Vérifier que les plats son avec ou sans description
+
+SELECT plat_id, titre_plat, description
+FROM plat
+WHERE description IS NULL OR description = '';
+
+4.12 Ajouter une colonne à une table entière ciblé
+ALTER TABLE plat
+ADD COLUMN description_plat VARCHAR(250);
+
+4.13 Verifier la mise à jour d'une table
+SELECT plat_id, titre_plat, description_plat FROM plat LIMIT 10;
+
+4.14 Mettre à jour une colonne d'une table pointé par son id 
+UPDATE plat SET description_plat = 'Magret de canard rôti accompagné de cèpes.' WHERE plat_id = 2;
+
 # 5 Importation des données dans la DDB  
 
 J'ai créer un fichier dans le docs pour remplir la base de données 
