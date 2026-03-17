@@ -3,9 +3,9 @@ Aide mémoire est d'Installation Back-end
 1. Installation et mise en place de Symfony
 
 1.1 vérification des versions php,composeur etc ..
-php -v  -> vérification de la version de php
-composer -v  -> vérification de la version de composer
-symfony -v  -> vérification de la version du Command Line Interface (CLI)
+php -v   :  vérification de la version de php
+composer -v   :  vérification de la version de composer
+symfony -v   :  vérification de la version du Command Line Interface (CLI)
 
 1.1.1 Vérification des requirement syfony avant installation 
 symfony check:requirements
@@ -123,7 +123,7 @@ composer.bat require lexik/jwt-authentication-bundle
 
 4.2 génèration des clefs de chiffrement
 php bin/console lexik:jwt:generate-keypair
--> génération de deux fichiers dans le dossier config/jwt
+ :  génération de deux fichiers dans le dossier config/jwt
     private.pem qui est la clé privée pour signer les tokens
     public.pem qui est la clé publique afin de vérifier les tokens
 
@@ -150,7 +150,6 @@ composer.bat require doctrine/doctrine-bundle
 
 4.7 creation de script sql pour l'instantiation des données dans un users et la table role. 
 création_utilisateur.sql
-
 
 4.8 création de la route login dans un controleur
 php bin/console make:controller AuthController
@@ -189,7 +188,7 @@ dans le dossier templates/emails/contact.html.twig
 5.4 création d'un compte mailtrap
 https://mailtrap.io/inboxes/4404595/messages/5352687463/html
 et récupération du MAILER_DSN
-mailtrap -> sandbox -> intégration -> symphony -> MAILER_DSN="smtp://6836c3cc28f364:****c337@sandbox.smtp.mailtrap.io:2525"
+mailtrap  :  sandbox  :  intégration  :  symphony  :  MAILER_DSN="smtp://6836c3cc28f364:****c337@sandbox.smtp.mailtrap.io:2525"
 ne pas oublié de régénerer les crédentiale il faut pas que le mdp soit masquer sa ma souler j'ai perdu 1 heure de débug.
 
 5.5 creation des fonctions sanitazier, validation reggex et rate limitation dans le controleur mail ContactController.php
@@ -219,9 +218,9 @@ Solution :Si ce champ est rempli c'est forcément un bot car un humain ne verra 
 Protection n°5 : sanitazier 
 un attaquant peut cree du code malvaillant avec des espaces du html ou php ou js ou des characteres speciaux
 Solution :
-trim -> supprime les espaces inutile
-strip_tags -> supprime les balise html, js et ,php
-htmlspecialchars -> évite les attaques XSS de script malvaillant
+trim  :  supprime les espaces inutile
+strip_tags  :  supprime les balise html, js et ,php
+htmlspecialchars  :  évite les attaques XSS de script malvaillant
 
 Protection n°6 : Injection SQL
 Un attaquant peut tenter d'injecter des commandes SQL dans les champs texte pour manipuler la base de données
@@ -235,7 +234,7 @@ https://symfony.com/doc/current/reference/forms/types/entity.html
 https://symfony.com/doc/current/doctrine.html#fetching-objects-from-the-database
 
 
-5.7 vérification des routes après modification de UtilisateurController.php -> AdminController.php
+5.7 vérification des routes après modification de UtilisateurController.php  :  AdminController.php
 pour respecter la regle un controleur un niveau responsabilité unique que je respecter pas
 Commande pérmettant de vérifier que Symfony voit bien les nouvelles routes :
 php bin/console debug:router | Select-String "admin"
@@ -248,8 +247,8 @@ Objectif : chaque jour, vérifier les commandes (pret_materiel=1, restitution_ma
 
 5.9 Création du fichier de commande
 php bin/console make:command        
-Choose a command name ->CheckRetourMaterielCommand
-Crée automatiquement la commande -> src/Command/CheckRetourMaterielCommand.php
+Choose a command name  : CheckRetourMaterielCommand
+Crée automatiquement la commande  :  src/Command/CheckRetourMaterielCommand.php
 
 5.9 Création de la command Symfony
 php bin/console app:check-retour-materiel
@@ -271,11 +270,11 @@ php bin/console doctrine:schema:create --dump-sql
 
 6.2.4 : Vérifie que ta BDD est synchronisée
 php bin/console doctrine:migrations:diff
-# → Si "No changes detected" c'est parfait
+# :  Si "No changes detected" c'est parfait
 
 6.3.5 : Apres création du cron et de la doctrine tester la commande dans le terminal :
  Tester MANUELLEMENT check-retour-materiel
--> php bin/console app:check-retour-materiel
+ :  php bin/console app:check-retour-materiel
 
 6.3.6 Voir la version de doctrine-bundle 
 composer show doctrine/doctrine-bundle | grep versions
@@ -300,8 +299,8 @@ mongod --version n'exite pas okay
 php -m dans visual code la reponse contient MongoDB oui ou non si non continue 
 
 6.4.2.2 ouvrir le bon dossier PHP pour savoir lequel est installer php-v
-réponse -> PHP 8.4.15
-du coup le bon dossier -> D:\wamp64\bin\php\php8.4.15\ext\
+réponse  :  PHP 8.4.15
+du coup le bon dossier  :  D:\wamp64\bin\php\php8.4.15\ext\
 Lance cette commande :
 if (Test-Path "D:\wamp64\bin\php\php8.4.15\ext\php_mongodb.dll") { echo "php_mongodb.dll EST PRESENT" } else { echo "php_mongodb.dll N'EST PAS PRESENT" }
 
@@ -328,36 +327,36 @@ Stop-Service com.docker.service -Force
 Start-Service com.docker.service
 
 6.7 Supprimer les anciens containers ou images corrompus
-docker container prune -f -> supprime tous les containers arrêtés
-docker image prune -a -f -> supprime toutes les images inutilisées
+docker container prune -f  :  supprime tous les containers arrêtés
+docker image prune -a -f  :  supprime toutes les images inutilisées
 
 6.8 ENFIN on part sur quelque chose de property  (POWERSHELL avec droit admin )
 Lancer MongoDB via docker 
 mkdir D:\DockerData\MongoDB
 docker run -d --name mongodb -p 27017:27017 -v D:\DockerData\MongoDB:/data/db mongo:6
 Explications :
--d -> mode détaché (arrière-plan)
---name mongodb -> nom du container
--p 27017:27017 -> accessible depuis ton PC sur localhost
--v D:\DockerData\MongoDB:/data/db -> MongoDB stocke les données sur D:, pas dans Docker interne
-mongo:6 -> version officielle MongoDB 6
+-d  :  mode détaché (arrière-plan)
+--name mongodb  :  nom du container
+-p 27017:27017  :  accessible depuis ton PC sur localhost
+-v D:\DockerData\MongoDB:/data/db  :  MongoDB stocke les données sur D:, pas dans Docker interne
+mongo:6  :  version officielle MongoDB 6
 
 Vérification que MongoDB tourne 
 PS C:\WINDOWS\system32> docker ps
 
-résultat : sa tourne bien  Ports -> 0.0.0.0:27017->27017/tcp 
+résultat : sa tourne bien  Ports  :  0.0.0.0:27017 : 27017/tcp 
 CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS              PORTS                                             NAMES
-dab15d72eb7e   mongo:6   "docker-entrypoint.s…"   2 minutes ago   Up About a minute   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp   mongodb
+dab15d72eb7e   mongo:6   "docker-entrypoint.s…"   2 minutes ago   Up About a minute   0.0.0.0:27017 : 27017/tcp, [::]:27017 : 27017/tcp   mongodb
 PS C:\WINDOWS\system32>
 
-Faire la connection entre MongoDB <-> Docker
+Faire la connection entre MongoDB < :  Docker
 $client = new MongoDB\Client("mongodb://127.0.0.1:27017");
 
-$client -> tu crées un objet client MongoDB.
-new MongoDB\Client(...) -> tu dis à PHP : « Je veux me connecter à MongoDB »
-"mongodb://127.0.0.1:27017"-> c’est l’adresse du serveur MongoDB :
-127.0.0.1-> ton PC local (localhost)
-27017->le port où MongoDB écoute
+$client  :  tu crées un objet client MongoDB.
+new MongoDB\Client(...)  :  tu dis à PHP : « Je veux me connecter à MongoDB »
+"mongodb://127.0.0.1:27017" :  c’est l’adresse du serveur MongoDB :
+127.0.0.1 :  ton PC local (localhost)
+27017 : le port où MongoDB écoute
 
 
 Créer un projet test pour MongoDB
@@ -379,7 +378,7 @@ Installer la librairie PHP (option test)
 composer require mongodb/mongodb --ignore-platform-req=ext-mongodb
     Le --ignore-platform-req=ext-mongodb permet d’installer les fichiers PHP même si ext-mongodb est absent
 
-php --ini -> affiche ou se lance ton php 
+php --ini  :  affiche ou se lance ton php 
 résultat : D:\wamp64\bin\php\php8.4.15\php.ini
 
 php -i | findstr "Thread"
@@ -387,7 +386,7 @@ résulat :
     Thread Safety => enabled
     Thread API => Windows Threads
 
-Du coup il me faut -> PHP 8.4 / Thread Safe / x64
+Du coup il me faut  :  PHP 8.4 / Thread Safe / x64
 https://pecl.php.net/package/mongodb
 Clique la dernière version de la DLL :  à côté de la version 2.2.1 est choisie 8.4 Thread Safe (TS) x64 
 On extrait le dossier php_mongodb-2.2.1-8.4-ts-vs17-x64.zip
@@ -395,10 +394,10 @@ Ensuite on copie le fichier php_mongodb.dll dans D:\wamp64\bin\php\php8.4.15\ext
 Trouve php.init avec la commande php --ini dans un cmd
 D:\wamp64\bin\php\php8.4.15\php.ini
 ouvre le CRTL F " extension=" il faut que ton fichier dll soit dans \ext
-écris dans le fichier -> extension=php_mongodb.dll
+écris dans le fichier  :  extension=php_mongodb.dll
 Sauvegarde et ferme le fichier
 
-Ferme et relance wamp  -> pour recharger le php.ini
+Ferme et relance wamp   :  pour recharger le php.ini
 
 Test pour vérifier si sa fonctionne :
     php -m | findstr mongodb 
@@ -406,7 +405,6 @@ Test pour vérifier si sa fonctionne :
 
 installer MongoDB pour symfony
 composer require doctrine/mongodb-odm-bundle
-
 
 met a jour le .env 
 
@@ -416,7 +414,7 @@ MONGODB_DB=mongodb_symfony
 test si sa fonctionne :
 C:\Users\USUARIO>docker ps
 CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                             NAMES
-7d471ae11e68   mongo:6   "docker-entrypoint.s…"   4 minutes ago   Up 4 minutes   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp   mongodb_symphony
+7d471ae11e68   mongo:6   "docker-entrypoint.s…"   4 minutes ago   Up 4 minutes   0.0.0.0:27017 : 27017/tcp, [::]:27017 : 27017/tcp   mongodb_symphony
 
 Test de la connection 
 docker exec -it mongodb_symphony mongosh --eval "db.runCommand({ping:1})"
@@ -440,12 +438,12 @@ structure à implémenté
 
 6.8.1 création du fichier LogActivite.php définissant les donnée représenté dans le log d'activité
 
-id -> string -> Identifiant MongoDB
-message -> string -> Message descriptif du log
-email -> string -> Email de l'utilisateur concerné
-role -> string -> Rôle de l'utilisateur concerné
-"numero_commande": "CMD-XXXX", "montant": 450.00 -> Données contextuelles supplémentaires 
-date -> DateTime -> Date et heure du log
+id  :  string  :  Identifiant MongoDB
+message  :  string  :  Message descriptif du log
+email  :  string  :  Email de l'utilisateur concerné
+role  :  string  :  Rôle de l'utilisateur concerné
+"numero_commande": "CMD-XXXX", "montant": 450.00  :  Données contextuelles supplémentaires 
+date  :  DateTime  :  Date et heure du log
 
 6.8.2 Création du service de gestion de l'enregistrement des logs dans mongodb
 création du fichier LogService.php dans src/Service
@@ -805,16 +803,16 @@ ensuite ajout de la ligne
 0 8 * * * /usr/bin/php /var/www/html/mon-projet/bin/console app:check-retour-materiel
 
 Version Windows
-Panneau de configuration → Planificateur de tâches
-Nouvelle tâche → déclencher tous les jours à 8h
+Panneau de configuration :  Planificateur de tâches
+Nouvelle tâche :  déclencher tous les jours à 8h
 Action : php C:\wamp64\www\mon-projet\bin/console app:check-retour-materiel
 
 
 APP_SECRET génèration par la commande => php bin/console secrets:generate-keys
 
 création de api/doc
-Installer -> composer require nelmio/api-doc-bundle
-dans -> config/packages/nelmio_api_doc.yaml
+Installer  :  composer require nelmio/api-doc-bundle
+dans  :  config/packages/nelmio_api_doc.yaml
 ajoute :
 nelmio_api_doc:
     documentation:
@@ -867,7 +865,7 @@ nelmio_api_doc:
             path_patterns:
                 - ^/api/admin
 
-dans -> config/routes/nelmio_api_doc.yaml
+dans  :  config/routes/nelmio_api_doc.yaml
 ajoute :
 # Page Swagger pour chaque area
 app.swagger_ui_public:
@@ -937,10 +935,10 @@ Ensuite acceder via https://127.0.0.1:8000/api/doc/public
 # 1.1 Ajouter un fichier Procfile
 echo "web: heroku-php-apache2 public/" > Procfile
 
-# 1.2 Merge de dev -> master
+# 1.2 Merge de dev  :  master
 git checkout master
 
-# 1.3 Merge de dev -> master
+# 1.3 Merge de dev  :  master
 git branch -m master main  // on renome master à main
 
 # 1.4 Pousser la nouvelle branche main sur le remote
@@ -1212,7 +1210,7 @@ s'ouvre est qu'il y les routes => swagger fonctionne
 
 1. on supprime l'ancienne migration et on la recréer pour repartir propre 
 Remove-Item migrations\*.php
-ls migrations/  -> est il vide oui on continue 
+ls migrations/   :  est il vide oui on continue 
 $env:APP_ENV="dev"; php bin/console make:migration
 
 # 2 On crée la base de données JawsDB
@@ -1244,75 +1242,120 @@ heroku run --app vite-et-gourmand-api -- php bin/console doctrine:schema:create
 3.1 Générer le SQL de toutes tes tables depuis Symfony en local
 php bin/console doctrine:schema:update --dump-sql > dump.sql
 
-3.2 Se connecter à JawsDB et Heroku et vider la base
-mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
-Mot de passe : lgcy2tt6lhnbg7a8
+3.2 Recréer une DB JawsDB
+heroku addons:create jawsdb:kitefin --app vite-et-gourmand-api
 
-3.2.2 Supprime toutes les table
+3.3 Nouvelle DDB
+JAWSDB_YELLOW_URL:     mysql://ue3gbfbhdm68zc42:zljkqdfbr7l21x5j@muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/y1gtp5y6q1qq2atq
+
+3.4 Remttre à jour la ddb
+heroku config:set DATABASE_URL="mysql://ue3gbfbhdm68zc42:zljkqdfbr7l21x5j@muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/y1gtp5y6q1qq2atq" --app vite-et-gourmand-api
+
+3.4 définir comme DB principale
+heroku config:set DATABASE_URL="$(heroku config:get JAWSDB_YELLOW_URL -a vite-et-gourmand-api)" --app vite-et-gourmand-api
+
+3.6 Nettoyer le reste (important)
+heroku config:unset JAWSDB_URL --app vite-et-gourmand-api
+heroku config:unset JAWSDB_COBALT_URL --app vite-et-gourmand-api
+
+3.7 Vérifier qu'il n'y à qu'une ddb 
+heroku config --app vite-et-gourmand-api
+
+3.8 Se connecter à JawsDB et Heroku et vider la base
+mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
+Mot de passe : zljkqdfbr7l21x5j
+
+3.9 Supprime toutes les table (ATTENTION A NE PAS FAIRE)
 DROP TABLE IF EXISTS avis, menu, plat, commande, utilisateur, contient, propose, allergene, regime, role, theme, menu_tags, suivi_commande, password_reset_token, horaire;
 
-3.3 Charge les tables depuis le dump SQL
-Get-Content .\dump.sql | mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
-Mot de passe : lgcy2tt6lhnbg7a8
+3.10 Charge les tables depuis le dump SQL
+Get-Content .\dump.sql | mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
+Mot de passe : zljkqdfbr7l21x5j
 
-3.4 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
+3.11 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
 heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
 
-3.4 Vérifie que les tables existent
-mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
-Mot de passe : lgcy2tt6lhnbg7a8
+3.12 Vérifie que les tables existent
+mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
+Mot de passe : zljkqdfbr7l21x5j
 pour voir les table tape 
 SHOW TABLES;
 pour sortir exit ou ctrl C
+USER :  ue3gbfbhdm68zc42
+PASSWORD :  zljkqdfbr7l21x5j
+HOST :  muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com
+DB :  y1gtp5y6q1qq2atq
 
-# 3 On affiche la base de donnée crée par DDB JawsDB 
+# 4 On affiche la base de donnée crée par DDB JawsDB 
+
 heroku run --app vite-et-gourmand-api -- php bin/console dbal:run-sql "SHOW TABLES;"
 
+Ou en sql c'est mieux !!
+4.1 voir comment est composer une table (retourne les cles les index, les types,les colonnes)
+SHOW CREATE TABLE user;
 
-devrait répondre :
- ----------------------
-  TABLE_NAME
- ----------------------
-  allergene
-  avis
-  commande
-  contient
-  horaire
-  menu
-  menu_tags
-  password_reset_token
-  plat
-  propose
-  regime
-  role
-  suivi_commande
-  theme
-  utilisateur
- ----------------------
+mysql> SHOW TABLES;
++----------------------------+
+| Tables_in_y1gtp5y6q1qq2atq |
++----------------------------+
+| allergene                  |
+| avis                       |
+| commande                   |
+| contient                   |
+| horaire                    |
+| menu                       |
+| menu_tags                  |
+| password_reset_token       |
+| plat                       |
+| propose                    |
+| regime                     |
+| role                       |
+| suivi_commande             |
+| theme                      |
+| utilisateur                |
++----------------------------+
 
-# 4 Voir les données à l'interieur d'une base de données distante 
+4.2 vérifier le contenue le table pour toutes les tables
+DESCRIBE allergene;
+mysql> DESCRIBE allergene;
++--------------+-------------+------+-----+---------+----------------+
+| Field        | Type        | Null | Key | Default | Extra          |
++--------------+-------------+------+-----+---------+----------------+
+| allergene_id | int         | NO   | PRI | NULL    | auto_increment |
+| libelle      | varchar(50) | NO   |     | NULL    |                |
++--------------+-------------+------+-----+---------+----------------+
+2 rows in set (0.10 sec)
 
-4.1 Afficher la table de données
-mysql -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u z6kfic0nl9ubmba9 -p utp2g4edmtrisl82
+IMPORTANT DE VERIFIER TOUTES LES TABLES AVANT D'UTILISER CETTE COMMANDE
+4.3 METTRE A JOUR LES DONNEE DE LA BASE D'APRES le fichier create_database.sql
+Sur linux : 
+"D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -pzljkqdfbr7l21x5j y1gtp5y6q1qq2atq < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql
+Sur windows :
+cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -pzljkqdfbr7l21x5j y1gtp5y6q1qq2atq < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
 
-4.2 Comment voir les éléments d'une table 
+ou si on et deja connecter sur SQL
+SOURCE docs/creation_database.sql;
+
+# 5 Voir les données à l'interieur d'une base de données distante 
+
+5.1 Afficher la table de données
+mysql -h muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u ue3gbfbhdm68zc42 -p y1gtp5y6q1qq2atq
+
+5.2 Comment voir les éléments d'une table 
 SELECT * FROM utilisateur;
 
-4.3 Comment supprimer les element d'une table données par son id 
-=
-
-4.4 supprimer plusieurs element d'un coup 
+5.3 supprimer plusieurs element d'un coup 
 DELETE FROM utilisateur
 WHERE utilisateur_id IN (4 , 5, 6, 7,8,9,10,11,12,13,14,15,16,17,18,19);
 
-4.5 afficher les contraintes liéer à une table donnée
+5.4 afficher les contraintes liéer à une table donnée
 SELECT
 TABLE_NAME,
 COLUMN_NAME
 FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 WHERE REFERENCED_TABLE_NAME = 'utilisateur';
 
-4.6 Trouve et renvoie les utilisateurs qui n'ont pas de contrainte de clefs avec commande avis et password_reset_token
+5.5 Trouve et renvoie les utilisateurs qui n'ont pas de contrainte de clefs avec commande avis et password_reset_token
 SELECT *
 FROM utilisateur
 WHERE utilisateur_id NOT IN (
@@ -1325,7 +1368,7 @@ AND utilisateur_id NOT IN (
     SELECT utilisateur_id FROM commande
 );
 
-4.7 supprime les utilisateurs qui n'ont pas de contrainte sauf les utilisateurs id
+5.6 supprime les utilisateurs qui n'ont pas de contrainte sauf les utilisateurs id
 DELETE FROM utilisateur
 WHERE utilisateur_id NOT IN (
     SELECT utilisateur_id FROM password_reset_token
@@ -1338,51 +1381,50 @@ AND utilisateur_id NOT IN (
 )
 AND utilisateur_id NOT IN (1, 2, 12, 23);
 
-4.8 Comment modifier un code utilisateur
+5.7 Comment modifier un code utilisateur
 UPDATE utilisateur
 SET password = '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.';
 
-4.9 Comment cibler les utilisateurs qui ont des commandes
+5.8 Comment cibler les utilisateurs qui ont des commandes
 SELECT u.*
 FROM utilisateur u
 INNER JOIN commande c ON u.utilisateur_id = c.utilisateur_id
 GROUP BY u.utilisateur_id;
 
-4.10 Réinitialiser l’auto-increment (seulement si la table est vide)
+5.9 Réinitialiser l’auto-increment (seulement si la table est vide)
 ALTER TABLE utilisateur AUTO_INCREMENT = 1;
 
-4.11 Vérifier que les plats son avec ou sans description
+5.10 Vérifier que les plats son avec ou sans description
 
-SELECT plat_id, titre_plat, description
+SELECT plat_id, titre_plat, description_plat
 FROM plat
-WHERE description IS NULL OR description = '';
 
-4.12 Ajouter une colonne à une table entière ciblé
+5.11 Ajouter une colonne à une table entière ciblé
 ALTER TABLE plat
 ADD COLUMN description_plat VARCHAR(250);
 
-4.13 Verifier la mise à jour d'une table
+5.12 Verifier la mise à jour d'une table
 SELECT plat_id, titre_plat, description_plat FROM plat LIMIT 10;
 
-4.14 Mettre à jour une colonne d'une table pointé par son id 
+5.13 Mettre à jour une colonne d'une table pointé par son id 
 UPDATE plat SET description_plat = 'Magret de canard rôti accompagné de cèpes.' WHERE plat_id = 2;
 
-# 5 Importation des données dans la DDB  
+# 6 Importation des données dans la DDB  
 
 J'ai créer un fichier dans le docs pour remplir la base de données 
 
 Fichier présent à l'adresse : docs/creation_database.sql 
 
-4.1 vérifie que le fichier est bien présent 
+6.1 vérifie que le fichier est bien présent 
 
 dir D:\wamp64\www\vite-et-gourmand-back\docs\*.sql
 
-4.2 Lance la commande suivante pour l'insertion des données dans la base de donnée 
+6.2 Lance la commande suivante pour l'insertion des données dans la base de donnée 
 
 cd D:\wamp64\www\vite-et-gourmand-back\docs
 cmd /c "D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -u z6kfic0nl9ubmba9 -plgcy2tt6lhnbg7a8 utp2g4edmtrisl82 < creation_database.sql"
 
-4.3 Vérifications des données via appel des routes 
+6.3 Vérifications des données via appel des routes 
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/menus
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/horaires
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/plats
@@ -1392,7 +1434,7 @@ https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/allergenes
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/avis
 
 
-4.4 Résolution du probleme de JWT  Exception Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTEncodeFailureException
+6.4 Résolution du probleme de JWT  Exception Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTEncodeFailureException
 
 heroku config:set JWT_PASSPHRASE=vite_et_gourmand_secret --app vite-et-gourmand-api
 

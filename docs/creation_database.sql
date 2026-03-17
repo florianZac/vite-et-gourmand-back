@@ -18,12 +18,35 @@
 -- 14. menu_tags
 
 -- =====================================
+-- SÉCURITÉ : désactivation des contraintes
+-- =====================================
+SET FOREIGN_KEY_CHECKS = 0;
+
+
+-- =====================================
+--  CLEAN (décommente si reset total)
+-- ============================================
+-- TRUNCATE TABLE contient;
+-- TRUNCATE TABLE propose;
+-- TRUNCATE TABLE commande;
+-- TRUNCATE TABLE utilisateur;
+-- TRUNCATE TABLE menu;
+-- TRUNCATE TABLE plat;
+-- TRUNCATE TABLE role;
+-- TRUNCATE TABLE regime;
+-- TRUNCATE TABLE allergene;
+-- TRUNCATE TABLE theme;
+-- TRUNCATE TABLE menu_tags;
+-- TRUNCATE TABLE avis;
+-- TRUNCATE TABLE suivi_commande;
+
+-- =====================================
 -- ROLE
 -- =====================================
-INSERT INTO role (libelle) VALUES
-('ROLE_CLIENT'),
-('ROLE_EMPLOYE'),
-('ROLE_ADMIN');
+INSERT IGNORE INTO role (role_id, libelle) VALUES
+(1, 'ROLE_CLIENT'),
+(2, 'ROLE_EMPLOYE'),
+(3, 'ROLE_ADMIN');
 
 -- =====================================
 -- UTILISATEUR
@@ -33,23 +56,23 @@ INSERT INTO role (libelle) VALUES
 -- creation d'un mdp hacher php bin/console security:hash-password 
 
 -- mdp hashé = Moncode23+
-INSERT INTO utilisateur
+INSERT IGNORE INTO utilisateur
 (nom, prenom, telephone, email, password, pays, ville, adresse_postale, code_postal, statut_compte, role_id)
 VALUES
-('admin', 'admin', '0123456789', 'admin@vite-et-gourmand.fr', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.','France', 'Montpellier', '123 Rue de la Gourmandise', '34400', 'actif', 3),
+('admin', 'admin', '0123456789', 'admin@vite-et-gourmand.fr', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Montpellier', '123 Rue de la Gourmandise', '34400', 'actif', 3),
 ('employe', 'employe', '0600000001', 'employe@vite-et-gourmand.fr', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Montpellier', '1 rue de la Fougasse', '34000', 'actif', 2),
-('client', 'client', '0688888888', 'client@gmail.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'LHERM', '1222', '33000', 'actif', 1),
+('client', 'client', '0688888888', 'client@gmail.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Lherm', '1222 Rue Exemple', '33000', 'actif', 1),
 ('Dupont', 'Jean', '0601020304', 'jean.dupont@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Paris', '1 rue Exemple', '75001', 'actif', 1),
 ('Martin', 'Claire', '0605060708', 'claire.martin@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Lyon', '2 rue Exemple', '69001', 'actif', 1),
 ('Durand', 'Paul', '0608091011', 'paul.durand@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Marseille', '3 rue Exemple', '13001', 'actif', 1),
 ('Bernard', 'Sophie', '0612131415', 'sophie.bernard@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Toulouse', '4 rue Exemple', '31000', 'actif', 1),
 ('Moreau', 'Luc', '0616171819', 'luc.moreau@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Nice', '5 rue Exemple', '06000', 'actif', 1),
-('Lefevre', 'Emma', '0620212223', 'emma.lefevre@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Bordeaux', '6 rue Exemple', '33000', 'actif', 1);
+('Lefevre', 'Emma', '0620212223', 'emma.lefevre@email.com', '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.', 'France', 'Bordeaux', '6 rue Exemple', '33000', 'inactif', 1);
 
 -- =====================================
 -- REGIMES
 -- =====================================
-INSERT INTO regime (regime_id, libelle) VALUES
+INSERT IGNORE INTO regime (regime_id, libelle) VALUES
 (1, 'Classique'),
 (2, 'Végétalien'),
 (3, 'Vegan'),
@@ -58,7 +81,7 @@ INSERT INTO regime (regime_id, libelle) VALUES
 -- =====================================
 -- ALLERGENES
 -- =====================================
-INSERT INTO allergene (allergene_id, libelle) VALUES
+INSERT IGNORE INTO allergene (allergene_id, libelle) VALUES
 (1, 'Gluten'),
 (2, 'Lactose'),
 (3, 'Fruits à coque'),
@@ -69,10 +92,10 @@ INSERT INTO allergene (allergene_id, libelle) VALUES
 (8, 'Sésame'),
 (9, 'Soja'),
 (10, 'Sulfites'),
-(11, 'viande'),
+(11, 'Viande'),
 (12, 'Arachides'),
 (13, 'Lait'),
-(14, 'noisettes'),
+(14, 'Noisettes'),
 (15, 'Céleri'),
 (16, 'Moutarde'),
 (17, 'Lupin'),
@@ -81,7 +104,7 @@ INSERT INTO allergene (allergene_id, libelle) VALUES
 -- =====================================
 -- THEMES
 -- =====================================
-INSERT INTO theme (theme_id, libelle) VALUES
+INSERT IGNORE INTO theme (theme_id, libelle) VALUES
 (1, 'Noël'),
 (2, 'Classique'),
 (3, 'Asiatique'),
@@ -89,14 +112,14 @@ INSERT INTO theme (theme_id, libelle) VALUES
 (5, 'Français'),
 (6, 'Italien'),
 (7, 'Pâques'),
-(8, 'Jour de l''an'),
+(8, 'Jour de l''An'),
 (9, 'Événement'),
 (10, 'Solo');
 
 -- =====================================
 -- PLATS
 -- =====================================
-INSERT INTO plat (plat_id, titre_plat, photo, categorie,description_plat) VALUES
+INSERT IGNORE INTO plat (plat_id, titre_plat, photo, categorie,description_plat) VALUES
 -- Noël (plats 1-24)
 (1, 'Velouté de châtaigne et foie gras poêlé', 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800', 'Entrée','Crème de châtaignes onctueuse avec morceaux de foie gras poêlé.'),
 (2, 'Magret de canard aux cèpes', 'https://images.unsplash.com/photo-1576402187878-974f70c890a5?w=800', 'Plat', 'Magret de canard rôti accompagné de cèpes.'),
@@ -176,7 +199,7 @@ INSERT INTO plat (plat_id, titre_plat, photo, categorie,description_plat) VALUES
 -- =====================================
 -- CONTIENT (Plats <-> Allergènes)
 -- =====================================
-INSERT INTO contient (plat_id, allergene_id) VALUES
+INSERT IGNORE INTO contient (plat_id, allergene_id) VALUES
 (1, 3), -- Foie gras <-> Fruits à coque
 (2, 5), -- Saumon fumé <-> Poissons
 (4, 2), -- Bûche chocolat <-> Lactose
@@ -274,38 +297,32 @@ INSERT INTO contient (plat_id, allergene_id) VALUES
 (44, 11),
 (45, 4),
 (45, 1),
--- Mexicain
-(46, 1), (46, 13), -- Nachos au fromage et guacamole: Gluten, Lait
-(47, 11), (47, 4), -- Tacos de poulet épicé: Viande, Oeufs
-(48, 2), (48, 12), -- Churros au chocolat: Lactose, Arachides
--- Asiatique
-(49, 6), (49, 5),  -- Rouleaux de printemps aux crevettes: Crustacés, Poissons
-(50, 11), (50, 9), -- Poulet au curry thaï et riz parfumé: Viande, Soja
-(51, 2), (51, 4),  -- Perles de coco: Lactose, Oeufs
--- Jour de l'An
-(52, 1), (52, 4),  -- Velouté de potiron et paprika: Gluten, Oeufs
-(53, 11), (53, 18),-- Filet mignon sauce truffe: Viande, Champignons
-(54, 2), (54, 4),  -- Tartelette au chocolat et éclats de caramel: Lactose, Oeufs
--- Italien
-(55, 2), (55, 4),  -- Antipasti variés: Lactose, Oeufs
-(56, 18), (56, 2), -- Risotto aux champignons sauvages: Champignons, Lactose
-(57, 2), (57, 4),  -- Tiramisu classique: Lactose, Oeufs
--- Français
-(58, 2), (58, 4),  -- Soupe à l’oignon gratinée: Lactose, Oeufs
-(59, 11), (59, 18),-- Boeuf Bourguignon: Viande, Champignons
-(60, 2), (60, 4),  -- Crème brûlée: Lactose, Oeufs
--- Classique
-(61, 5),(61, 2),   -- Saumon mariné à l’aneth: Poissons, Lactose
-(62, 11),(62, 1),  -- Poulet rôti à la provençale: Viande, Gluten
-(63, 2),(63, 4),   -- Clafoutis aux cerises: Lactose, Oeufs
-(64, 1),(64, 2),   -- Soupe de légumes de saison: Gluten, Lactose
-(65, 13),(65, 11), -- Gratin dauphinois et rôti de veau: Lait, Viande
-(66, 2),(66,1 );   -- Tarte aux pommes classique: Lactose, Gluten
+(46, 1), (46, 13), -- Mexicain Nachos au fromage et guacamole: Gluten, Lait
+(47, 11), (47, 4), -- Mexicain Tacos de poulet épicé: Viande, Oeufs
+(48, 2), (48, 12), -- Mexicain Churros au chocolat: Lactose, Arachides
+(49, 6), (49, 5),  -- Asiatique Rouleaux de printemps aux crevettes: Crustacés, Poissons
+(50, 11), (50, 9), -- Asiatique Poulet au curry thaï et riz parfumé: Viande, Soja
+(51, 2), (51, 4),  -- Asiatique Perles de coco: Lactose, Oeufs
+(52, 1), (52, 4),  -- Jour de l'An Velouté de potiron et paprika: Gluten, Oeufs
+(53, 11), (53, 18),-- Jour de l'An Filet mignon sauce truffe: Viande, Champignons
+(54, 2), (54, 4),  -- Jour de l'An Tartelette au chocolat et éclats de caramel: Lactose, Oeufs
+(55, 2), (55, 4),  -- Italien Antipasti variés: Lactose, Oeufs
+(56, 18), (56, 2), -- Italien Risotto aux champignons sauvages: Champignons, Lactose
+(57, 2), (57, 4),  -- Italien Tiramisu classique: Lactose, Oeufs
+(58, 2), (58, 4),  -- Français Soupe à l’oignon gratinée: Lactose, Oeufs
+(59, 11), (59, 18),-- Français Boeuf Bourguignon: Viande, Champignons
+(60, 2), (60, 4),  -- Français Crème brûlée: Lactose, Oeufs
+(61, 5),(61, 2),   -- Classique Saumon mariné à l’aneth: Poissons, Lactose
+(62, 11),(62, 1),  -- Classique Poulet rôti à la provençale: Viande, Gluten
+(63, 2),(63, 4),   -- Classique Clafoutis aux cerises: Lactose, Oeufs
+(64, 1),(64, 2),   -- Classique Soupe de légumes de saison: Gluten, Lactose
+(65, 13),(65, 11), -- Classique Gratin dauphinois et rôti de veau: Lait, Viande
+(66, 2),(66,1 );   -- Classique Tarte aux pommes classique: Lactose, Gluten
 
 -- =====================================
 -- MENUS
 -- =====================================
-INSERT INTO menu
+INSERT IGNORE INTO menu
 (menu_id, titre, nombre_personne_minimum, prix_par_personne, description, quantite_restante, conditions, regime_id, theme_id)
 VALUES
 (1,'Festin du Réveillon',10,58.00,'Menu de fête aux saveurs traditionnelles du Sud-Ouest.',1,'Commande minimum 10 personnes',1,1),
@@ -360,16 +377,15 @@ VALUES
 (50,'Menu Classique 3',1,27.00,'Plats classiques revisités.',10,'Commande la veille',1,2),
 (51,'Menu Classique 4',1,28.00,'Menu classique gourmand.',10,'Commande la veille',1,2);
 
-
 -- =====================================
 -- PROPOSE (Menus <-> Plats)
 -- =====================================
 -- Table propose : menu_id <-> plat_id
 -- PROPOSE (Menus <-> Plats) pour Noël (menus 1 à 8)
 -- =====================================
-INSERT INTO propose (menu_id, plat_id) VALUES
--- Noël
-(1,1),(1,2),(1,3),
+INSERT IGNORE INTO propose (menu_id, plat_id) VALUES
+
+(1,1),(1,2),(1,3), -- Noël
 (2,4),(2,5),(2,6),
 (3,7),(3,8),(3,9),
 (4,10),(4,11),(4,12),
@@ -377,56 +393,43 @@ INSERT INTO propose (menu_id, plat_id) VALUES
 (6,16),(6,17),(6,18),
 (7,19),(7,20),(7,21),
 (8,22),(8,23),(8,24),
--- Pâques
-(9,25),(9,26),(9,27),
+(9,25),(9,26),(9,27), -- Pâques
 (10,28),(10,29),(10,30),
 (11,31),(11,32),(11,33),
 (12,34),(12,35),(12,36),
--- Classique du Terroir / Vegan Bien-être / Solo Gourmet / etc.
-(13,40),(13,41),(13,42),
-(14,37),(14,38),(14,39),
-(15,52),(15,53),(15,54),
-(16,43),(16,44),(16,45),
-(17,43),(17,44),(17,45),
-(18,58),(18,59),(18,60),
+(13,40),(13,41),(13,42), -- Classique / Vegan / Solo
+(14,43),(14,44),(14,45),
+(15,46),(15,47),(15,48),
+(16,49),(16,50),(16,51),
+(17,52),(17,53),(17,54),
+(18,55),(18,56),(18,57),
 (19,58),(19,59),(19,60),
-(20,37),(20,38),(20,39),
-(21,37),(21,38),(21,39),
-(22,61),(22,62),(22,63),
-(23,52),(23,53),(23,54),
-(24,52),(24,53),(24,54),
--- Solo
-(25,52),(25,53),(25,54),
+(20,61),(20,62),(20,63),
+(21,64),(21,65),(21,66),
+(25,52),(25,53),(25,54), -- Solo
 (26,55),(26,56),(26,57),
--- Événement & Mariage
-(27,58),(27,59),(27,60),
+(27,58),(27,59),(27,60), -- Événement & Mariage
 (28,61),(28,62),(28,63),
 (29,64),(29,65),(29,66),
 (30,52),(30,53),(30,54),
--- Mexicain
-(31,46),(31,47),(31,48),
+(31,46),(31,47),(31,48), -- Mexicain
 (32,46),(32,47),(32,48),
 (33,46),(33,47),(33,48),
 (34,46),(34,47),(34,48),
 (35,46),(35,47),(35,48),
--- Asiatique
-(36,49),(36,50),(36,51),
+(36,49),(36,50),(36,51), -- Asiatique
 (37,49),(37,50),(37,51),
 (38,49),(38,50),(38,51),
 (39,49),(39,50),(39,51),
 (40,49),(40,50),(40,51),
--- Jour de l'An
-(41,52),(41,53),(41,54),
+(41,52),(41,53),(41,54), -- Jour de l'An
 (42,52),(42,53),(42,54),
--- Italien
-(43,55),(43,56),(43,57),
+(43,55),(43,56),(43,57), -- Italien
 (44,55),(44,56),(44,57),
 (45,55),(45,56),(45,57),
--- Français
-(46,58),(46,59),(46,60),
+(46,58),(46,59),(46,60), -- Français
 (47,58),(47,59),(47,60),
--- Classique
-(48,61),(48,62),(48,63),
+(48,61),(48,62),(48,63), -- Classique
 (49,61),(49,62),(49,63),
 (50,61),(50,62),(50,63),
 (51,61),(51,62),(51,63);
@@ -434,51 +437,36 @@ INSERT INTO propose (menu_id, plat_id) VALUES
 -- =====================================
 -- HORAIRES
 -- =====================================
-INSERT INTO horaire (jour, heure_ouverture, heure_fermeture) VALUES
-('Lundi', '09:00:00', '18:00:00'),
-('Mardi', '09:00:00', '18:00:00'),
-('Mercredi', '09:00:00', '18:00:00'),
-('Jeudi', '09:00:00', '18:00:00'),
-('Vendredi', '09:00:00', '18:00:00'),
-('Samedi', '10:00:00', '16:00:00'),
-('Dimanche', NULL, NULL);
-
--- =====================================
--- COMMANDES
--- utilisateur_id 3 = client
--- =====================================
-INSERT INTO commande (
-    numero_commande, date_commande, date_prestation, statut,
-    pret_materiel, restitution_materiel, date_statut_retour_materiel, date_statut_livree,
-    mail_penalite_envoye, heure_livraison, prix_menu, nombre_personne, prix_livraison,
-    motif_annulation, montant_rembourse, adresse_livraison, ville_livraison,
-    montant_acompte, distance_km, utilisateur_id, menu_id
-) VALUES
-('CMD-001', STR_TO_DATE('01-01-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('15-01-2026', '%d-%m-%Y'), 'Terminée', 1, 1, NULL, STR_TO_DATE('15-01-2026', '%d-%m-%Y'), 0, '12:00:00', 150.00, 10, 20.00, NULL, 0.00, '1 rue Exemple', 'Paris', 50.00, 10, 3, 1),
-('CMD-002', STR_TO_DATE('05-01-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('20-01-2026', '%d-%m-%Y'), 'Acceptée', 1, 1, NULL, STR_TO_DATE('20-01-2026', '%d-%m-%Y'), 0, '12:00:00', 200.00, 15, 25.00, NULL, 0.00, '2 rue Exemple', 'Lyon', 60.00, 15, 3, 1),
-('CMD-003', STR_TO_DATE('10-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('25-02-2026', '%d-%m-%Y'), 'En livraison', 1, 1, NULL, NULL, 0, '12:00:00', 180.00, 12, 20.00, NULL, 0.00, '3 rue Exemple', 'Marseille', 40.00, 12, 3, 1),
-('CMD-004', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '4 rue Exemple', 'Toulouse', 70.00, 20, 3, 1),
-('CMD-005', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente de retour', 0, 0, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '5 rue Exemple', 'Nice', 70.00, 20, 3, 1),
-('CMD-006', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '6 rue Exemple', 'Bordeaux', 70.00, 20, 3, 1);
-
+INSERT IGNORE INTO horaire (jour, heure_ouverture, heure_fermeture) VALUES
+('Lundi','09:00:00','18:00:00'),
+('Mardi','09:00:00','18:00:00'),
+('Mercredi','09:00:00','18:00:00'),
+('Jeudi','09:00:00','18:00:00'),
+('Vendredi','09:00:00','18:00:00'),
+('Samedi','10:00:00','14:00:00'),
+('Dimanche',NULL,NULL);
 
 -- =====================================
 -- AVIS
 -- =====================================
-INSERT INTO avis (note, description, statut, utilisateur_id, commande_id) VALUES
-(5, 'Service impeccable et repas délicieux, très satisfait !', 'Publié', 4, 1),
-(4, 'Très bon menu, juste un peu en retard sur la livraison.', 'Publié', 4, 2),
-(3, 'Repas correct mais portions un peu petites.', 'Publié', 5, 3),
-(5, 'Mariage parfait grâce à la qualité des plats !', 'Publié', 6, 4),
-(2, 'Déçu, certains plats manquaient de goût.', 'En attente', 7, 5),
-(4, 'Livraison rapide et plats bien présentés.', 'Publié', 8, 6);
+INSERT IGNORE INTO avis (note, description, statut, date, utilisateur_id, commande_id) VALUES
+(5, 'Excellent repas, très satisfait !', 'validé', NOW(), 3, 1),
+(4, 'Plats bons mais service lent.', 'validé', NOW(), 4, 2),
+(3, 'Correct mais peu copieux.', 'validé', NOW(), 5, 3),
+(5, 'Service impeccable et repas délicieux, très satisfait !', 'Publié', NOW(), 4, 1),
+(4, 'Très bon menu, juste un peu en retard sur la livraison.', 'Publié', NOW(), 4, 2),
+(3, 'Repas correct mais portions un peu petites.', 'Publié', NOW(), 5, 3),
+(5, 'Mariage parfait grâce à la qualité des plats !', 'En attente', NOW(), 6, 4),
+(2, 'Déçu, certains plats manquaient de goût.', 'En attente', NOW(), 7, 5),
+(4, 'Livraison rapide et plats bien présentés.', 'Publié', NOW(), 8, 6);
 
 -- =====================================
 -- SUIVI COMMANDE
 -- =====================================
 -- Insertion des données pour la table suivi_commande pour l'historique des commandes
 -- STR_TO_DATE permet de modifier le format de la date de YYYY-MM-DD à DD-MM-YYYY
-INSERT INTO suivi_commande (statut, date_statut, commande_id) VALUES
+-- =====================================
+INSERT IGNORE INTO suivi_commande (statut, date_statut, commande_id) VALUES
 -- Commande 1 (Terminée)
 ('Commande reçue', STR_TO_DATE('01-01-2026 10:05:00', '%d-%m-%Y %H:%i:%s'), 1),
 ('En attente', STR_TO_DATE('01-01-2026 10:35:00', '%d-%m-%Y %H:%i:%s'), 1),
@@ -513,7 +501,7 @@ INSERT INTO suivi_commande (statut, date_statut, commande_id) VALUES
 -- =====================================
 -- MENU TAGS
 -- =====================================
-INSERT INTO menu_tags (tag, menu_id) VALUES
+INSERT IGNORE INTO menu_tags (tag, menu_id) VALUES
 -- Noël
 ('Foie gras', 1), ('Magret', 1), ('Truffe', 1),
 ('Saumon fumé', 2), ('Dinde farcie', 2), ('Bûche', 2),
@@ -531,38 +519,50 @@ INSERT INTO menu_tags (tag, menu_id) VALUES
 -- Solo
 ('Solo', 15),
 ('Solo', 23), ('Viande', 23), ('Bœuf', 23), ('Gastronomique', 23),
-('Solo', 24), ('Viande', 24), ('Magret', 24), ('Foie gras', 24), ('Sud-Ouest', 24),
+('Solo', 24), ('Viande', 24), ('Magret', 24), ('Sud-Ouest', 24),
 ('Solo', 25),
 ('Solo', 26),
 -- Événement & Mariage
-('Mariage', 27), ('Homard', 27), ('Cocktail', 27), ('Verrines', 27),
+('Mariage', 27), ('Homard', 27), ('Verrines', 27),
 ('Événement', 28), ('Anniversaire', 28), ('Élégance', 28),
 ('Séminaire', 29),
 ('Anniversaire', 30),
 -- Mexicain
-('Mexicain', 31),
-('Mexicain', 32),
-('Mexicain', 33),
-('Mexicain', 34),
-('Mexicain', 35),
+('Mexicain', 31), ('Mexicain', 32), ('Mexicain', 33), ('Mexicain', 34), ('Mexicain', 35),
 -- Asiatique
-('Asiatique', 36),
-('Asiatique', 37),
-('Asiatique', 38),
-('Asiatique', 39),
-('Asiatique', 40),
+('Asiatique', 36), ('Asiatique', 37), ('Asiatique', 38), ('Asiatique', 39), ('Asiatique', 40),
 -- Jour de l'An
-('Nouvel An', 41),
-('Nouvel An', 42),
+('Nouvel An', 41), ('Nouvel An', 42),
 -- Italien
-('Italien', 43),
-('Italien', 44),
-('Italien', 45),
+('Italien', 43), ('Italien', 44), ('Italien', 45),
 -- Français
-('Français', 46),
-('Français', 47),
+('Français', 46), ('Français', 47),
 -- Classique
-('Classique', 48), ('Entrecôte', 48), ('Huîtres', 48), ('Bordeaux', 48),
-('Classique', 49), ('Légumes BIO', 49), ('Sans viande', 49), ('Fromages AOP', 49),
-('Classique', 50), ('100% Végétal', 50), ('BIO', 50), ('Sans allergènes majeurs', 50),
-('Classique', 51), ('Gascogne', 51), ('Canard', 51), ('Armagnac', 51);
+('Classique', 48), ('Huîtres', 48), ('Bordeaux', 48),
+('Classique', 49), ('Légumes BIO', 49), ('Sans viande', 49),
+('Classique', 50), ('100% Végétal', 50), ('BIO', 50),
+('Classique', 51), ('Gascogne', 51), ('Canard', 51);
+
+
+-- =====================================
+-- COMMANDES
+-- utilisateur_id 3 = client
+-- =====================================
+INSERT IGNORE INTO commande (
+    numero_commande, date_commande, date_prestation, statut,
+    pret_materiel, restitution_materiel, date_statut_retour_materiel, date_statut_livree,
+    mail_penalite_envoye, heure_livraison, prix_menu, nombre_personne, prix_livraison,
+    motif_annulation, montant_rembourse, adresse_livraison, ville_livraison,
+    montant_acompte, distance_km, utilisateur_id, menu_id
+) VALUES
+('CMD-001', STR_TO_DATE('01-01-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('15-01-2026', '%d-%m-%Y'), 'Terminée', 1, 1, NULL, STR_TO_DATE('15-01-2026', '%d-%m-%Y'), 0, '12:00:00', 150.00, 10, 20.00, NULL, 0.00, '1 rue Exemple', 'Paris', 50.00, 10, 3, 1),
+('CMD-002', STR_TO_DATE('05-01-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('20-01-2026', '%d-%m-%Y'), 'Acceptée', 1, 1, NULL, STR_TO_DATE('20-01-2026', '%d-%m-%Y'), 0, '12:00:00', 200.00, 15, 25.00, NULL, 0.00, '2 rue Exemple', 'Lyon', 60.00, 15, 3, 1),
+('CMD-003', STR_TO_DATE('10-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('25-02-2026', '%d-%m-%Y'), 'En livraison', 1, 1, NULL, NULL, 0, '12:00:00', 180.00, 12, 20.00, NULL, 0.00, '3 rue Exemple', 'Marseille', 40.00, 12, 3, 1),
+('CMD-004', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '4 rue Exemple', 'Toulouse', 70.00, 20, 3, 1),
+('CMD-005', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente de retour', 0, 0, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '5 rue Exemple', 'Nice', 70.00, 20, 3, 1),
+('CMD-006', STR_TO_DATE('15-02-2026 10:00:00', '%d-%m-%Y %H:%i:%s'), STR_TO_DATE('28-02-2026', '%d-%m-%Y'), 'En attente', 1, 1, NULL, NULL, 0, '12:00:00', 250.00, 20, 30.00, NULL, 0.00, '6 rue Exemple', 'Bordeaux', 70.00, 20, 3, 1);
+
+-- ============================================
+-- RÉACTIVATION DES CONTRAINTES
+-- ============================================
+SET FOREIGN_KEY_CHECKS = 1;
