@@ -1449,4 +1449,5 @@ heroku config:set JWT_PASSPHRASE=vite_et_gourmand_secret --app vite-et-gourmand-
 heroku run --app vite-et-gourmand-api -- ls config/jwt
 
 6.5 AFFICHE LE LOG
-heroku logs --num 100 --app NOM_DE_TON_APP
+heroku logs --num 100 --app vite-et-gourmand-api
+heroku logs --tail --app vite-et-gourmand-api
