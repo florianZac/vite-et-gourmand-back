@@ -382,18 +382,19 @@ final class CommandeController extends BaseController
     
     // Étape 31 - Retourner la confirmation
     return $this->json([
-      'status' => 'Succès',
-      'message' => 'Commande créée avec succès',
-      'numero_commande' => $numeroCommande,
-      'prix_menu' => round($prixMenu, 2),
-      'prix_livraison' => round($prixLivraison, 2),
-      'prix_total' => $prixTotal,
-      'montant_acompte' => round($montantAcompte, 2),
-      'heure_livraison' => $heureLivraison->format('H:i'),
-      'pret_materiel' => $commande->isPretMateriel(),
-      'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
-      'stock_restant' => $menu->getQuantiteRestante(),
-      'distanceKm' => round($distanceKm, 2),
+        'status' => 'Succès',
+        'message' => 'Commande créée avec succès',
+        'numero_commande' => $numeroCommande,
+        'email' => $utilisateur->getEmail(),
+        'prix_menu' => round($prixMenu, 2),
+        'prix_livraison' => round($prixLivraison, 2),
+        'prix_total' => $prixTotal,
+        'montant_acompte' => round($montantAcompte, 2),
+        'heure_livraison' => $heureLivraison->format('H:i'),
+        'pret_materiel' => $commande->isPretMateriel(),
+        'reduction_appliquee' => $nombrePersonnes > ($minimumPersonnes + 5) ? '-10%' : 'aucune',
+        'stock_restant' => $menu->getQuantiteRestante(),
+        'distanceKm' => round($distanceKm, 2),
     ], 201);
   }
 
