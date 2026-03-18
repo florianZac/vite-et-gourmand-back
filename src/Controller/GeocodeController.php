@@ -31,7 +31,7 @@ class GeocodeController extends AbstractController
 	private const MAX_DELIVERY_DISTANCE = 200; // distance max de livraison en km	
 
 	// Paramètres de tarification livraison
-	private const FREE_DELIVERY_RADIUS_KM = 50;  // distance pour désigné si c'est gratuit ou non 
+	private const FREE_DELIVERY_RADIUS_KM = 10;  // distance pour désigné si c'est gratuit ou non 
 	private const DELIVERY_BASE_FEE = 5.00;     // Frais fixes en €
 	private const DELIVERY_PER_KM_FEE = 0.59;  // Frais par km en €
 
