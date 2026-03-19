@@ -59,8 +59,8 @@ nelmio_api_doc:
                 - ^/api/commandes
                 - ^/geocode
                 - ^/distance
-                - ^/delivery-cost    
-
+                - ^/delivery-cost 
+                - ^/test-email    
 
         public:
             path_patterns:
