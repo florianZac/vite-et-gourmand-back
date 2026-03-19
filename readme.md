@@ -1451,3 +1451,27 @@ heroku run --app vite-et-gourmand-api -- ls config/jwt
 6.5 AFFICHE LE LOG
 heroku logs --num 100 --app vite-et-gourmand-api
 heroku logs --tail --app vite-et-gourmand-api
+
+6.6 changement de mailbox SendPit :
+
+MAIL_HOST: smtp.sendpit.com
+MAIL_PORT: 2525
+MAIL_USERNAME: mb_ab6pbmevd9l9
+MAIL_PASSWORD: BXkhhaUjSLwXtVnE
+TLS : actif (encryption=tls)
+
+modification du .env
+MAILER_DSN=smtp://mb_ab6pbmevd9l9:BXkhhaUjSLwXtVnE@smtp.sendpit.com:2525?encryption=tls&auth_mode=login
+
+Mise à jour de Heroku
+
+heroku config:set "MAILER_DSN=smtp://mb_ab6pbmevd9l9:BXkhhaUjSLwXtVnE@smtp.sendpit.com:2525?encryption=tls&auth_mode=login" --app vite-et-gourmand-api
+heroku config:set APP_URL="https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com" --app vite-et-gourmand-api
+
+création du controleur de test pour envoies d'un mail
+TestEmailController
+
+Installation du mailer
+composer require symfony/mailer
+
+Vérifier la configuration du mail 
