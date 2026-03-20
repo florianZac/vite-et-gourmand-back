@@ -1287,7 +1287,7 @@ final class AdminController extends AbstractController
       'status' => 'Succès',
       'message' => 'Horaire mis à jour avec succès',
       'data' => [
-        'id' => $horaire->getId(),
+        'horaire_id' => $horaire->getId(),
         'jour' => $horaire->getJour(),
         'heureOuverture' => $horaire->getHeureOuverture()->format('H:i'),
         'heureFermeture' => $horaire->getHeureFermeture()->format('H:i'),
