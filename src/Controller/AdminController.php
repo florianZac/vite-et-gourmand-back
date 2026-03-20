@@ -1213,6 +1213,7 @@ final class AdminController extends AbstractController
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'horaire', schema: new OA\Schema(type: 'integer'))]
   #[OA\RequestBody(required: true, content: new OA\JsonContent(
     properties: [
+      new OA\Property(property: 'horaire_id', type: 'integer', example: 1),
       new OA\Property(property: 'jour', type: 'string', example: 'Mardi'),
       new OA\Property(property: 'heure_ouverture', type: 'string', example: '10:00'),
       new OA\Property(property: 'heure_fermeture', type: 'string', example: '19:00'),
@@ -1231,9 +1232,9 @@ final class AdminController extends AbstractController
    * @param EntityManagerInterface $em L'EntityManager
    * @return JsonResponse
    */
-  #[Route('/horaires/{id}', name: 'api_admin_horaires_update', methods: ['PUT'])]
+  #[Route('/horaires/{horaire_id}', name: 'api_admin_horaires_update', methods: ['PUT'])]
   public function updateHoraire(
-    int $id,
+    int $horaire_id,
     Request $request,
     HoraireRepository $horaireRepository,
     EntityManagerInterface $em
@@ -1245,7 +1246,7 @@ final class AdminController extends AbstractController
     }
 
     // Étape 2 - Récupérer l'horaire
-    $horaire = $horaireRepository->find($id);
+    $horaire = $horaireRepository->find($horaire_id);
     if (!$horaire) {
       return $this->json(['status' => 'Erreur', 'message' => 'Horaire non trouvé'], 404);
     }
