@@ -1263,19 +1263,37 @@ final class AdminController extends AbstractController
 
     // Étape 5 - Mise à jour heure_ouverture
     if (isset($data['heure_ouverture'])) {
-      $horaire->setHeureOuverture(new \DateTime($data['heure_ouverture']));
+      $value = $data['heure_ouverture'] === 'Fermé' ? '00:00' : $data['heure_ouverture'];
+      $horaire->setHeureOuverture(new \DateTime($value));
     }
 
     // Étape 6 - Mise à jour heure_fermeture
     if (isset($data['heure_fermeture'])) {
-      $horaire->setHeureFermeture(new \DateTime($data['heure_fermeture']));
+      $value = $data['heure_fermeture'] === 'Fermé' ? '00:00' : $data['heure_fermeture'];
+      $horaire->setHeureFermeture(new \DateTime($value));
     }
+    /*
+    dump($horaire->getHeureOuverture());
+    dump($horaire->getHeureFermeture());
+    die();
+    */
 
     // Étape 7 - Sauvegarder
+    $em->persist($horaire);
     $em->flush();
 
     // Étape 8 - Retourne le résultat
-    return $this->json(['status' => 'Succès', 'message' => 'Horaire mis à jour avec succès']);
+    return $this->json([
+      'status' => 'Succès',
+      'message' => 'Horaire mis à jour avec succès',
+      'data' => [
+        'id' => $horaire->getId(),
+        'jour' => $horaire->getJour(),
+        'heureOuverture' => $horaire->getHeureOuverture()->format('H:i'),
+        'heureFermeture' => $horaire->getHeureFermeture()->format('H:i'),
+      ]
+    ]);
+
   }
 
   #[Route('/horaires/{id}', name: 'api_admin_horaires_delete', methods: ['DELETE'])]
