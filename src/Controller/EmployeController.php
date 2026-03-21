@@ -784,6 +784,7 @@ final class EmployeController extends AbstractController
         $menu->addPlat($plat);
           
         // Préparer les images du plat
+        /*
         $imagesPlat = [];
         foreach ($plat->getImages() as $image) {
           $imagesPlat[] = [
@@ -792,10 +793,12 @@ final class EmployeController extends AbstractController
             'ordre' => $image->getOrdre(),
           ];
         }
+        */
         $platsRetour[] = [
           'id' => $plat->getId(),
-          'nom' => $plat->getNom(),
-          'images' => $imagesPlat,
+          'titre' => $plat->getTitrePlat(),
+          'categorie' => $plat->getCategorie(),
+          'photo' => $plat->getPhoto(),
         ];
       }
     }
@@ -964,6 +967,7 @@ final class EmployeController extends AbstractController
         $menu->addPlat($plat);
 
         // Ajouter les images du plat pour la réponse
+        /*
         $imagesPlat = [];
         foreach ($plat->getImages() as $image) {
           $imagesPlat[] = [
@@ -972,11 +976,12 @@ final class EmployeController extends AbstractController
             'ordre' => $image->getOrdre()
           ];
         }
-
+        */
         $platsRetour[] = [
           'id' => $plat->getId(),
-          'nom' => $plat->getNom(),
-          'images' => $imagesPlat
+          'titre' => $plat->getTitrePlat(),
+          'categorie' => $plat->getCategorie(),
+          'photo' => $plat->getPhoto(),
         ];
       }
     }
