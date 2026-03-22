@@ -1545,6 +1545,9 @@ final class EmployeController extends AbstractController
     $plat->setTitrePlat($data['titre_plat']);
     $plat->setPhoto($data['photo']);
     $plat->setCategorie($data['categorie']);
+    if (isset($data['description_plat'])) {
+      $plat->setDescriptionPlat($data['description_plat']);
+    }
 
     // Étape 7 - Associer les allergènes si fournis
     if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
@@ -1616,7 +1619,13 @@ final class EmployeController extends AbstractController
       $plat->setTitrePlat($data['titre_plat']);
     }
 
-    // Étape 5 - Mettre à jour la photo si fournie
+    // Étape 5 - Mise à jour de la description si fournie
+    if (isset($data['description_plat'])) {
+      $plat->setDescriptionPlat($data['description_plat']);
+    }
+
+
+    // Étape 6 - Mettre à jour la photo si fournie
     if (isset($data['photo'])) {
       // Si l'ancienne photo est différente et existe sur Cloudinary → la supprimer
       $anciennePhoto = $plat->getPhoto();
@@ -1626,7 +1635,7 @@ final class EmployeController extends AbstractController
       $plat->setPhoto($data['photo']);
     }
 
-    // Étape 6 - Mettre à jour la catégorie si fournie
+    // Étape 7 - Mettre à jour la catégorie si fournie
     if (isset($data['categorie'])) {
       $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
       if (!in_array($data['categorie'], $categoriesValides)) {
@@ -1635,7 +1644,7 @@ final class EmployeController extends AbstractController
       $plat->setCategorie($data['categorie']);
     }
 
-    // Étape 7 - Synchroniser les allergènes si fournis (remplacement complet)
+    // Étape 8 - Synchroniser les allergènes si fournis (remplacement complet)
     if (isset($data['allergenes']) && is_array($data['allergenes'])) {
       foreach ($plat->getAllergenes() as $allergeneExistant) {
         $plat->removeAllergene($allergeneExistant);
@@ -1649,10 +1658,10 @@ final class EmployeController extends AbstractController
       }
     }
 
-    // Étape 8 - Sauvegarder
+    // Étape 9 - Sauvegarder
     $em->flush();
 
-    // Étape 9 - Retourner une confirmation
+    // Étape 10 - Retourner une confirmation
     return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
   }
 
