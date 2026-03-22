@@ -702,6 +702,88 @@ final class AdminController extends AbstractController
     ], 201);
   }
 
+  #[Route('/clients', name: 'api_admin_clients_create', methods: ['POST'])]
+  #[OA\Post(summary: 'Créer un compte client', description: 'Crée un compte client avec mot de passe temporaire.')]
+  #[OA\Tag(name: 'Admin - Utilisateurs')]
+  #[OA\Response(response: 201, description: 'Client créé')]
+  #[OA\Response(response: 400, description: 'Champs manquants')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  #[OA\Response(response: 409, description: 'Email déjà utilisé')]
+  public function createClient(
+      Request $request,
+      UtilisateurRepository $utilisateurRepository,
+      RoleRepository $roleRepository,
+      UserPasswordHasherInterface $passwordHasher,
+      EntityManagerInterface $em,
+      MailerService $mailerService
+  ): JsonResponse {
+
+    // Étape 1 - Vérification du rôle
+    if (!$this->isGranted('ROLE_ADMIN')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupére les données JSON
+    $data = json_decode($request->getContent(), true);
+
+    // Étape 3 - Vérification des champs
+    if (empty($data['nom']) || empty($data['prenom']) || empty($data['email']) || empty($data['telephone'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Les champs nom, prenom, email et telephone sont obligatoires'], 400);
+    }
+
+    // Étape 4 - Validation email
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Format email invalide'], 400);
+    }
+
+    // Étape 5 - Vérification que l'email nexiste pas déjà
+    if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
+    }
+
+    // Étape 6 - Affecte le role client au nouvelle utilisateur
+    $role = $roleRepository->findOneBy(['libelle' => 'ROLE_CLIENT']);
+    if (!$role) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Rôle ROLE_CLIENT introuvable en base'], 500);
+    }
+
+    // Étape 7 - Génère un mote de passe temporaire
+    $motDePasseTemporaire = bin2hex(random_bytes(8));
+
+    // Étape 8 - Crée un nouvelle object Utilisateur
+    $client = new Utilisateur();
+    $client->setNom($data['nom']);
+    $client->setPrenom($data['prenom']);
+    $client->setEmail($data['email']);
+    $client->setTelephone($data['telephone']);
+    $client->setVille($data['ville'] ?? '');
+    $client->setAdressePostale($data['adresse_postale'] ?? '');
+    $client->setCodePostal($data['code_postal'] ?? '');
+    $client->setPays($data['pays'] ?? 'France');
+    $client->setStatutCompte('actif');
+    $client->setRole($role);
+    $client->setPassword($passwordHasher->hashPassword($client, $motDePasseTemporaire));
+
+    // Étape 9 - Presiste et sauvegarde les données client
+    $em->persist($client);
+    $em->flush();
+
+    // Étape 10 - Envoie le mail aux client avec son mdp client
+    $mailerService->sendPasswordResetEmail($client, $motDePasseTemporaire);
+
+    // Étape 11 - Retourne résultat formatée
+    return $this->json([
+      'status' => 'Succès',
+      'message' => 'Compte client créé avec succès. Identifiants envoyés par email.',
+      'client' => [
+        'id' => $client->getId(),
+        'nom' => $client->getNom(),
+        'prenom' => $client->getPrenom(),
+        'email' => $client->getEmail(),
+      ]
+    ], 201);
+  }
+
   // =========================================================================
   // COMMANDE
   // =========================================================================
