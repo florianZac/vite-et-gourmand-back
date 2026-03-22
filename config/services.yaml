@@ -24,3 +24,6 @@ services:
     App\Service\MailerService:
             arguments:
                 $appUrl: '%env(APP_URL)%'
+    App\Service\CloudinaryService:
+        arguments:
+            $cloudinaryUrl: '%env(CLOUDINARY_URL)%'

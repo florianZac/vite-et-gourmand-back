@@ -21,6 +21,7 @@ use App\Repository\RegimeRepository;
 use App\Repository\SuiviCommandeRepository;
 use App\Repository\ThemeRepository;
 use App\Repository\UtilisateurRepository;
+use App\Service\CloudinaryService;
 
 use App\Service\MailerService;
 
@@ -364,8 +365,8 @@ final class EmployeController extends AbstractController
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
   #[OA\RequestBody(required: true, content: new OA\JsonContent(
     properties: [
-        new OA\Property(property: 'restitution_materiel', type: 'boolean', example: true),
-        new OA\Property(property: 'penalite_payee', type: 'boolean', example: true),
+      new OA\Property(property: 'restitution_materiel', type: 'boolean', example: true),
+      new OA\Property(property: 'penalite_payee', type: 'boolean', example: true),
     ]
   ))]
   #[OA\Response(response: 200, description: 'Restitution confirmée (passage en Terminée si conditions remplies)')]
@@ -426,8 +427,8 @@ final class EmployeController extends AbstractController
     return $this->json([
       'status'               => 'Succès',
       'message'              => $commande->getStatut() === CommandeStatut::TERMINEE
-          ? 'Matériel rendu et pénalité payée : commande passée en Terminée'
-          : 'Informations mises à jour',
+        ? 'Matériel rendu et pénalité payée : commande passée en Terminée'
+        : 'Informations mises à jour',
       'statut'               => $commande->getStatut(),
       'restitution_materiel' => $commande->isRestitutionMateriel(),
     ]);
@@ -448,8 +449,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 200, description: 'Commandes filtrées')]
   #[OA\Response(response: 403, description: 'Accès refusé')]
   public function filtrerCommandes(
-      Request $request,
-      CommandeRepository $commandeRepository
+    Request $request,
+    CommandeRepository $commandeRepository
   ): JsonResponse {
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
@@ -517,8 +518,8 @@ final class EmployeController extends AbstractController
     $suivisFormates = [];
     foreach ($suivis as $suivi) {
       $suivisFormates[] = [
-          'statut'      => $suivi->getStatut(),
-          'date_statut' => $suivi->getDateStatut()->format('d/m/Y H:i'),
+        'statut'      => $suivi->getStatut(),
+        'date_statut' => $suivi->getDateStatut()->format('d/m/Y H:i'),
       ];
     }
 
@@ -783,17 +784,6 @@ final class EmployeController extends AbstractController
         }
         $menu->addPlat($plat);
           
-        // Préparer les images du plat
-        /*
-        $imagesPlat = [];
-        foreach ($plat->getImages() as $image) {
-          $imagesPlat[] = [
-            'id' => $image->getId(),
-            'url' => $image->getUrl(),
-            'ordre' => $image->getOrdre(),
-          ];
-        }
-        */
         $platsRetour[] = [
           'id' => $plat->getId(),
           'titre' => $plat->getTitrePlat(),
@@ -965,18 +955,7 @@ final class EmployeController extends AbstractController
         $plat = $platRepository->find($platId);
         if (!$plat) return $this->json(['status' => 'Erreur', 'message' => "Plat id $platId non trouvé"], 404);
         $menu->addPlat($plat);
-
-        // Ajouter les images du plat pour la réponse
-        /*
-        $imagesPlat = [];
-        foreach ($plat->getImages() as $image) {
-          $imagesPlat[] = [
-            'id' => $image->getId(),
-            'url' => $image->getUrl(),
-            'ordre' => $image->getOrdre()
-          ];
-        }
-        */
+        
         $platsRetour[] = [
           'id' => $plat->getId(),
           'titre' => $plat->getTitrePlat(),
@@ -1055,276 +1034,72 @@ final class EmployeController extends AbstractController
       return $this->json(['status' => 'Succès', 'message' => 'Menu supprimé avec succès']);
   }
 
-  // =========================================================================
-  // IMAGES MENUS PAS SUR PEUT ETRE UNE MAUVAISE IDEE 
-  // =========================================================================
-
   /**
-   * @description Ajouter une image à la galerie d'un menu
-   * Reçoit un fichier image en en plusieurs parties /form-data (PAS en JSON)
-   * Sauvegarde le fichier dans public/uploads/menus/
-   * Stocke l'URL publique en base dans la table menu_image
-   * @see https://www.ibm.com/docs/fr/wm-integration-ipaas?topic=services-support-multipart-request-body
-   *
-   * Requête en plusieurs parties attendue :
-   *   - champ "image"  -> le fichier image (jpg, jpeg, png, webp)
-   *   - champ "ordre"  -> position dans la galerie par défaut à 1
-   *
-   * @param int $id L'id du menu
-   * @param Request $request La requête HTTP contenant le fichier uploadé
-   * @param MenuRepository $menuRepository Le repository des menus
-   * @param EntityManagerInterface $em L'EntityManager
-   * @return JsonResponse
+   * Fonction pour uploader une image via l'API.
+   * 
+   * Cette route permet d'envoyer une image qui sera uploadée
+   * sur Cloudinary. La fonction vérifie le rôle, le fichier, son type et sa taille,
+   * puis renvoie l'URL de l'image en cas de succès.*/
+/**
+   * @description Upload une image vers Cloudinary via le back
+   * Reçoit un fichier en multipart/form-data
+   * Retourne l'URL publique Cloudinary
    */
-  /*
-  #[Route('/menus/{id}/images', name: 'api_employe_menus_images_add', methods: ['POST'])]
-  #[OA\Post(
-      summary: 'Ajouter une image à un menu',
-      description: 'Upload un fichier image en multipart/form-data. Formats : jpg, jpeg, png, webp. Sauvegarde dans public/uploads/menus/.'
-  )]
-  #[OA\Tag(name: 'Employé - Images Menus')]
-  #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
-  #[OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(
-      properties: [
-          new OA\Property(property: 'image', type: 'string', format: 'binary', description: 'Fichier image'),
-          new OA\Property(property: 'ordre', type: 'integer', example: 1, description: 'Position dans la galerie'),
-      ]
-  )))]
-  #[OA\Response(response: 201, description: 'Image ajoutée')]
+  #[Route('/upload/image', name: 'api_employe_upload_image', methods: ['POST'])]
+  #[OA\Post(summary: 'Upload une image', description: 'Upload un fichier image vers Cloudinary. Retourne l\'URL publique.')]
+  #[OA\Tag(name: 'Employé - Upload')]
+  #[OA\RequestBody(required: true, content: new OA\MediaType(
+      mediaType: 'multipart/form-data',
+      schema: new OA\Schema(properties: [
+          new OA\Property(property: 'image', type: 'string', format: 'binary')
+      ])
+  ))]
+  #[OA\Response(response: 200, description: 'Image uploadée, URL retournée')]
   #[OA\Response(response: 400, description: 'Fichier manquant ou format invalide')]
   #[OA\Response(response: 403, description: 'Accès refusé')]
-  #[OA\Response(response: 404, description: 'Menu non trouvé')]
-  public function addImageMenu(
-      int $id,
+  public function uploadImage(
       Request $request,
-      MenuRepository $menuRepository,
-      EntityManagerInterface $em
+      CloudinaryService $cloudinaryService
   ): JsonResponse {
+
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
-    // Étape 2 - Récupérer le menu
-    $menu = $menuRepository->find($id);
-    if (!$menu) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
-    }
-*/
-    // Étape 3 - Récupérer le fichier uploadé
-    // $request->files->get('image') lit le fichier depuis le champ "image" de la requête multipart
-    /** @var UploadedFile|null $fichier */
- /*   $fichier = $request->files->get('image');
+    // Étape 2 - Récupérer le fichier
+    $fichier = $request->files->get('image');
     if (!$fichier) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Aucun fichier reçu. Utiliser multipart/form-data avec le champ "image"'], 400);
+      return $this->json(['status' => 'Erreur', 'message' => 'Aucun fichier reçu'], 400);
     }
 
-    // Étape 4 - Vérifier le type MIME et l'extension
-    $extensionsAutorisees = ['jpg', 'jpeg', 'png', 'webp'];
+    // Étape 3 - Validation type MIME
     $typesAutorises = ['image/jpeg', 'image/png', 'image/webp'];
-    $extension = strtolower($fichier->getClientOriginalExtension());
-    $mimeType = $fichier->getMimeType();
-
-    if (!in_array($extension, $extensionsAutorisees) || !in_array($mimeType, $typesAutorises)) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Format invalide. Formats acceptés : jpg, jpeg, png, webp'], 400);
+    if (!in_array($fichier->getMimeType(), $typesAutorises)) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Format invalide (JPG, PNG, WebP uniquement)'], 400);
     }
 
-    // Étape 4.1 - Limiter la taille du fichier (ex : 5 Mo max)
-    $maxSize = 5 * 1024 * 1024; // 5 Mo
-    if ($fichier->getSize() > $maxSize) {
-        return $this->json(['status'=>'Erreur','message'=>'Fichier trop volumineux (max 5 Mo)'],400);
+    // Étape 4 - Validation taille (5 Mo max)
+    if ($fichier->getSize() > 5 * 1024 * 1024) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Fichier trop volumineux (max 5 Mo)'], 400);
     }
 
-    // Étape 5 - Générer un nom de fichier unique pour éviter les collisions entre menus
-    $nomFichier = 'menu_' . $id . '_' . uniqid() . '.' . $extension;
+    // Étape 5 - Upload vers Cloudinary
+    try {
+      $url = $cloudinaryService->upload($fichier->getPathname());
 
-    // Étape 6 - Déplacer le fichier dans public/uploads/menus
-    // kernel.project_dir = chemin absolu vers la racine du projet (ex: /var/www/vite-et-gourmand)
-    // Le dossier public/ est servi directement par le serveur web
-    $dossierUpload = $this->getParameter('kernel.project_dir') . '/public/uploads/menus';
-    if (!is_dir($dossierUpload)) {
-        mkdir($dossierUpload, 0755, true);
+      return $this->json([
+        'status' => 'Succès',
+        'message' => 'Image uploadée avec succès',
+        'url' => $url
+      ]);
+    } catch (\Exception $e) {
+      return $this->json([
+        'status' => 'Erreur',
+        'message' => 'Erreur upload Cloudinary : ' . $e->getMessage()
+      ], 500);
     }
-    $fichier->move($dossierUpload, $nomFichier);
-
-    // Étape 7 - Construire l'URL publique accessible depuis le navigateur
-    // Le dossier public/ est la racine web -> l'URL commence par /uploads/menus/
-    // Exemple : "http://monsite.fr/uploads/menus/menu_3_6a3f2b1c4d5e6789.jpg"
-    $urlPublique = $request->getSchemeAndHttpHost() . '/uploads/menus/' . $nomFichier;
-
-    // Étape 8 - Récupérer l'ordre depuis le champ "ordre" de la requête multipart
-    // $request->request->get() lit les champs texte d'une requête multipart (pas JSON)
-    // Ordre 1 = photo principale affichée en premier dans la galerie
-    $ordre = (int) ($request->request->get('ordre', 1));
-
-    // Étape 9 - Créer l'entité MenuImage et l'associer au menu
-    $image = new MenuImage();
-    $image->setUrl($urlPublique);
-    $image->setOrdre($ordre);
-    $image->setMenu($menu);
-
-
-    // Étape 10 - Persister et sauvegarder
-    $em->persist($image);
-    $em->flush();
-
-    // Étape 11 - Retourner une confirmation avec l'URL et l'id de l'image créée
-    return $this->json([
-      'status'  => 'Succès',
-      'message' => 'Image ajoutée avec succès',
-      'image'   => [
-          'id'    => $image->getId(),
-          'url'   => $urlPublique,
-          'ordre' => $ordre,
-      ]
-    ], 201);
   }
-*/
-  /**
-   * @description Supprimer une image de la galerie d'un menu
-   * Supprime le fichier physique sur le serveur ET l'entrée en base de données
-   * @param int $id L'id du menu
-   * @param int $imageId L'id de l'image à supprimer
-   * @param MenuRepository $menuRepository Le repository des menus
-   * @param MenuImageRepository $menuImageRepository Le repository des images
-   * @param EntityManagerInterface $em L'EntityManager
-   * @return JsonResponse
-   */
-  /*
-  #[Route('/menus/{id}/images/{imageId}', name: 'api_employe_menus_images_delete', methods: ['DELETE'])]
-  #[OA\Delete(summary: 'Supprimer une image d\'un menu', description: 'Supprime le fichier physique et l\'entrée en base.')]
-  #[OA\Tag(name: 'Employé - Images Menus')]
-  #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID du menu', schema: new OA\Schema(type: 'integer'))]
-  #[OA\Parameter(name: 'imageId', in: 'path', required: true, description: 'ID de l\'image', schema: new OA\Schema(type: 'integer'))]
-  #[OA\Response(response: 200, description: 'Image supprimée')]
-  #[OA\Response(response: 403, description: 'Accès refusé ou image n\'appartient pas au menu')]
-  #[OA\Response(response: 404, description: 'Menu ou image non trouvé')]
-  public function deleteImageMenu(
-    int $id,
-    int $imageId,
-    MenuRepository $menuRepository,
-    MenuImageRepository $menuImageRepository,
-    EntityManagerInterface $em
-  ): JsonResponse {
-
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-    }
-
-    // Étape 2 - Récupérer le menu
-    $menu = $menuRepository->find($id);
-    if (!$menu) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
-    }
-
-    // Étape 3 - Récupérer l'image
-    $image = $menuImageRepository->find($imageId);
-    if (!$image) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Image non trouvée'], 404);
-    }
-
-    // Étape 4 - Vérifier que l'image appartient bien à ce menu
-    // Sécurité : évite qu'un employé supprime une image d'un autre menu via manipulation d'URL
-    if ($image->getMenu()->getId() !== $menu->getId()) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Cette image n\'appartient pas à ce menu'], 403);
-    }
-
-    // Étape 5 - Supprimer le fichier physique sur le serveur
-    // L'URL stockée est "/uploads/menus/fichier.jpg" -> on reconstitue le chemin absolu
-    $cheminFichier = $this->getParameter('kernel.project_dir') . '/public' . $image->getUrl();
-    if (file_exists($cheminFichier)) {
-      try {
-          unlink($cheminFichier);
-      } catch (\Exception $e) {
-          // Log l’erreur a faire 
-      }
-    }
-
-    // Étape 6 - Supprimer l'entrée en base
-    $em->remove($image);
-    $em->flush();
-
-    // Étape 7 - Retourner une confirmation
-    return $this->json(['status' => 'Succès', 'message' => 'Image supprimée avec succès']);
-  }
-*/
-  /**
-   * @description Modifier l'ordre d'affichage d'une image dans la galerie
-   * Permet de définir quelle image apparaît en premier (ordre 1 = photo principale)
-   * Corps JSON attendu : { "ordre": 2 }
-   * @param int $id L'id du menu
-   * @param int $imageId L'id de l'image à modifier
-   * @param Request $request La requête HTTP contenant le nouvel ordre
-   * @param MenuRepository $menuRepository Le repository des menus
-   * @param MenuImageRepository $menuImageRepository Le repository des images
-   * @param EntityManagerInterface $em L'EntityManager
-   * @return JsonResponse
-   */
-/*
-  #[Route('/menus/{id}/images/{imageId}', name: 'api_employe_menus_images_update', methods: ['PUT'])]
-  #[OA\Put(summary: 'Modifier l\'ordre d\'une image', description: 'Change la position d\'affichage d\'une image dans la galerie (ordre 1 = photo principale).')]
-  #[OA\Tag(name: 'Employé - Images Menus')]
-  #[OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-  #[OA\Parameter(name: 'imageId', in: 'path', required: true, schema: new OA\Schema(type: 'integer'))]
-  #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'ordre', type: 'integer', example: 2)]))]
-  #[OA\Response(response: 200, description: 'Ordre mis à jour')]
-  #[OA\Response(response: 400, description: 'Champ ordre manquant')]
-  #[OA\Response(response: 403, description: 'Accès refusé ou image n\'appartient pas au menu')]
-  #[OA\Response(response: 404, description: 'Menu ou image non trouvé')]
-  public function updateOrdreImage(
-    int $id,
-    int $imageId,
-    Request $request,
-    MenuRepository $menuRepository,
-    MenuImageRepository $menuImageRepository,
-    EntityManagerInterface $em
-  ): JsonResponse {
-
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-    }
-
-    // Étape 2 - Récupérer le menu
-    $menu = $menuRepository->find($id);
-    if (!$menu) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
-    }
-
-    // Étape 3 - Récupérer l'image
-    $image = $menuImageRepository->find($imageId);
-    if (!$image) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Image non trouvée'], 404);
-    }
-
-    // Étape 4 - Vérifier que l'image appartient bien à ce menu
-    if ($image->getMenu()->getId() !== $menu->getId()) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Cette image n\'appartient pas à ce menu'], 403);
-    }
-
-    // Étape 5 - Récupérer le nouvel ordre depuis le JSON
-    $data = json_decode($request->getContent(), true);
-    if (!isset($data['ordre'])) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Le champ ordre est obligatoire'], 400);
-    }
-
-    // Étape 6 - Mettre à jour l'ordre
-    $image->setOrdre((int) $data['ordre']);
-    $em->flush();
-
-    // Étape 7 - Retourner une confirmation
-    return $this->json([
-        'status'  => 'Succès',
-        'message' => 'Ordre de l\'image mis à jour avec succès',
-        'image'   => [
-            'id'    => $image->getId(),
-            'url'   => $image->getUrl(),
-            'ordre' => $image->getOrdre(),
-        ]
-    ]);
-  }
-  */
 
   // =========================================================================
   // THEMES
@@ -1806,7 +1581,14 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 404, description: 'Non trouvé')]  
   #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
-  public function updatePlat(int $id, Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+  public function updatePlat(
+    int $id, 
+    Request $request, 
+    PlatRepository $platRepository, 
+    AllergeneRepository $allergeneRepository, 
+    EntityManagerInterface $em,
+    CloudinaryService $cloudinaryService
+  ): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
@@ -1836,6 +1618,11 @@ final class EmployeController extends AbstractController
 
     // Étape 5 - Mettre à jour la photo si fournie
     if (isset($data['photo'])) {
+      // Si l'ancienne photo est différente et existe sur Cloudinary → la supprimer
+      $anciennePhoto = $plat->getPhoto();
+      if ($anciennePhoto && $anciennePhoto !== $data['photo']) {
+        $cloudinaryService->deleteByUrl($anciennePhoto);
+      }
       $plat->setPhoto($data['photo']);
     }
 
@@ -1882,7 +1669,12 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 200, description: 'Supprimé')]  
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 404, description: 'Non trouvé')]
-  public function deletePlat(int $id, PlatRepository $platRepository, EntityManagerInterface $em): JsonResponse
+  public function deletePlat(
+    int $id, 
+    PlatRepository $platRepository,
+    EntityManagerInterface $em,
+    CloudinaryService $cloudinaryService 
+  ): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
     if (!$this->isGranted('ROLE_EMPLOYE')) {
@@ -1895,16 +1687,20 @@ final class EmployeController extends AbstractController
       return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
     }
 
-    // Étape 3 - Supprimer
+    // Étape 3 - Supprime l'image sur Cloudinary si elle existe
+    if ($plat->getPhoto()) {
+      $cloudinaryService->deleteByUrl($plat->getPhoto());
+    }
+
+    // Étape 4 - Supprime le plat
     $em->remove($plat);
 
-    // Étape 4 - Sauvegarder       
+    // Étape 5 - Sauvegarder       
     $em->flush();
 
-    // Étape 5 - Retourne le résulat
+    // Étape 6 - Retourne le résulat
     return $this->json(['status' => 'Succès', 'message' => 'Plat supprimé avec succès']);
   }
-
 
 	/**
 	 * @description Ajoute un plat à un menu

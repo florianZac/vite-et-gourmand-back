@@ -1475,3 +1475,24 @@ Installation du mailer
 composer require symfony/mailer
 
 Vérifier la configuration du mail 
+
+# 7 Mise en place de cloudinary pour la gestion des images
+https://console.cloudinary.com/app/c-d5bfca4e46946f1728ea3eff5264e4/settings/upload/presets
+
+7.1 Création du service CloudinaryService.php
+
+7.2 Installation des dépendances Cloudinary
+composer require cloudinary/cloudinary_php
+
+7.3 Mise a jour de config/services.yaml
+services:
+    App\Service\CloudinaryService:
+        arguments:
+            $cloudinaryUrl: '%env(CLOUDINARY_URL)%'
+
+7.4 Mise a jour de .env
+CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg@drdup0seu
+
+7.5 Mise a des config var heroku
+heroku config:set CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg@drdup0seu --app vite-et-gourmand-api
