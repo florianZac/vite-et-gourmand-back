@@ -1495,4 +1495,7 @@ CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg@drdup0seu
 
 7.5 Mise a des config var heroku
-heroku config:set CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg@drdup0seu --app vite-et-gourmand-api
+heroku config:set CLOUDINARY_URL=cloudinary://624924471853181:K9wvLveSqVDrKwzb...@drdup0seu --app vite-et-gourmand-api
+
+
+K9wvLveSqVDrKwzb
