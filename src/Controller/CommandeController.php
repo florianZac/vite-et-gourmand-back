@@ -259,10 +259,11 @@ final class CommandeController extends BaseController
     }
 
     // Étape 13 - Vérification stock suffisant pour le nombre de personnes commandées
-    if ($menu->getQuantiteRestante() < $nombrePersonnes) {
+    $decrement = max($nombrePersonnes, $minimumPersonnes);
+    if ($menu->getQuantiteRestante() < $decrement) {
         return $this->json([
             'status' => 'Erreur',
-            'message' => "Stock insuffisant : il reste {$menu->getQuantiteRestante()} menus disponibles, {$nombrePersonnes} requis"
+            'message' => "Stock insuffisant : il reste {$menu->getQuantiteRestante()} disponibles, {$decrement} requis"
         ], 400);
     }
 
@@ -357,8 +358,10 @@ final class CommandeController extends BaseController
     $em->persist($suivi);
     $em->flush();
 
-    // Étape 28 - Décrémenter le stock en fonction du nombre de personnes commandées
-    $menu->setQuantiteRestante($menu->getQuantiteRestante() - $nombrePersonnes);
+    // Étape 28 - Décrémenter le stock
+    // Le décrement est toujours au moins le minimum du menu
+    $decrement = max($nombrePersonnes, $minimumPersonnes);
+    $menu->setQuantiteRestante($menu->getQuantiteRestante() - $decrement);
     $em->flush();
 
     // Étape 29 - Envoyer mail de confirmation
