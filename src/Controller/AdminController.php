@@ -851,9 +851,11 @@ final class AdminController extends AbstractController
             'note' => $a->getNote(),
             'description' => $a->getDescription(),
             'statut' => $a->getStatut(),
+            'date' => $a->getDate()?->format('d/m/Y H:i:s'),
             'utilisateur_id' => $a->getUtilisateur()?->getId(),
             'utilisateur_nom' => $a->getUtilisateur()?->getNom(),
             'commande_id' => $a->getCommande()?->getId(),
+            'numero_commande' => $a->getCommande()?->getNumeroCommande(),
         ];
     }
     
@@ -994,10 +996,10 @@ final class AdminController extends AbstractController
    * 
    * Exploite les logs de type "commande_creee" déjà stockés dans MongoDB
    * 
-   * Pourquoi MongoDB pour les graphiques ?
-   *  L'énoncé impose une source NoSQL pour les graphiques
-   *  Les logs commande_creee contiennent déjà : menu, montant, ville_livraison, date
-   *  MongoDB est optimisé pour ce type d'agrégation sans jointure
+   * Pourquoi MongoDB pour les graphiques est les log ? 
+   *  L'énoncé impose une source NoSQL, pour les graphiques ainsi que les logs une base de donnée non relationnel est optimale
+   *  Les logs commande_cree  : menu, montant, ville_livraison, date
+   *  MongoDB est optimisé pour des bases de données non relationnel
    *
    * Données retournées :
    *   - CA total et par menu
