@@ -17,7 +17,7 @@ class CommandeStatut
     public const LIVRE                      = 'Livré';
     public const EN_ATTENTE_RETOUR_MATERIEL = 'En attente du retour matériel';
     public const TERMINEE                   = 'Terminée';
-    public const ANNULEE                    = 'annulée';
+    public const ANNULEE                    = 'Annulée';
 
     // Statuts dans lesquels un CLIENT peut modifier sa commande
     public const MODIFIABLES = [

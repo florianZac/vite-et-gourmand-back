@@ -341,7 +341,7 @@ final class CommandeController extends BaseController
             ->setPrixLivraison(round($prixLivraison, 2))
             ->setMontantAcompte(round($montantAcompte, 2))
             ->setDistanceKm($distanceKm)
-            ->setPrixTotal($prixTotal) // <- nouveau champ ajouté
+            ->setPrixTotal($prixTotal) 
             ->setStatut(CommandeStatut::EN_ATTENTE)
             ->setDateCommande(new \DateTime())
             ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
@@ -445,6 +445,8 @@ final class CommandeController extends BaseController
             'id' => $commande->getUtilisateur()?->getId(),
             'nom' => $commande->getUtilisateur()?->getNom(),
             'prenom' => $commande->getUtilisateur()?->getPrenom(),
+            'telephone' => $commande->getUtilisateur()?->getTelephone(),        
+            'adresse_postale' => $commande->getUtilisateur()?->getAdressePostale(),
         ],
 
         'menu' => [
@@ -526,6 +528,8 @@ final class CommandeController extends BaseController
           'id' => $commande->getUtilisateur()?->getId(),
           'nom' => $commande->getUtilisateur()?->getNom(),
           'prenom' => $commande->getUtilisateur()?->getPrenom(),
+          'telephone' => $commande->getUtilisateur()?->getTelephone(),        
+          'adresse_postale' => $commande->getUtilisateur()?->getAdressePostale(),
       ],
 
       'menu' => [
