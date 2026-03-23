@@ -594,7 +594,7 @@ final class EmployeController extends AbstractController
   public function approuverAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -637,7 +637,7 @@ final class EmployeController extends AbstractController
   public function refuserAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
