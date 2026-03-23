@@ -95,8 +95,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]
   public function getCommandes(CommandeRepository $commandeRepository): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -125,8 +125,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 404, description: 'Aucune commande trouvée')]
   public function rechercherCommande(string $nom, CommandeRepository $commandeRepository): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -175,8 +175,8 @@ final class EmployeController extends AbstractController
     EntityManagerInterface $em,
     MailerService $mailerService
   ): JsonResponse {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -287,8 +287,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]
   public function getMaterialEnCours(CommandeRepository $commandeRepository): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -325,8 +325,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 404, description: 'Commande non trouvée')]
   public function getMaterielCommande(int $id, CommandeRepository $commandeRepository): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -380,8 +380,8 @@ final class EmployeController extends AbstractController
     EntityManagerInterface $em,
     MailerService $mailerService
   ): JsonResponse {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -452,8 +452,8 @@ final class EmployeController extends AbstractController
     Request $request,
     CommandeRepository $commandeRepository
   ): JsonResponse {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -497,8 +497,8 @@ final class EmployeController extends AbstractController
     CommandeRepository $commandeRepository,
     SuiviCommandeRepository $suiviCommandeRepository
   ): JsonResponse {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -549,8 +549,8 @@ final class EmployeController extends AbstractController
 
   public function getAvisEnAttente(AvisRepository $avisRepository): JsonResponse
   {
-     // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -593,7 +593,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 404, description: 'Avis non trouvé')]
   public function approuverAvis(int $id, AvisRepository $avisRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
@@ -707,8 +707,8 @@ final class EmployeController extends AbstractController
     EntityManagerInterface $em
   ): JsonResponse {
 
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -855,8 +855,8 @@ final class EmployeController extends AbstractController
     EntityManagerInterface $em
   ): JsonResponse {
       
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1005,8 +1005,9 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Menu déjà commandé par des clients')]
   public function deleteMenu(int $id, MenuRepository $menuRepository, EntityManagerInterface $em): JsonResponse
   {
-      // Étape 1 - Vérifier le rôle EMPLOYE
-      if (!$this->isGranted('ROLE_EMPLOYE')) {
+      // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+      if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) 
+      { 
         return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
       }
 
@@ -1062,8 +1063,8 @@ final class EmployeController extends AbstractController
       CloudinaryService $cloudinaryService
   ): JsonResponse {
 
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1121,8 +1122,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 201, description: 'Thème créé')]  #[OA\Response(response: 400, description: 'Libellé manquant')]  #[OA\Response(response: 403, description: 'Accès refusé')]  #[OA\Response(response: 409, description: 'Thème déjà existant')]
   public function createTheme(Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1170,8 +1171,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
   public function updateTheme(int $id, Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1215,8 +1216,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 404, description: 'Non trouvé')]
   public function deleteTheme(int $id, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1255,8 +1256,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Déjà existant')]
   public function createRegime(Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1303,8 +1304,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
   public function updateRegime(int $id, Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1347,8 +1348,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 404, description: 'Non trouvé')]
   public function deleteRegime(int $id, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1383,8 +1384,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Déjà existant')]
   public function createAllergene(Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1426,8 +1427,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
   public function updateAllergene(int $id, Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1472,8 +1473,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 404, description: 'Non trouvé')]
   public function deleteAllergene(int $id, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1515,8 +1516,8 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
   public function createPlat(Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1593,8 +1594,8 @@ final class EmployeController extends AbstractController
     CloudinaryService $cloudinaryService
   ): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1685,8 +1686,8 @@ final class EmployeController extends AbstractController
     CloudinaryService $cloudinaryService 
   ): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -1733,8 +1734,9 @@ final class EmployeController extends AbstractController
 		PlatRepository $platRepository
 	): JsonResponse
 	{
-		// Étape 1 - Vérifie le rôle ROLE_EMPLOYE
-		if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) 
+    {
 			return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
 		}
 
@@ -1792,8 +1794,9 @@ final class EmployeController extends AbstractController
       PlatRepository $platRepository
   ): JsonResponse
   {
-    // Étape 1 - Vérifie le rôle ROLE_EMPLOYE
-    if (!$this->isGranted('ROLE_EMPLOYE')) {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) 
+    {
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 

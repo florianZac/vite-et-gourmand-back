@@ -804,7 +804,7 @@ final class AdminController extends AbstractController
    */
   public function deleteCommande(int $id, CommandeRepository $commandeRepository, EntityManagerInterface $em): JsonResponse
   {
-    // Étape 1 — Vérifier le rôle CLIENT
+    // Étape 1 — Vérifier le rôle
     if (!$this->isGranted('ROLE_ADMIN')) {
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }

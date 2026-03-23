@@ -443,10 +443,14 @@ final class CommandeController extends BaseController
 
         'utilisateur' => [
             'id' => $commande->getUtilisateur()?->getId(),
+            'nom' => $commande->getUtilisateur()?->getNom(),
+            'prenom' => $commande->getUtilisateur()?->getPrenom(),
         ],
 
         'menu' => [
             'id' => $commande->getMenu()?->getId(),
+            'titre' => $commande->getMenu()?->getTitre(),
+
         ]
       ];
     }
@@ -520,10 +524,14 @@ final class CommandeController extends BaseController
 
       'utilisateur' => [
           'id' => $commande->getUtilisateur()?->getId(),
+          'nom' => $commande->getUtilisateur()?->getNom(),
+          'prenom' => $commande->getUtilisateur()?->getPrenom(),
       ],
 
       'menu' => [
           'id' => $commande->getMenu()?->getId(),
+          'titre' => $commande->getMenu()?->getTitre(),
+
       ]
     ];
 

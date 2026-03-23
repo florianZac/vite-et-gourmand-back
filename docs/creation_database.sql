@@ -582,6 +582,45 @@ INSERT IGNORE INTO commande (
 (7, 'CMD-TEST01', '2026-03-17 17:01:54', '2026-04-20', 'EN_ATTENTE', 0, 0, NULL, NULL, 0, '12:30:00', 120, 0, 0, 36, 84, 5, NULL, NULL, '12 rue des fleurs', 'Bordeaux', 1, 1);
 
 -- ============================================
+-- MISE A JOUR POUR CORRECTION DE BUG
+-- ============================================
+UPDATE avis SET statut = 'en_attente' WHERE statut = 'En attente';
+UPDATE avis SET statut = 'validé' WHERE statut = 'Publié';
+UPDATE avis SET statut = 'validé' WHERE statut = 'Validé';
+UPDATE avis SET statut = 'refusé' WHERE statut = 'Refusé';
+-- Livrée passe à Livré
+UPDATE suivi_commande SET statut = 'Livré' WHERE statut = 'Livrée';
+-- En attente retour materiel mise à jour de la valeur complète avec accents
+UPDATE suivi_commande SET statut = 'En attente de retour matériel' WHERE statut = 'En attente retour materiel';
+-- Commande reçue pas dans le cycle de vie, on remplace par En attente
+UPDATE suivi_commande SET statut = 'En attente' WHERE statut = 'Commande reçue';
+UPDATE commande SET statut = 'En attente de retour matériel' WHERE commande_id = 5;
+UPDATE commande SET statut = 'En attente' WHERE commande_id = 7;
+UPDATE commande SET statut = 'Terminée' WHERE commande_id = 2; 
+
+UPDATE commande SET restitution_materiel = '0' WHERE commande_id = 3;
+UPDATE commande SET restitution_materiel = '0' WHERE commande_id = 4;
+
+UPDATE commande SET pret_materiel = '1' WHERE commande_id = 5;
+
+UPDATE commande SET numero_commande = 'CMD-007' WHERE commande_id = 7;
+UPDATE commande SET numero_commande = 'CMD-008' WHERE commande_id = 8;
+UPDATE commande SET numero_commande = 'CMD-009' WHERE commande_id = 9;
+UPDATE commande SET numero_commande = 'CMD-010' WHERE commande_id = 10;
+UPDATE commande SET numero_commande = 'CMD-011' WHERE commande_id = 11;
+UPDATE commande SET numero_commande = 'CMD-012' WHERE commande_id = 12;
+UPDATE commande SET numero_commande = 'CMD-013' WHERE commande_id = 13;
+UPDATE commande SET numero_commande = 'CMD-014' WHERE commande_id = 14;
+UPDATE commande SET numero_commande = 'CMD-015' WHERE commande_id = 15;
+UPDATE commande SET numero_commande = 'CMD-016' WHERE commande_id = 16;
+UPDATE commande SET numero_commande = 'CMD-017' WHERE commande_id = 17;
+UPDATE commande SET numero_commande = 'CMD-018' WHERE commande_id = 18;
+UPDATE commande SET numero_commande = 'CMD-019' WHERE commande_id = 19;
+UPDATE commande SET numero_commande = 'CMD-020' WHERE commande_id = 20;
+UPDATE commande SET numero_commande = 'CMD-021' WHERE commande_id = 21;
+UPDATE commande SET numero_commande = 'CMD-022' WHERE commande_id = 22;
+
+-- ============================================
 -- RÉACTIVATION DES CONTRAINTES
 -- ============================================
 SET FOREIGN_KEY_CHECKS = 1;
