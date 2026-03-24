@@ -65,6 +65,7 @@ use OpenApi\Attributes as OA;
 #[Route('/api/admin')]
 final class AdminController extends AbstractController
 {
+
   // =========================================================================
   // UTILISATEUR
   // =========================================================================

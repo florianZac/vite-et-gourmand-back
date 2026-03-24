@@ -50,6 +50,14 @@ final class CommandeController extends BaseController
   private const RESTAURANT_LAT = 44.8562;
   private const RESTAURANT_LON = -0.5709;
 
+  // Valeur maximal de la distance de livraison
+  private const VALEUR_MAX_DISTANCE =200;
+  // Valeur minimum de la distance entre le restaurant et le rayon de livraison gratuite
+  private const VALEUR_MIN_DISTANCE =10;
+  // Frais fixe pour le calcule de la livraison
+  private const FRAIS_FIXE =5;
+  // Coefficient de calcul pour les frais kilométrique
+  private const FRAIS_COEF_KILOMETRE =0.59;
 
   /**
    * @description Retourne la liste des jours fériés français pour une année donnée
@@ -313,22 +321,32 @@ final class CommandeController extends BaseController
       $prixMenu *= 0.90;
     }
 
-    // Étape 22 - Calculer le prix de livraison
-    $prixLivraison = 0;
-    if ($distanceKm > 50) {
-      $prixLivraison = 5 + 0.59 * ($distanceKm - 50);
-      $prixLivraison = round($prixLivraison, 2); // arrondi à 2 décimales
+    // Étape 22 - Vérifier distance max
+    if ($distanceKm > self::VALEUR_MAX_DISTANCE) {
+      return $this->json([
+        'status' => 'Erreur',
+        'message' => 'Livraison impossible : distance supérieure à ' . self::VALEUR_MAX_DISTANCE . ' km'
+      ], 400);
     }
 
-    // Étape 23 - Calcul de l'acompte
+    // Étape 23 - Calculer le prix de livraison
+    // Gratuit si ≤ rayon minimum, sinon frais fixe + coefficient × distance
+    $prixLivraison = 0;
+    if ($distanceKm > self::VALEUR_MIN_DISTANCE) {
+      $prixLivraison = self::FRAIS_FIXE + (self::FRAIS_COEF_KILOMETRE * $distanceKm);
+      $prixLivraison = round($prixLivraison, 2);
+    }
+
+    // Étape 24 - Calcul de l'acompte
     $libelleTheme = strtolower($menu->getTheme()->getLibelle());
     $tauxAcompte = in_array($libelleTheme, ['événement', 'mariage']) ? 0.50 : 0.30;
     $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
     $prixTotal = round($prixMenu + $prixLivraison, 2);
-    // Étape 24 - Générer numéro de commande
+
+    // Étape 25 - Générer numéro de commande
     $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
 
-    // Étape 25 - Créer la commande
+    // Étape 26 - Créer la commande
     $commande = new Commande();
     $commande->setUtilisateur($utilisateur)
             ->setMenu($menu)
@@ -347,27 +365,27 @@ final class CommandeController extends BaseController
             ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
             ->setNumeroCommande($numeroCommande);
 
-    // Étape 26 - Créer le suivi initial
+    // Étape 27 - Créer le suivi initial
     $suivi = new SuiviCommande();
     $suivi->setStatut(CommandeStatut::EN_ATTENTE)
       ->setDateStatut(new \DateTime())
       ->setCommande($commande);
 
-    // Étape 27 - Persister et sauvegarder
+    // Étape 28 - Persister et sauvegarder
     $em->persist($commande);
     $em->persist($suivi);
     $em->flush();
 
-    // Étape 28 - Décrémenter le stock
+    // Étape 29 - Décrémenter le stock
     // Le décrement est toujours au moins le minimum du menu
     $decrement = max($nombrePersonnes, $minimumPersonnes);
     $menu->setQuantiteRestante($menu->getQuantiteRestante() - $decrement);
     $em->flush();
 
-    // Étape 29 - Envoyer mail de confirmation
+    // Étape 30 - Envoyer mail de confirmation
     $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-    // Étape 30 - Log MongoDB
+    // Étape 31 - Log MongoDB
     $logService->log(
       'commande_creee',
       $utilisateur->getEmail(),
@@ -383,7 +401,7 @@ final class CommandeController extends BaseController
       ]
     );
     
-    // Étape 31 - Retourner la confirmation
+    // Étape 32 - Retourner la confirmation
     return $this->json([
         'status' => 'Succès',
         'message' => 'Commande créée avec succès',

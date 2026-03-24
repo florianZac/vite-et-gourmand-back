@@ -39,6 +39,20 @@ use OpenApi\Attributes as OA;
 #[Route('/api/client')]
 final class ClientController extends BaseController
 {
+  // ADRESSE DU RESTAURANT VITE ET GOURMAND
+  private const RESTAURANT_ADDRESS = '22 quai des Chartrons, Bordeaux, France';
+  private const RESTAURANT_LAT = 44.8562;
+  private const RESTAURANT_LON = -0.5709;
+
+  // Valeur maximal de la distance de livraison
+  private const VALEUR_MAX_DISTANCE =200;
+  // Valeur minimum de la distance entre le restaurant et le rayon de livraison gratuite
+  private const VALEUR_MIN_DISTANCE =10;
+  // Frais fixe pour le calcule de la livraison
+  private const FRAIS_FIXE =5;
+  // Coefficient de calcul pour les frais kilométrique
+  private const FRAIS_COEF_KILOMETRE =0.59;
+
 	// =========================================================================
 	// UTILISATEUR
 	// =========================================================================
@@ -532,11 +546,11 @@ final class ClientController extends BaseController
 			}
 
 			// Étape 9.4 : Recalcul du prix de livraison
-			// Gratuit à Bordeaux, sinon 5€ + 0,59€/km
-			if ($villeLivraison === 'bordeaux') {
+			// Gratuit si ≤ rayon minimum, sinon frais fixe + coefficient × distance
+			if ($distanceKm <= self::VALEUR_MIN_DISTANCE) {
 				$prixLivraison = 0;
 			} else {
-				$prixLivraison = 5 + (0.59 * $distanceKm);
+				$prixLivraison = self::FRAIS_FIXE + (self::FRAIS_COEF_KILOMETRE * $distanceKm);
 			}
 
 			// Étape 9.5 - Recalcul de l'acompte
