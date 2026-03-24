@@ -446,7 +446,7 @@ final class CommandeController extends BaseController
             'nom' => $commande->getUtilisateur()?->getNom(),
             'prenom' => $commande->getUtilisateur()?->getPrenom(),
             'telephone' => $commande->getUtilisateur()?->getTelephone(),        
-            'adresse_postale' => $commande->getUtilisateur()?->getAdressePostale(),
+            'code_postal' => $commande->getUtilisateur()?->getCodePostal(),
         ],
 
         'menu' => [
@@ -529,7 +529,7 @@ final class CommandeController extends BaseController
           'nom' => $commande->getUtilisateur()?->getNom(),
           'prenom' => $commande->getUtilisateur()?->getPrenom(),
           'telephone' => $commande->getUtilisateur()?->getTelephone(),        
-          'adresse_postale' => $commande->getUtilisateur()?->getAdressePostale(),
+          'code_postal' => $commande->getUtilisateur()?->getCodePostal(),
       ],
 
       'menu' => [
