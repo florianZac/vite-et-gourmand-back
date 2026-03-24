@@ -619,6 +619,8 @@ UPDATE commande SET numero_commande = 'CMD-019' WHERE commande_id = 19;
 UPDATE commande SET numero_commande = 'CMD-020' WHERE commande_id = 20;
 UPDATE commande SET numero_commande = 'CMD-021' WHERE commande_id = 21;
 UPDATE commande SET numero_commande = 'CMD-022' WHERE commande_id = 22;
+UPDATE commande SET statut = 'En attente du retour matériel' WHERE commande_id = 5;
+
 
 -- ============================================
 -- RÉACTIVATION DES CONTRAINTES
