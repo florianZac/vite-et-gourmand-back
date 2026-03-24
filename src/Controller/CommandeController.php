@@ -343,10 +343,18 @@ final class CommandeController extends BaseController
     $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
     $prixTotal = round($prixMenu + $prixLivraison, 2);
 
-    // Étape 25 - Générer numéro de commande
-    $numeroCommande = 'CMD-' . strtoupper(bin2hex(random_bytes(4)));
+    // Étape 25 - Récupère la valeur max dans la bdd de la colone numeroCommande
+    $lastNumero = $commandeRepository->findMaxNumeroCommande();
+    if ($lastNumero === null) {
+        $nextNumero = 1;
+    } else {
+        $nextNumero = $lastNumero + 1;
+    }
 
-    // Étape 26 - Créer la commande
+    // Étape 26 - Générer le numéro de commande
+    $numeroCommande = 'CMD-' . str_pad($nextNumero, 3, '0', STR_PAD_LEFT);
+
+    // Étape 27 - Créer la commande
     $commande = new Commande();
     $commande->setUtilisateur($utilisateur)
             ->setMenu($menu)
@@ -365,27 +373,27 @@ final class CommandeController extends BaseController
             ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
             ->setNumeroCommande($numeroCommande);
 
-    // Étape 27 - Créer le suivi initial
+    // Étape 28 - Créer le suivi initial
     $suivi = new SuiviCommande();
     $suivi->setStatut(CommandeStatut::EN_ATTENTE)
       ->setDateStatut(new \DateTime())
       ->setCommande($commande);
 
-    // Étape 28 - Persister et sauvegarder
+    // Étape 29 - Persister et sauvegarder
     $em->persist($commande);
     $em->persist($suivi);
     $em->flush();
 
-    // Étape 29 - Décrémenter le stock
+    // Étape 30 - Décrémenter le stock
     // Le décrement est toujours au moins le minimum du menu
     $decrement = max($nombrePersonnes, $minimumPersonnes);
     $menu->setQuantiteRestante($menu->getQuantiteRestante() - $decrement);
     $em->flush();
 
-    // Étape 30 - Envoyer mail de confirmation
+    // Étape 31 - Envoyer mail de confirmation
     $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-    // Étape 31 - Log MongoDB
+    // Étape 32 - Log MongoDB
     $logService->log(
       'commande_creee',
       $utilisateur->getEmail(),
@@ -401,7 +409,7 @@ final class CommandeController extends BaseController
       ]
     );
     
-    // Étape 32 - Retourner la confirmation
+    // Étape 33 - Retourner la confirmation
     return $this->json([
         'status' => 'Succès',
         'message' => 'Commande créée avec succès',

@@ -187,6 +187,36 @@ class CommandeRepository extends ServiceEntityRepository
 	}
 
 
+  /**
+   * @description Recherche la valeur maximale du dernier numero de commande 
+   * Utilisé par la fonction create commande pour pouvoir incrémenté la valeur de commande de façon triable et incrémentable
+   * @param none 
+   * @return string retourne la valeur max de la colonne numéro de commande   
+   */
+  public function findMaxNumeroCommande(): ?string
+  {
+    $result = $this->createQueryBuilder('c')
+      ->select('c.numeroCommande')
+      ->where('c.numeroCommande LIKE :prefix')
+      ->setParameter('prefix', 'CMD-%')
+      ->getQuery()
+      ->getScalarResult();
+
+    if (!$result) {
+      return null;
+    }
+
+    $max = 0;
+
+    foreach ($result as $row) {
+      $num = (int) str_replace('CMD-', '', $row['numeroCommande']);
+      if ($num > $max) {
+        $max = $num;
+      }
+    }
+    return $max;
+  }
+
 	// =========================================================================
 	// STATISTIQUE POUR LE DOUBLE CHART BAR JS EN FRONT 
 	// =========================================================================
