@@ -399,7 +399,7 @@ final class CommandeController extends BaseController
       $utilisateur->getEmail(),
       'ROLE_CLIENT',
       [
-        'numero_commande' => $numeroCommande,
+        'numero_commande' => $numero_commande,
         'montant' => round($prixMenu + $prixLivraison, 2),
         'menu' => $menu->getTitre(),
         'ville_livraison' => $data['ville_livraison'],
@@ -413,7 +413,7 @@ final class CommandeController extends BaseController
     return $this->json([
         'status' => 'Succès',
         'message' => 'Commande créée avec succès',
-        'numero_commande' => $numeroCommande,
+        'numero_commande' => $numero_commande,
         'email' => $utilisateur->getEmail(),
         'prix_menu' => round($prixMenu, 2),
         'prix_livraison' => round($prixLivraison, 2),

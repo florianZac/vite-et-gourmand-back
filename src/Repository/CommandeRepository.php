@@ -196,8 +196,8 @@ class CommandeRepository extends ServiceEntityRepository
   public function findMaxNumeroCommande(): ?string
   {
     $result = $this->createQueryBuilder('c')
-      ->select('c.numeroCommande')
-      ->where('c.numeroCommande LIKE :prefix')
+      ->select('c.numero_commande')
+      ->where('c.numero_commande  LIKE :prefix')
       ->setParameter('prefix', 'CMD-%')
       ->getQuery()
       ->getScalarResult();
