@@ -193,11 +193,11 @@ class CommandeRepository extends ServiceEntityRepository
    * @param none 
    * @return string retourne la valeur max de la colonne numéro de commande   
    */
-  public function findMaxNumeroCommande(): ?string
+  public function findMaxNumeroCommande(): ?int
   {
     $result = $this->createQueryBuilder('c')
       ->select('c.numero_commande')
-      ->where('c.numero_commande  LIKE :prefix')
+      ->where('c.numero_commande LIKE :prefix')
       ->setParameter('prefix', 'CMD-%')
       ->getQuery()
       ->getScalarResult();
@@ -205,11 +205,10 @@ class CommandeRepository extends ServiceEntityRepository
     if (!$result) {
       return null;
     }
-
     $max = 0;
 
     foreach ($result as $row) {
-      $num = (int) str_replace('CMD-', '', $row['numeroCommande']);
+      $num = (int) str_replace('CMD-', '', $row['numero_commande']);
       if ($num > $max) {
         $max = $num;
       }
