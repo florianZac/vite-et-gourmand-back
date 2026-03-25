@@ -26,7 +26,7 @@ class AvisRepository extends ServiceEntityRepository
 		return $this->createQueryBuilder('a')
 			// On ignore les espaces avant/après et on ignore la casse
 			->where('LOWER(TRIM(a.statut)) = :statut')
-			->setParameter('statut', strtolower('Publié'))
+			->setParameter('statut', strtolower('publié'))
 			->orderBy('a.date', 'DESC')  // On prend les plus récents par date
 			->setMaxResults($limit)
 			->getQuery()
