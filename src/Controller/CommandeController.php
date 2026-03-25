@@ -352,7 +352,7 @@ final class CommandeController extends BaseController
     }
 
     // Étape 26 - Générer le numéro de commande
-    $numeroCommande = 'CMD-' . str_pad($nextNumero, 3, '0', STR_PAD_LEFT);
+    $numero_commande  = 'CMD-' . str_pad($nextNumero, 3, '0', STR_PAD_LEFT);
 
     // Étape 27 - Créer la commande
     $commande = new Commande();
@@ -371,7 +371,7 @@ final class CommandeController extends BaseController
             ->setStatut(CommandeStatut::EN_ATTENTE)
             ->setDateCommande(new \DateTime())
             ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
-            ->setNumeroCommande($numeroCommande);
+            ->setNumeroCommande($numero_commande);
 
     // Étape 28 - Créer le suivi initial
     $suivi = new SuiviCommande();
