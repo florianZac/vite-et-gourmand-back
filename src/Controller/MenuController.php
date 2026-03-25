@@ -396,7 +396,7 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
 	public function getAvisValides(AvisRepository $avisRepository): JsonResponse
 	{
     // Étape 1 - Récupérer les 5 derniers avis au statut "Publié"
-    $avis = $avisRepository->findAvis('Publié', 5);
+    $avis = $avisRepository->findLastPublishedAvis(5);
 
     // Étape 2 - Conversion en tableau simple
     $data = array_map(function($user) {
