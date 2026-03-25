@@ -430,15 +430,15 @@ final class CommandeController extends BaseController
   /**
    * @description Retourne la liste de toutes les commandes
    */
-  #[Route('/admin', name: 'api_admin_commandes_list', methods: ['GET'])]
-  #[OA\Get(summary: 'Liste de toutes les commandes', description: 'Retourne la liste complète des commandes. Réservé aux administrateurs.')]
+  #[Route('', name: 'api_admin_commandes_list', methods: ['GET'])]
+  #[OA\Get(summary: 'Liste de toutes les commandes', description: 'Retourne la liste complète des commandes. ')]
   #[OA\Tag(name: 'Admin - Commandes')]
   #[OA\Response(response: 200, description: 'Liste des commandes retournée')]
   #[OA\Response(response: 403, description: 'Accès refusé')]
   public function getAllCommandes(CommandeRepository $commandeRepository): JsonResponse
   {
     // Étape 1 - Vérifier le rôle ADMIN
-    if (!$this->isGranted('ROLE_ADMIN')) {
+        if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
@@ -498,8 +498,8 @@ final class CommandeController extends BaseController
    * @param CommandeRepository $commandeRepository Le repository des commandes
    * @return JsonResponse
    */
-  #[Route('/admin/{id}', name: 'api_admin_commandes_show', methods: ['GET'])]
-  #[OA\Get(summary: 'Détail d\'une commande par ID', description: 'Retourne une commande par son ID. Réservé aux administrateurs.')]
+  #[Route('/{id}', name: 'api_admin_commandes_show', methods: ['GET'])]
+  #[OA\Get(summary: 'Détail d\'une commande par ID', description: 'Retourne une commande par son ID.')]
   #[OA\Tag(name: 'Admin - Commandes')]
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
   #[OA\Response(response: 200, description: 'Commande trouvée')]
@@ -507,8 +507,8 @@ final class CommandeController extends BaseController
   #[OA\Response(response: 404, description: 'Commande non trouvée')]
   public function getCommandeById(int $id, CommandeRepository $commandeRepository): JsonResponse
   {
-    // Étape 1 - Vérifier le rôle ADMIN
-    if (!$this->isGranted('ROLE_ADMIN')) {
+    // Étape 1 - Vérifier le rôle ADMIN ou EMPLOYEE
+        if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
