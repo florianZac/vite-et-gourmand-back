@@ -830,44 +830,6 @@ final class AdminController extends AbstractController
   // AVIS
   // =========================================================================
 
-  #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
-  #[OA\Get(summary: 'Liste de tous les avis', description: 'Retourne tous les avis clients (tous statuts confondus). Réservé aux administrateurs.')]
-  #[OA\Tag(name: 'Admin - Avis')]
-  #[OA\Response(response: 200, description: 'Liste des avis retournée avec succès')]
-  /**
-   * @description Récupère tous les avis
-   * @return JsonResponse
-   */
-  #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
-  public function getAllAvis(AvisRepository $avisRepository): JsonResponse
-{
-    // Étape 1 — récupere tous les avis des clients
-    $avis = $avisRepository->findAll();
-
-    // Étape 2 - Formater les données pour éviter la référence circulaire
-    $data = [];
-    foreach ($avis as $a) {
-        $data[] = [
-            'id' => $a->getId(),
-            'note' => $a->getNote(),
-            'description' => $a->getDescription(),
-            'statut' => $a->getStatut(),
-            'date' => $a->getDate()?->format('d/m/Y H:i:s'),
-            'utilisateur_id' => $a->getUtilisateur()?->getId(),
-            'utilisateur_nom' => $a->getUtilisateur()?->getNom(),
-            'commande_id' => $a->getCommande()?->getId(),
-            'numero_commande' => $a->getCommande()?->getNumeroCommande(),
-        ];
-    }
-    
-    // Étape 3 - Retourne les données correctement formatée.
-    return $this->json([
-        'success' => true,
-        'data' => $data,
-        'count' => count($data),
-    ]);
-  }
-
   #[Route('/avis/{id}', name: 'api_admin_avis_delete', methods: ['DELETE'])]
   #[OA\Delete(summary: 'Supprimer un avis', description: 'Supprime un avis client par son ID. Réservé aux administrateurs.')]
   #[OA\Tag(name: 'Admin - Avis')]

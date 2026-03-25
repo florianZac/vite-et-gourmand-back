@@ -536,12 +536,50 @@ final class EmployeController extends AbstractController
   // AVIS
   // =========================================================================
 
+  #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
+  #[OA\Get(summary: 'Liste de tous les avis', description: 'Retourne tous les avis clients (tous statuts confondus). Réservé aux administrateurs.')]
+  #[OA\Tag(name:'Avis')]
+  #[OA\Response(response: 200, description: 'Liste des avis retournée avec succès')]
+  /**
+   * @description Récupère tous les avis
+   * @return JsonResponse
+   */
+  #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
+  public function getAllAvis(AvisRepository $avisRepository): JsonResponse
+{
+    // Étape 1 — récupere tous les avis des clients
+    $avis = $avisRepository->findAll();
+
+    // Étape 2 - Formater les données pour éviter la référence circulaire
+    $data = [];
+    foreach ($avis as $a) {
+        $data[] = [
+            'id' => $a->getId(),
+            'note' => $a->getNote(),
+            'description' => $a->getDescription(),
+            'statut' => $a->getStatut(),
+            'date' => $a->getDate()?->format('d/m/Y H:i:s'),
+            'utilisateur_id' => $a->getUtilisateur()?->getId(),
+            'utilisateur_nom' => $a->getUtilisateur()?->getNom(),
+            'commande_id' => $a->getCommande()?->getId(),
+            'numero_commande' => $a->getCommande()?->getNumeroCommande(),
+        ];
+    }
+    
+    // Étape 3 - Retourne les données correctement formatée.
+    return $this->json([
+        'success' => true,
+        'data' => $data,
+        'count' => count($data),
+    ]);
+  }
+
   /**
    * @description Afficher tous les avis en attente de validation
    * @param AvisRepository $avisRepository Le repository des avis
    * @return JsonResponse
    */
-  #[Route('/avis', name: 'api_employe_avis', methods: ['GET'])]
+  #[Route('/avis_attente', name: 'api_employe_avis', methods: ['GET'])]
   #[OA\Get(summary: 'Avis en attente de validation', description: 'Retourne tous les avis clients au statut "en_attente".')]
   #[OA\Tag(name: 'Employé - Avis')]
   #[OA\Response(response: 200, description: 'Liste des avis en attente')]
