@@ -498,7 +498,7 @@ final class CommandeController extends BaseController
    * @param CommandeRepository $commandeRepository Le repository des commandes
    * @return JsonResponse
    */
-  #[Route('/{id}', name: 'api_admin_commandes_show', methods: ['GET'])]
+  #[Route('/{id}', name: 'api_admin_commandes_show', methods: ['GET'], requirements: ['id' => '\d+'])]
   #[OA\Get(summary: 'Détail d\'une commande par ID', description: 'Retourne une commande par son ID.')]
   #[OA\Tag(name: 'Admin - Commandes')]
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de la commande', schema: new OA\Schema(type: 'integer'))]
