@@ -4,6 +4,15 @@ namespace App\Service;
 
 use Cloudinary\Cloudinary;
 
+/** 
+ * @author      Florian Aizac
+ * @created     26/03/2026
+ * @description Service gérant les données pour l'accès APi pour la gestion des images
+ *  1. upload()              : Upload une image vers Cloudinary
+ *  2. deleteByUrl()         : Supprime une image de Cloudinary à partir de son URL
+ *  3. extractPublicId()     : Extrait le public_id d'une URL Cloudinary
+ *
+*/
 class CloudinaryService
 {
     private Cloudinary $cloudinary;

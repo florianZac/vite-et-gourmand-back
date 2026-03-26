@@ -48,34 +48,38 @@ use OpenApi\Attributes as OA;
  *  7. filtrerCommandes()    : Filtrer les commandes par statut et/ou par client
  *  8. getSuiviCommande()    : Afficher le suivi d'une commande
  *
- *  9. getAvisEnAttente()    : Afficher tous les avis en attente de validation
- *  10. approuverAvis()      : Approuver un avis client
- *  11. refuserAvis()        : Refuser un avis client
+ *  9. getAllAvis()          : Retourne tous les avis clients
+ *  10. getAvisEnAttente()   : Afficher tous les avis en attente de validation
+ *  11. approuverAvis()      : Approuver un avis client
+ *  12. refuserAvis()        : Refuser un avis client
  * 
- *  12. createMenu()         : Créer un nouveau menu
- *  13. updateMenu()         : Met à jour un menu par son id
- *  14. deleteMenu()         : Supprimer un menu par son id
+ *  13. createMenu()         : Créer un nouveau menu
+ *  14. updateMenu()         : Met à jour un menu par son id
+ *  15. deleteMenu()         : Supprimer un menu par son id
  *
- *  15. addImageMenu()       : Ajouter une image à la galerie d'un menu
- *  16. deleteImageMenu()    : Supprimer une image de la galerie d'un menu
- *  17. updateOrdreImage()   : Modifier l'ordre d'affichage d'une image
+ *  16. uploadImage()        : Ajouter une image à un plat à travers l'API Cloudinary
  *
- *  18. createTheme()        : Créer un nouveau thème
- *  19. updateTheme()        : Met à jour un thème par son id
- *  20. deleteTheme()        : Supprimer un thème par son id
+ *  17. createTheme()        : Créer un nouveau thème
+ *  18. updateTheme()        : Met à jour un thème par son id
+ *  19. deleteTheme()        : Supprimer un thème par son id
  *
- *  21. createRegime()       : Créer un nouveau régime
- *  22. updateRegime()       : Met à jour un régime par son id
- *  23. deleteRegime()       : Supprimer un régime par son id
+ *  20. createRegime()       : Créer un nouveau régime
+ *  21. updateRegime()       : Met à jour un régime par son id
+ *  22. deleteRegime()       : Supprimer un régime par son id
  *
- *  24. createAllergene()    : Créer un nouvel allergène
- *  25. updateAllergene()    : Met à jour un allergène par son id
- *  26. deleteAllergene()    : Supprimer un allergène par son id
+ *  23. createAllergene()    : Créer un nouvel allergène
+ *  24. updateAllergene()    : Met à jour un allergène par son id
+ *  25. deleteAllergene()    : Supprimer un allergène par son id
  *
- *  27. createPlat()         : Créer un nouveau plat
- *  28. updatePlat()         : Met à jour un plat par son id
- *  29. deletePlat()         : Supprimer un plat par son id
+ *  26. createPlat()         : Créer un nouveau plat
+ *  27. updatePlat()         : Met à jour un plat par son id
+ *  28. deletePlat()         : Supprimer un plat par son id
+ *  29. addPlatToMenu()      : Ajoute un plat à un menu
+ *  30. removePlatFromMenu() : Supprime un plat d'un menu
+ *
+ *  31. formatCommande() : Formate une commande en tableau pour éviter la référence circulaire
  */
+
 #[Route('/api/employe')]
 final class EmployeController extends AbstractController
 {
@@ -407,14 +411,14 @@ final class EmployeController extends AbstractController
     // Étape 6 - Mettre à jour la restitution du matériel
     $commande->setRestitutionMateriel((bool) $data['restitution_materiel']);
 
-    // Étape 7 - Si les deux conditions sont remplies -> passer en Terminée
+    // Étape 7 - Si les deux conditions sont remplies -> passer en RESTITUTION_CONFIRMEE
     if ($commande->isRestitutionMateriel() === true && (bool) $data['penalite_payee'] === true) {
-      $commande->setStatut(CommandeStatut::TERMINEE);
+      $commande->setStatut(CommandeStatut::RESTITUTION_CONFIRMEE);
       $mailerService->sendCommandeTermineeEmail($commande->getUtilisateur(), $commande);
 
-      // Enregistrer le suivi du passage à Terminée
+      // Enregistrer le suivi du passage à RESTITUTION_CONFIRMEE
       $suivi = new SuiviCommande();
-      $suivi->setStatut(CommandeStatut::TERMINEE);
+      $suivi->setStatut(CommandeStatut::RESTITUTION_CONFIRMEE);
       $suivi->setDateStatut(new \DateTime());
       $suivi->setCommande($commande);
       $em->persist($suivi);
@@ -426,7 +430,7 @@ final class EmployeController extends AbstractController
     // Étape 9 - Retourner une confirmation
     return $this->json([
       'status'               => 'Succès',
-      'message'              => $commande->getStatut() === CommandeStatut::TERMINEE
+      'message'              => $commande->getStatut() === CommandeStatut::RESTITUTION_CONFIRMEE
         ? 'Matériel rendu et pénalité payée : commande passée en Terminée'
         : 'Informations mises à jour',
       'statut'               => $commande->getStatut(),
@@ -622,7 +626,7 @@ final class EmployeController extends AbstractController
    * @return JsonResponse
    */
   #[Route('/avis/{id}/approuver', name: 'api_employe_avis_approuver', methods: ['PUT'])]
-  #[OA\Put(summary: 'Approuver un avis', description: 'Valide un avis client en attente. Le statut passe à "validé".')]
+  #[OA\Put(summary: 'Approuver un avis', description: 'Valide un avis client en attente. Le statut passe à "publié".')]
   #[OA\Tag(name: 'Employé - Avis')]
   #[OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID de l\'avis', schema: new OA\Schema(type: 'integer'))]
   #[OA\Response(response: 200, description: 'Avis approuvé')]
@@ -648,7 +652,7 @@ final class EmployeController extends AbstractController
     }
 
     // Étape 4 - Approuver l'avis
-    $avis->setStatut('validé');
+    $avis->setStatut('publié');
 
     // Étape 5 - Sauvegarder en base
     $em->flush();
@@ -1663,7 +1667,6 @@ final class EmployeController extends AbstractController
       $plat->setDescriptionPlat($data['description_plat']);
     }
 
-
     // Étape 6 - Mettre à jour la photo si fournie
     if (isset($data['photo'])) {
       // Si l'ancienne photo est différente et existe sur Cloudinary → la supprimer
@@ -1907,5 +1910,4 @@ final class EmployeController extends AbstractController
           'menu_titre' => $c->getMenu()?->getTitre(),
       ];
   }
-
 }

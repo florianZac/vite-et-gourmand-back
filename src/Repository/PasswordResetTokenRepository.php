@@ -9,6 +9,9 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<PasswordResetToken>
+ * 
+ *  1. findValidToken()    : Récupère un token valide non expiré et non utilisé par sa valeur
+ *  2. deleteOldTokens()   : Supprime tous les tokens expirés ou utilisés d'un utilisateur
  */
 class PasswordResetTokenRepository extends ServiceEntityRepository
 {

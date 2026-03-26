@@ -242,72 +242,72 @@ final class PlatController extends BaseController
   EntityManagerInterface $em
   ): JsonResponse {
 
-  // Étape 1 - Vérifier le rôle ADMIN
-  if (!$this->isGranted('ROLE_ADMIN')) {
-    return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
-  }
-
-  // Étape 2 - Chercher le plat à modifier
-  $plat = $platRepository->find($id);
-  if (!$plat) {
-    return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
-  }
-
-  // Étape 3 - Récupérer les données JSON
-  $data = json_decode($request->getContent(), true);
-  if (!is_array($data)) {
-    return $this->json(['status'=>'Erreur','message'=>'JSON invalide'],400);
-  } 
-
-  // Étape 4 - Mettre à jour le titre si fourni
-  if (isset($data['titre_plat'])) {
-    $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
-    if ($existant && $existant->getId() !== $plat->getId()) {
-      return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
+    // Étape 1 - Vérifier le rôle ADMIN
+    if (!$this->isGranted('ROLE_ADMIN')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
-    $plat->setTitrePlat($data['titre_plat']);
-  }
 
-  // Étape 5 - Mettre à jour la photo si fournie
-  if (isset($data['photo'])) {
-    $plat->setPhoto($data['photo']);
-  }
-
-  // Étape 6 - Mettre à jour la categorie
-  if (isset($data['categorie'])) {
-    $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
-    if (!in_array($data['categorie'], $categoriesValides)) {
-        return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+    // Étape 2 - Chercher le plat à modifier
+    $plat = $platRepository->find($id);
+    if (!$plat) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Plat non trouvé'], 404);
     }
-    $plat->setCategorie($data['categorie']);
-  }
 
-  // Étape 7 - Mise à jour de la description si fournie
-  if (isset($data['description'])) {
-      $plat->setDescriptionPlat($data['description']);
-  }
+    // Étape 3 - Récupérer les données JSON
+    $data = json_decode($request->getContent(), true);
+    if (!is_array($data)) {
+      return $this->json(['status'=>'Erreur','message'=>'JSON invalide'],400);
+    } 
 
-  // Étape 8 - Synchroniser les allergènes si fournis
-  // On retire tous les anciens et on remet les nouveaux
-  if (isset($data['allergenes']) && is_array($data['allergenes'])) {
-    foreach ($plat->getAllergenes() as $allergeneExistant) {
-      $plat->removeAllergene($allergeneExistant);
+    // Étape 4 - Mettre à jour le titre si fourni
+    if (isset($data['titre_plat'])) {
+      $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
+      if ($existant && $existant->getId() !== $plat->getId()) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
+      }
+      $plat->setTitrePlat($data['titre_plat']);
     }
-    foreach ($data['allergenes'] as $allergeneId) {
-      $allergeneId = (int)$allergeneId;
-      if ($allergeneId <= 0) continue;
-      $allergene = $allergeneRepository->find($allergeneId);
-      if ($allergene) {
-        $plat->addAllergene($allergene);
+
+    // Étape 5 - Mettre à jour la photo si fournie
+    if (isset($data['photo'])) {
+      $plat->setPhoto($data['photo']);
+    }
+
+    // Étape 6 - Mettre à jour la categorie
+    if (isset($data['categorie'])) {
+      $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
+      if (!in_array($data['categorie'], $categoriesValides)) {
+          return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+      }
+      $plat->setCategorie($data['categorie']);
+    }
+
+    // Étape 7 - Mise à jour de la description si fournie
+    if (isset($data['description'])) {
+        $plat->setDescriptionPlat($data['description']);
+    }
+
+    // Étape 8 - Synchroniser les allergènes si fournis
+    // On retire tous les anciens et on remet les nouveaux
+    if (isset($data['allergenes']) && is_array($data['allergenes'])) {
+      foreach ($plat->getAllergenes() as $allergeneExistant) {
+        $plat->removeAllergene($allergeneExistant);
+      }
+      foreach ($data['allergenes'] as $allergeneId) {
+        $allergeneId = (int)$allergeneId;
+        if ($allergeneId <= 0) continue;
+        $allergene = $allergeneRepository->find($allergeneId);
+        if ($allergene) {
+          $plat->addAllergene($allergene);
+        }
       }
     }
-  }
 
-  // Étape 9 - Sauvegarder (pas besoin de persist() pour une mise à jour)
-  $em->flush();
+    // Étape 9 - Sauvegarder (pas besoin de persist() pour une mise à jour)
+    $em->flush();
 
-  // Étape 10 - Retourner une confirmation
-  return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
+    // Étape 10 - Retourner une confirmation
+    return $this->json(['status' => 'Succès', 'message' => 'Plat mis à jour avec succès']);
   }
 
   /**

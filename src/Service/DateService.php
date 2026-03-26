@@ -7,6 +7,9 @@ namespace App\Service;
  * @author      Florian Aizac
  * @created     26/02/2026
  * @description Service gérant les jours ouvrés à une date donnée
+ * 
+ *  1. addOpenDay()              : Ajoute un nombre de jours ouvrés à une date donnée.
+ * 
  */
 class DateService
 {

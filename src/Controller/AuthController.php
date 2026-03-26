@@ -21,10 +21,11 @@ use OpenApi\Attributes as OA;
  * @created     24/02/2026
  * @description Contrôleur gérant l'authentification 
  * utilisation : tous les rôle sont concerné.
- *  1. login                  : Log tous les utilisateurs
- *  2. register               : Inscription de tous les utilisateurs + envoie mail de bienvenue
- *  3. forgotPassword         : Demande de réinitialisation de mot de passe envoie lien par email
- *  4. resetPassword          : Réinitialise le mot de passe avec le token reçu par email
+ *  1. login()                  : Log tous les utilisateurs
+ *  2. register()               : Inscription de tous les utilisateurs + envoie mail de bienvenue
+ *  3. forgotPasswordmail()     : Lien de réinitialisation envoyé
+ *  4. resetPassword()          : Réinitialise le mot de passe avec le token reçu par email
+ *  5. me()                     : Récupération des données d'un utilisateur connecté
  */
 #[Route('/api')]
 final class AuthController extends AbstractController
@@ -116,7 +117,6 @@ final class AuthController extends AbstractController
       ], 400);
     }
     
-
     // Étape 7 - Vérifie que l'email n'existe pas déjà en base de données
     // équivalent de SELECT * FROM utilisateur WHERE email = :email
     if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {

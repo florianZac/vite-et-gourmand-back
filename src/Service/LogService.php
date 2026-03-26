@@ -24,6 +24,10 @@ use Doctrine\ODM\MongoDB\DocumentManager;
  *                 'numero_commande' => $commande->getNumeroCommande(), 
  *                 'montant'         => $commande->getPrixMenu(),
  *             ]);
+ * 
+ *  1. log()              : Enregistre un log d'activité dans MongoDB
+ *  2. genererMessage()   : Génère automatiquement un message lisible selon le type de log
+ * 
  */
 class LogService
 {

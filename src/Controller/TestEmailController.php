@@ -16,6 +16,7 @@ final class TestEmailController extends AbstractController
    * @description permet l'envoie rapid de mail pour tester sur swagger l'inplantation de SendPit
    * @param mailerService $MailerService Le service mail
    * @return JsonResponse
+   * 
    */
   public function sendTestEmail(MailerService $mailerService): JsonResponse
   {

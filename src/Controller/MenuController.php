@@ -21,15 +21,16 @@ use OpenApi\Attributes as OA;
  * @description Contrôleur gérant les informations publiques accessibles sans authentification.
  *              Toutes les routes de ce contrôleur sont ouvertes au public (visiteurs non connectés).
  *
- *  1. index()              : Retourne la liste de tous les menus
- *  2. show()               : Retourne le détail brut d’un menu par son ID
- *  3. getMenuPlatsImages() : Retourne uniquement les images et catégories des plats d’un menu ciblé pour le carrousel d’images sur le front
- *  4. getAllThemes()       : Retourne la liste de tous les thèmes utilisé pour les filtres front.
- *  5. getAllRegimes()      : Retourne la liste de tous les régimes utilisé pour les filtres front.
- *  6. getAllAllergenes()   : Retourne la liste de tous les allergènes affiché sur les fiches menus.
- *  7. getAvisValides()     : Retourne les avis clients validés affichage public.
- *  8. getAllPlats()        : Retourne la liste des plats.
- *  9. getAllMenus()        : Retourne la liste complète de tous les menus avec leurs plats et images, structuré pour le front. 
+ *  1. index()              : Retourne la liste de tous les menus disponibles
+ *  2. show()               : Retourne le détail d'un menu par son id
+ *  3. getMenuPlatsImages() : Retourne uniquement les images et catégories des plats d'un menu
+ *  4. getAllThemes()       : Retourne la liste de tous les thèmes disponibles
+ *  5. getAllRegimes()      : Retourne la liste de tous les régimes utilisé pour les filtres front
+ *  6. getAllAllergenes()   : Retourne la liste de tous les allergènes affiché sur les fiches menus
+ *  7. getAvisValides()     : Retourne les avis clients Publié qui ont était validés pour affichage public sur le site
+ *  8. getAllPlats()        : Retourne la liste de tous les plats
+ *  9. getMenuById()        : Retourne le détail complet d'un menu par son ID, avec ses plats, images et catégories
+ *
  */
 #[Route('/api')]
 final class MenuController extends AbstractController
@@ -262,7 +263,6 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
       'plats_images' => $imagesArray
     ]);
   }
-
 
 	// =========================================================================
 	// THEMES

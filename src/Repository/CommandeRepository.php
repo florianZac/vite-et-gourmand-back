@@ -12,6 +12,16 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Commande>
+ * 
+ *  1. findByUtilisateur()              : Récupère toutes les données d'un utilisateur triées par date décroissante.
+ *  2. findCommandesEnCours()           : Retourne les commandes en cours 
+ *  3. findByNumeroCommande()           : Recherche des commandes par numéro de commande
+ *  4. findCommandesMaterielNonRendu()  : Recherche dans les commandes si il y as du materiel en court de pret
+ *  5. findCommandesMaterielARelancer() : Récupère les commandes à relancer dans le cas d'un pret de matériel qui n'a pas été restitué
+ *  6. findByFiltres()                  : Recherche des commandes avec filtres optionnels par statut et/ou par client
+ *  7. findMaxNumeroCommande()          : Recherche la valeur maximale du dernier numero de commande 
+ *  8. getStatistiques()                : Récupère les statistique pour l'affiche avec Chart.js en front
+ * 
  */
 class CommandeRepository extends ServiceEntityRepository
 {
@@ -28,7 +38,7 @@ class CommandeRepository extends ServiceEntityRepository
 	 * @author Florian Aizac
 	 * @created 24/02/2026
 	 * @description fonction personalisé responsable des requêtes SQL sur la table commande.
-	 *  il  récupère toutes les données d'un utilisateur triées par date décroissante.
+	 *  il récupère toutes les données d'un utilisateur triées par date décroissante.
 	 * @param Utilisateur $utilisateur L'utilisateur dont on veut récupérer les commandes
 	 * @return Commande[] Tableau d'objets Commande
 	*/

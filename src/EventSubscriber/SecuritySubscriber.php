@@ -23,10 +23,13 @@ use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
  * 
  * Comparaison SQL vs NoSQL pour ce cas d'usage particulier :
  * 
- *  MySQL est une BDD relationnel : chaque log nécessiterait une table avec un schéma fixe, avec migration et jointure pour et entre les rapports sa n'a pas d'interet dans ce cas.
+ * MySQL est une BDD relationnel : chaque log nécessiterait une table avec un schéma fixe, avec migration et jointure pour et entre les rapports sa n'a pas d'interet dans ce cas.
  * 
- *  MongoDB n'est pas une relationnel : Elle permet l'insertion rapide, sans schémas définit au préalable et qui n'a pas besoin de migration chaque log est dissocié et peut avoir des champs différents 
+ * MongoDB n'est pas une relationnel : Elle permet l'insertion rapide, sans schémas définit au préalable et qui n'a pas besoin de migration chaque log est dissocié et peut avoir des champs différents 
  *  
+ *  1. getSubscribedEvents() : Déclare les événements écoutés par ce subscriber
+ *  2. onLoginSuccess() : Méthode appelée automatiquement après une connexion réussie
+ * 
  */
 class SecuritySubscriber implements EventSubscriberInterface
 {

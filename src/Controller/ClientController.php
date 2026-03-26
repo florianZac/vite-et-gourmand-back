@@ -26,15 +26,15 @@ use OpenApi\Attributes as OA;
  * @description Contrôleur gérant les actions du client connecté
  *
  *  1. getProfil             : Retourne les informations du profil client connecté
- *  2. updateUserById        : Met à jour les informations d'un client par son id
+ *  2. updateUserById        : Met à jour les informations du client connecté
  *  3. demandeDesactivation  : Demande de désactivation du compte client et envois d'un mail a l'admin
- *  4. deleteAccount         : Supprime le compte du client avec toutes ces commandes et ces avis.
- *  5. getCommandes          : Retourne la liste de ses commandes
+ *  4. deleteAccount         : Supprime le compte du client connecté ainsi que toutes ces données associées
+ *  5. getCommandes          : Retourne la liste des commandes du client connecté
  *  6. modifierCommande      : Modifier une commande en statut "En attente"
  *  7. annulerCommande       : Annule une commandes passée par le client en fournissant son ID
  *  8. getSuiviCommande      : Afficher le suivis de commande du client
- *  9. getAvis               : Afficher la liste des avis d'un client connecté
- *  10. createAvis           : Permettre a un client de poster un avis lorsque sa commande est en statut "terminée"
+ *  9. getAvis               : Retourne tous les avis déposés par le client connecté, triés du plus récent au plus ancien.
+ *  10. createAvis           : Permet au client de déposer un avis
  */
 #[Route('/api/client')]
 final class ClientController extends BaseController
@@ -74,7 +74,6 @@ final class ClientController extends BaseController
 	// Récupère les données du profil du client connecté
 	public function getProfil(): JsonResponse
 	{
-			
 		// Étape 1 - Vérifie que l'utilisateur a le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
 			return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -288,7 +287,6 @@ final class ClientController extends BaseController
 		]);
 	}
 
-
   #[Route('/profil', name: 'api_client_delete_profil', methods: ['DELETE'])]
   #[OA\Delete(
     summary: 'Supprimer son compte',
@@ -299,8 +297,8 @@ final class ClientController extends BaseController
   #[OA\Response(response: 401, description: 'Utilisateur non connecté')]
   #[OA\Response(response: 403, description: 'Accès refusé')]
   /**
-   * @description Supprime le compte du client connecté ainsi que toutes ses données associées
-   * Ordre de suppression : avis → suivis commande → commandes → utilisateur
+   * @description Supprime le compte du client connecté ainsi que toutes ces données associées
+   * Ordre de suppression : avis -> suivis commande -> commandes -> utilisateur
    * Aucun ID dans l'URL : on récupère l'utilisateur depuis le token JWT
    */
   public function deleteAccount(

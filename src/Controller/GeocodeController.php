@@ -16,10 +16,13 @@ use OpenApi\Attributes as OA;
  * @author      Florian Aizac
  * @created     08/03/2026
  * @description Contrôleur pour gérer les requêtes liées au géocodage et le calcul des frais de livraisons lors de la commande d'un utilisateur
- *  1. geocodeUser : Accès à l'api Nominatim et recuperation de la longitude et la latitude de la valeur mis en parametres
- * doit etre de cette forme -> http://127.0.0.1:8000/geocode?adresse=22++quai+des+Chartrons,+33000+Bordeaux,France
- *  2. distance  : Distance à vol d'oiseau entre les deux adresses celle du restaurant et celle du client
- *  3. delivery-cost :  Calcul des frais de livraison via OSRM  et tarification. 
+ *    
+ *  1. geocodeUser()        : Accès à l'api Nominatim et recuperation de la longitude et la latitude de la valeur mis en parametres
+ *                doit etre de cette forme -> http://127.0.0.1:8000/geocode?adresse=22++quai+des+Chartrons,+33000+Bordeaux,France
+ *  2. distanceHaversine()  : Fonction privée qui calcule la distance entre deux points GPS
+ *  3. distance()           : Distance à vol d'oiseau entre les deux adresses celle du restaurant et celle du client
+ *  4. deliveryCost()       : Calcule les frais de livraison entre le restaurant (22 quai des Chartrons, Bordeaux) et l\'adresse du client via OSRM  et tarification. 
+ *
  */
 class GeocodeController extends AbstractController
 {
@@ -92,11 +95,11 @@ class GeocodeController extends AbstractController
         'longitude' => $coords['lon'] // Longitude retournée par Nominatim
       ]);
     } else {
-      // Si l'adresse n'a pas été trouvée, on renvoie une erreur 404
-      return $this->json([
-        'error' => 'Adresse non trouvée'
-      ], 404);
-    }
+		// Si l'adresse n'a pas été trouvée, on renvoie une erreur 404
+		return $this->json([
+			'error' => 'Adresse non trouvée'
+		], 404);
+		}
 	}
 
 	/**

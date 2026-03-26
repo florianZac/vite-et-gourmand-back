@@ -51,8 +51,8 @@ use OpenApi\Attributes as OA;
  *  7. desactiverCompte()           : Désactivation d'un compte utilisateur
  *  8. reactiverCompte()            : Résactivation d'un compte utilisateur
  *  9. createEmploye()              : Création d'un compte employé par l'administrateur
- *  10. deleteCommande()            : Supprimer une commande
- *  11. getAllAvis                  : Récupère tous les avis
+ *  10. createClient()              : Crée un compte client avec mot de passe temporaire
+ *  11. deleteCommande()            : Supprimer une commande
  *  12. supprimerAvis()             : Supprimer un avis client
  *  13. getStatistiques()           : Retourne les statistiques complètes vennant de MySQl 
  *  14. getStatistiquesGraphiques() : Retourne les données graphiques depuis MongoDB

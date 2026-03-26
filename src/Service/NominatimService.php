@@ -16,6 +16,9 @@ namespace App\Service; // Namespace du service dans Symfony
  * Le Contrôleur GeocodeController.php Symfony : appelle le service et renvoie un JSON.
  * l'Autowiring : Symfony injecte automatiquement le service dans le contrôleur.
  * User-Agent : obligatoire pour Nominatim. permet de ciblé l'utilisateur de l'api.
+ * 
+ * 1. geocode()              : Géocode une adresse et retourne latitude et longitude
+ * 
  */
 
 // Service pour communiquer avec l'API Nominatim

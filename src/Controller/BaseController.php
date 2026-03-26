@@ -6,12 +6,15 @@ use App\Entity\Utilisateur;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 
-// Fonction utilisée  pour redéfinir la méthode getUser()
-// j'avait des érreurs avec la classe ClientController qui extend AbstractController 
-// le problème vennait de la déclaration de getUser() car il ne s'avait pas reconnaitre que UserInterface récupere l'utilisateur avec des classes custom
-// du coup en changeant le type de retour de ?UserInterface à ?Utilisateur cela corrige le problème.
-// a creuser des que j'ai le temps.
-
+/**
+ * @author      Florian Aizac
+ * @created     25/02/2026
+ * @description Gestions des controleurs
+ *
+ *  1. getUser()             : Récupère un utilisateur
+ *  2. getDataFromRequest()  : Récupère et décode le corps JSON d’une requête.
+ * 
+ */
 abstract class BaseController extends AbstractController
 {
   /**

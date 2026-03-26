@@ -16,6 +16,7 @@ class CommandeStatut
     public const EN_LIVRAISON               = 'En livraison';
     public const LIVRE                      = 'Livré';
     public const EN_ATTENTE_RETOUR_MATERIEL = 'En attente du retour matériel';
+    public const RESTITUTION_CONFIRMEE      = 'Restitution confirmée';
     public const TERMINEE                   = 'Terminée';
     public const ANNULEE                    = 'Annulée';
 
@@ -39,6 +40,7 @@ class CommandeStatut
         self::EN_LIVRAISON               => 4,
         self::LIVRE                      => 5,
         self::EN_ATTENTE_RETOUR_MATERIEL => 6,
-        self::TERMINEE                   => 7,
+        self::RESTITUTION_CONFIRMEE      => 7,
+        self::TERMINEE                   => 8,
     ];
 }

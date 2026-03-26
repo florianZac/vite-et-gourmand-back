@@ -23,6 +23,9 @@ use Doctrine\ORM\Events;
  * pour plus de lisibilité et de contrôle explicite.
  *
  * @see https://symfony.com/doc/current/doctrine/events.html
+ * 
+ *  1. preUpdate : Méthode appelée automatiquement AVANT la mise à jour en base
+ * 
  */
 // L'attribut #[AsDoctrineListener] remplace l'ancienne interface + getSubscribedEvents()
 // On déclare ici directement quel événement Doctrine on écoute

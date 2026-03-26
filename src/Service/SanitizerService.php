@@ -6,71 +6,88 @@ namespace App\Service;
  * @author      Florian Aizac
  * @created     01/03/2026
  * @description Service de sanitisation des données entrantes
- * Centralise le nettoyage des données pour éviter les injections XSS et SQL
+ * Centralise le nettoyage des données pour éviter les injections XSS
  * Utilisable dans tous les controllers via injection de dépendance
  *
- * Types supportés :
- *  - email   : nettoie et valide un email
- *  - texte   : nettoie un texte court (sujet, titre...)
- *  - message : nettoie un texte long avec limite de taille
+ * Note : Les injections SQL sont déjà gérées par Doctrine (requêtes préparées)
+ *        Ce service se concentre uniquement sur le nettoyage XSS et la validation
+ * 
+ *  1. sanitize()       : Nettoie une valeur selon son type pour éviter les injections XSS
+ *  2. escapeForHtml()  : Échappe une valeur pour l'affichage HTML à utiliser côté sortie/API
+ * 
  */
 class SanitizerService
 {
-  public function sanitizeSpace(string $input): string
-  {
-      // Exemple simple : enlever les espaces superflus et balises HTML
-      return trim(strip_tags($input));
-  }
-/**
-	 * @description Nettoie une valeur selon son type pour éviter les injections
-	 * @param string $valeur La valeur à nettoyer
-	 * @param string $type   Le type de champ : 'email', 'texte', 'message'
-	 * @return string        La valeur nettoyée, chaîne vide si invalide
-	 */
-	public function sanitize(string $valeur, string $type): string
-	{
-		// Étape 1 - Supprime les espaces inutiles en début et fin de chaîne
-		$valeur = trim($valeur);
+    public function sanitizeSpace(string $input): string
+    {
+        return trim(strip_tags($input));
+    }
 
-		// Étape 2 - Supprime toutes les balises HTML et PHP
-		$valeur = strip_tags($valeur);
+    /**
+     * @description Nettoie une valeur selon son type pour éviter les injections XSS
+     * @param string $valeur La valeur à nettoyer
+     * @param string $type   Le type de champ : 'email', 'texte', 'message', 'telephone'
+     * @return string        La valeur nettoyée, chaîne vide si invalide
+     */
+    public function sanitize(string $valeur, string $type): string
+    {
+        // Étape 1 - Supprime les espaces inutiles en début et fin de chaîne
+        $valeur = trim($valeur);
 
-		// Étape 3 - Convertit les caractères spéciaux HTML en entités
-		$valeur = htmlspecialchars($valeur, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        // Étape 2 - Supprime toutes les balises HTML et PHP protection XSS principale
+        $valeur = strip_tags($valeur);
 
-		// Étape 4 - Traitement spécifique selon le type de champ
-		switch ($type) {
-			case 'email':
-					// Supprime tous les caractères non autorisés dans un email
-					$valeur = filter_var($valeur, FILTER_SANITIZE_EMAIL);
-					// Si l'email n'est pas valide on retourne une chaîne vide
-					if (!filter_var($valeur, FILTER_VALIDATE_EMAIL)) {
-							return '';
-					}
-					break;
+        // Étape 3 - Supprime les caractères de contrôle invisibles null byte, etc.
+        $valeur = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $valeur);
 
-			case 'texte':
-					// Supprime les caractères de contrôle invisibles (ex: null byte \0)
-					$valeur = preg_replace('/[\x00-\x1F\x7F]/u', '', $valeur);
-					// Supprime les tentatives d'injection SQL basiques
-					$valeur = preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i', '', $valeur);
-					break;
+        // Étape 4 - Traitement spécifique selon le type de champ
+        switch ($type) {
+            case 'email':
+                $valeur = filter_var($valeur, FILTER_SANITIZE_EMAIL);
+                if (!filter_var($valeur, FILTER_VALIDATE_EMAIL)) {
+                    return '';
+                }
+                break;
 
-			case 'message':
-					// Supprime les caractères de contrôle invisibles
-					$valeur = preg_replace('/[\x00-\x1F\x7F]/u', '', $valeur);
-					// Supprime les tentatives d'injection SQL
-					$valeur = preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i', '', $valeur);
-					// Limite la taille du message à 1000 caractères
-					if (strlen($valeur) > 1000) {
-							$valeur = substr($valeur, 0, 1000);
-					}
-					break;
+            case 'texte':
+                // Limite la taille d'un texte court nom, prénom, ville...
+                if (mb_strlen($valeur) > 255) {
+                    $valeur = mb_substr($valeur, 0, 255);
+                }
+                break;
 
-			default:
-					return '';
-		}
+            case 'message':
+                // Limite la taille du message à 1000 caractères
+                if (mb_strlen($valeur) > 1000) {
+                    $valeur = mb_substr($valeur, 0, 1000);
+                }
+                break;
 
-		return $valeur;
-	}
+            case 'telephone':
+                // Ne garde que les chiffres, +, espaces et tirets
+                $valeur = preg_replace('/[^0-9+\-\s()]/', '', $valeur);
+                break;
+
+            case 'code_postal':
+                // Ne garde que les chiffres
+                $valeur = preg_replace('/[^0-9]/', '', $valeur);
+                break;
+
+            default:
+                // Type inconnu : on retourne le texte nettoyé des étapes 1-3
+                break;
+        }
+
+        return $valeur;
+    }
+
+    /**
+     * @description Échappe une valeur pour l'affichage HTML à utiliser côté sortie/API
+     * @param string $valeur La valeur à échapper
+     * @return string La valeur échappée safe pour le HTML
+     */
+    public function escapeForHtml(string $valeur): string
+    {
+        return htmlspecialchars($valeur, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
 }

@@ -8,6 +8,13 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<Avis>
+ * 
+ *  1. findLastPublishedAvis() : Récupère les derniers avis publiés avec le statut = "Publié"
+ *  2. findAvis()              : Récupère les avis filtrés, ou filtrés par statut    
+ *  3. updateStatut()          : Met à jour le statut d'un avis
+ *  4. removeAvis()            : Supprime un avis
+ *  5. saveAvis() :            : Sauvegarde un avis en base
+ * 
  */
 class AvisRepository extends ServiceEntityRepository
 {

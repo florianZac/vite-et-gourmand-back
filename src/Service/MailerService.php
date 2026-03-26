@@ -18,6 +18,21 @@ use App\Entity\Commande;
  * @author      Florian Aizac
  * @created     23/02/2026
  * @description Service gérant l'envoi de tous les emails de l'application
+ * 
+ *  1. sendContactEmail()              : Fonction email qui envoie un email à l'administrateur du site lorsque le client remplis le formulaire de contact
+ *  2. sendPasswordResetEmail()        : Envoie un email avec le lien de réinitialisation de mot de passe
+ *  3. sendCommandeCreeeEmail()        : Envoie un email de confirmation de création de commande au client
+ *  4. sendAnnulationEmail()           : Envoie un email de confirmation d'annulation de commande au client
+ *  5. sendCommandeAccepteeEmail()     : Envoie un email au client lorsque sa commande est acceptée
+ *  6. sendCommandeLivraisonEmail()    : Envoie un email au client lorsque sa commande est en livraison
+ *  7. sendCommandeTermineeEmail()     : Envoie un email au client lorsque sa commande est terminée avec invitation à déposer un avis
+ *  8. sendDemandeDesactivationEmail() : Envoie un email à l'admin pour lui signaler une demande de désactivation de compte
+ *  9. sendRetourMaterielEmail()       : Envoie un email au client lorsque le matériel doit être retourné
+ *  10. sendPenaliteMaterielEmail()    : Envoie un email de pénalité au client lorsque le matériel n'a pas été rendu dans les 10 jours ouvrés
+ *  11. sendWelcomeEmail()             : Envoie un email de bienvenue à un nouvel utilisateur après son inscription
+ *  12. sendBienvenueEmployeEmail()    : Envoie les identifiants de connexion à un nouvel employé
+ *  13. sendCommandeAnnuleeEmail()     : Envoie un email de confirmation d'annulation de commande au client demandé par l'admin
+ * 
  */
 class MailerService
 {
@@ -32,6 +47,7 @@ class MailerService
 	// reçoit un tableau $data contenant les données du formulaire (nom, email, message)
 	public function sendContactEmail(array $data): void
 	{
+
 		// Étape 1 - Génère le HTML à partir du template Twig en lui passant les variables
 		$html = $this->twig->render('emails/contact.html.twig', [
 			'sujet'   => $data['sujet'],
@@ -129,6 +145,7 @@ class MailerService
 	 */
 	public function sendAnnulationEmail(Utilisateur $utilisateur, Commande $commande, int $pourcentage, float $montant): void
 	{
+
 		// Étape 1 - Génère le HTML à partir du template Twig
 		$html = $this->twig->render('emails/annulation_commande.html.twig', [
 			'prenom'          => $utilisateur->getPrenom(),
@@ -158,6 +175,7 @@ class MailerService
 	 */
 	public function sendCommandeAccepteeEmail(Utilisateur $utilisateur, Commande $commande): void
 	{
+
 		// Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
 		$html = $this->twig->render('emails/commande_acceptee.html.twig', [
 			'prenom'          => $utilisateur->getPrenom(),
@@ -184,6 +202,7 @@ class MailerService
 	 */
 	public function sendCommandeLivraisonEmail(Utilisateur $utilisateur, Commande $commande): void
 	{
+
 		// Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
 		$html = $this->twig->render('emails/commande_livraison.html.twig', [
 			'prenom'          => $utilisateur->getPrenom(),
@@ -209,6 +228,7 @@ class MailerService
 	 */
 	public function sendCommandeTermineeEmail(Utilisateur $utilisateur, Commande $commande): void
 	{
+
 		// Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
 		$html = $this->twig->render('emails/commande_terminee.html.twig', [
 			'prenom'          => $utilisateur->getPrenom(),
@@ -234,6 +254,7 @@ class MailerService
 	 */
 	public function sendDemandeDesactivationEmail(Utilisateur $utilisateur): void
 	{
+
 		// Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
 		$html = $this->twig->render('emails/demande_desactivation.html.twig', [
 			'prenom' => $utilisateur->getPrenom(),
@@ -261,6 +282,7 @@ class MailerService
 	 */
 	public function sendRetourMaterielEmail(Utilisateur $utilisateur, Commande $commande): void
 	{
+
 		// Étape 1 - Remplis les données pour l'envoies de l'Email à travers le template
 		$html = $this->twig->render('emails/retour_materiel.html.twig', [
 			'prenom'          => $utilisateur->getPrenom(),
@@ -318,7 +340,7 @@ class MailerService
 			'date_restitution' => $dateRestitution ? $dateRestitution->format('d/m/Y') : null,
 		]);
 
-			// Étape 2 - Construire l'objet email
+		// Étape 2 - Construire l'objet email
 		$email = (new Email())  // TemplatedEmail permet l'utilisation des templates Twig
 			->from('noreply@vite-et-gourmand.fr') // Expéditeur standard
 			->to($utilisateur->getEmail()) // Destinataire dynamique
@@ -392,7 +414,7 @@ class MailerService
 		$this->mailer->send($email);
 	}
 
-			/**
+	/**
 	 * @description Envoie un email de confirmation d'annulation de commande au client demandé par l'admin
 	 * @param Utilisateur $utilisateur Le client qui annule
 	 * @param Commande $commande La commande annulée
@@ -421,5 +443,4 @@ class MailerService
 		// Étape 2 - Envoie de l'email
 		$this->mailer->send($email);
 	}
-
 }

@@ -29,15 +29,16 @@ use App\Service\LogService;
  * @author      Florian Aizac
  * @created     25/02/2026
  * @description Contrôleur gérant les opérations sur les commandes côté administrateur
- *  1. createCommande  : Créer une nouvelle commande avec toutes les règles métier
- *  2. getAllCommandes : Retourne la liste de toutes les commandes
- *  3. getCommandeById : Retourne une commande par son id
- *  4. annulerCommande : Annule une commande avec un remboursement de 100%
+ *  1. getJoursFeries           : Retourne la liste des jours fériés français pour une année donnée
+ *  2. calculerJoursOuvrables   : Calcule le nombre de jours ouvrables entre aujourd'hui et une date cible
+ *  3. createCommande           : Crée une nouvelle commande avec toutes les règles métier 
+ *  4. getAllCommandes          : Retourne la liste de toutes les commandes
+ *  5. getCommandeById          : Retourne une commande par son id
+ *  6. annulerCommande          : Annuler une commande
  */
 #[Route('/api/commandes')] 
 final class CommandeController extends BaseController
 {
-
     private DistanceService $distanceService;
 
     public function __construct(DistanceService $distanceService)
@@ -489,7 +490,6 @@ final class CommandeController extends BaseController
         'total' => count($data),
         'commandes' => $data
     ]);
-
   }
 
   /**

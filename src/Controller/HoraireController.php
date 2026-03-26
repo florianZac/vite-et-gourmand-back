@@ -14,6 +14,7 @@ use OpenApi\Attributes as OA;
  * @description Contrôleur gérant le retour des informations qui concerne les horaires d'ouverture de l'entreprise vite & gourmand.
  * 
  *  1. getHoraire()      : Afficher la liste des horaires d'ouverture de l'entreprise vite & gourmand.
+ * 
 */
 #[Route('/api')]
 final class HoraireController extends AbstractController
