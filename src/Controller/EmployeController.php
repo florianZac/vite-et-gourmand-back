@@ -84,9 +84,12 @@ use OpenApi\Attributes as OA;
  *  32. createMenuTag()      : Crée un nouveau tag
  *  33. updateMenuTag()      : Met à jour un tag existant
  *  34. deleteMenuTag()      : Supprime un tag
- *  35. assignTagToMenu()    : assignTagToMenu
+ *  35. assignTagToMenu()    : Assigne un tag à un menu
+ *  36. removeTagFromMenu()  : Supprime un tag d’un menu existant
+ *  37. showMenu()           : Retourne un menu avec ses tags uniquement
+ *  38. listMenus()          : Retourne la liste de tous les menus
  * 
- *  36. formatCommande() : Formate une commande en tableau pour éviter la référence circulaire
+ *  39. formatCommande() : Formate une commande en tableau pour éviter la référence circulaire
  */
 
 #[Route('/api/employe')]
@@ -2020,7 +2023,6 @@ final class EmployeController extends AbstractController
 
   /**
    * @description Supprime un tag
-   * Accessible pour la gestion des menus
    * @param int $id ID du tag à supprimer
    * @param MenuTagsRepository $menuTagRepository Le repository des tags
    * @param EntityManagerInterface $em L'EntityManager
@@ -2055,14 +2057,13 @@ final class EmployeController extends AbstractController
 
   /**
    * @description Assigne un tag à un menu
-   * Accessible pour la gestion des menus
    * @param int $menuId ID du menu
    * @param int $tagId ID du tag
    * @param MenuRepository $menuRepository Le repository des menus
    * @param MenuTagsRepository $menuTagRepository Le repository des tags
    * @param EntityManagerInterface $em L'EntityManager
    * @return JsonResponse
-   */
+  */
   #[Route('/menus/{menuId}/tags/{tagId}', name: 'api_menu_assign_tag', methods: ['POST'])]
   #[OA\Post(summary: 'Assigner un tag à un menu', description: 'Ajoute un tag à un menu existant')]
   #[OA\Tag(name: 'Employé - Menus')]
@@ -2105,6 +2106,146 @@ final class EmployeController extends AbstractController
     $em->flush();
 
     return $this->json(['status' => 'Succès', 'message' => 'Tag assigné au menu']);
+  }
+
+  /**
+   * @description Supprime un tag d’un menu existant
+   * @param int $menuId ID du menu
+   * @param int $tagId ID du tag
+   * @param MenuRepository $menuRepository Le repository des menus
+   * @param MenuTagsRepository $menuTagRepository Le repository des tags
+   * @param EntityManagerInterface $em L'EntityManager
+   * @return JsonResponse Résultat de la suppression
+  */
+  #[Route('/menus/{menuId}/tags/{tagId}', name: 'api_menu_remove_tag', methods: ['DELETE'])]
+  #[OA\Delete(
+      summary: 'Retirer un tag d’un menu',
+      description: 'Supprime l’association entre un tag et un menu'
+  )]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\Parameter(
+      name: 'menuId',
+      in: 'path',
+      required: true,
+      description: 'ID du menu',
+      schema: new OA\Schema(type: 'integer')
+  )]
+  #[OA\Parameter(
+      name: 'tagId',
+      in: 'path',
+      required: true,
+      description: 'ID du tag',
+      schema: new OA\Schema(type: 'integer')
+  )]
+  #[OA\Response(response: 200, description: 'Tag retiré du menu')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  #[OA\Response(response: 404, description: 'Menu ou tag non trouvé')]
+  public function removeTagFromMenu(
+      int $menuId,
+      int $tagId,
+      MenuRepository $menuRepository,
+      MenuTagsRepository $menuTagRepository,
+      EntityManagerInterface $em
+  ): JsonResponse {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
+        return $this->json(['message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer le menu
+    $menu = $menuRepository->find($menuId);
+    if (!$menu) {
+        return $this->json(['message' => 'Menu non trouvé'], 404);
+    }
+
+    // Étape 3 - Récupérer le tag
+    $tag = $menuTagRepository->find($tagId);
+    if (!$tag) {
+        return $this->json(['message' => 'Tag non trouvé'], 404);
+    }
+
+    // Étape 4 - Vérifier si il est toujours lié
+    if (!$menu->getTags()->contains($tag)) {
+        return $this->json(['message' => 'Tag non associé'], 404);
+    }
+
+    // Étape 5 - Suppression de la relation
+    $menu->removeTag($tag);
+
+    // Étape 6 - Sauvegarde
+    $em->flush();
+
+    // Étape 7 - Retourne le résultat
+    return $this->json(['message' => 'Tag retiré du menu']);
+  }
+
+  /**
+   * @description Retourne un menu avec ses tags uniquement
+   * @param int $id ID du menu
+   * @param MenuRepository $menuRepository Le repository des menus
+   * @return JsonResponse Menu + tags ou 404 si non trouvé
+  */
+  #[Route('/menus/{id}', name: 'api_menu_show', methods: ['GET'])]
+  #[OA\Get(
+    summary: 'Récupérer un menu avec ses tags',
+    description: 'Retourne un menu avec la liste de ses tags associés (utilisé pour gestion admin drag & drop)'
+  )]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\Parameter(
+    name: 'id',
+    in: 'path',
+    required: true,
+    description: 'ID du menu',
+    schema: new OA\Schema(type: 'integer')
+  )]
+  #[OA\Response(response: 200, description: 'Menu trouvé')]
+  #[OA\Response(response: 404, description: 'Menu non trouvé')]
+  public function showMenu(int $id, MenuRepository $menuRepository): JsonResponse
+  {
+    // Étape 1 - Récupérer le menu par son Id
+    $menu = $menuRepository->find($id);
+
+    // Étape 2 - Vérifie s'il existe
+    if (!$menu) {
+      return $this->json(['message' => 'Menu non trouvé'], 404);
+    }
+
+    // Étape 3 - Retourne le résultat
+    return $this->json([
+      'id' => $menu->getId(),
+      'titre' => $menu->getTitre(),
+      'tags' => array_map(fn($tag) => [
+        'id' => $tag->getId(),
+        'libelle' => $tag->getTag()
+      ], $menu->getTags()->toArray())
+    ]);
+  }
+
+  /**
+   * @description Retourne la liste de tous les menus
+   * @param MenuRepository $menuRepository Le repository des menus
+   * @return JsonResponse Liste des menus
+  */
+  #[Route('/menus', name: 'api_menu_list', methods: ['GET'])]
+  #[OA\Get(
+    summary: 'Lister tous les menus',
+    description: 'Retourne une liste simplifiée des menus (id + titre) pour sélection dans l’admin'
+  )]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\Response(response: 200, description: 'Liste des menus')]
+  public function listMenus(MenuRepository $menuRepository): JsonResponse
+  {
+    // Étape 1 - Récupérer les menus
+    $menus = $menuRepository->findAll();
+
+    // Étape 2 - Récupérer les menu tag associé
+    $data = array_map(fn($menu) => [
+      'id' => $menu->getId(),
+      'titre' => $menu->getTitre()
+    ], $menus);
+
+    // Étape 3 - Renvoie le résultat
+    return $this->json(['menus' => $data]);
   }
 
 // =========================================================================

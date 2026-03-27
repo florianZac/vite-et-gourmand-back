@@ -200,10 +200,12 @@ class Menu
       }
       return $this;
   }
-
-  public function removeTag(MenuTags $tag): static
+  public function removeTag(MenuTags $tag): self
   {
-      $this->tags->removeElement($tag);
-      return $this;
+    if ($this->tags->removeElement($tag)) {
+      $tag->removeMenu($this);
+    }
+    return $this;
   }
 }
+

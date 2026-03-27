@@ -598,4 +598,5 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
     // Étape 5 - Retourner la réponse JSON
     return $this->json(['status' => 'Succès', 'menu' => $result]);
   }
+
 }
