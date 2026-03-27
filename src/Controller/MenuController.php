@@ -96,25 +96,25 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
             'libelle' => $allergene->getLibelle(),
           ];
         }
-      }      
-      $platsArray[] = [
-        'id' => $plat->getId(),
-        'titre' => $plat->getTitrePlat(),
-        'categorie' => $plat->getCategorie(),
-        'photo' => $plat->getPhoto(),
-        'description' => $plat->getDescriptionPlat(),
-        'allergenes' => $allergenesArray,
-      ];
-
-      // Récupère les tags associés au menu
-      $tagsArray = [];
-      foreach ($menu->getTags() as $menuTag) {
-        $tagsArray[] = [
-          'id' => $menuTag->getId(),
-          'libelle' => $menuTag->getTag(),
+           
+        $platsArray[] = [
+          'id' => $plat->getId(),
+          'titre' => $plat->getTitrePlat(),
+          'categorie' => $plat->getCategorie(),
+          'photo' => $plat->getPhoto(),
+          'description' => $plat->getDescriptionPlat(),
+          'allergenes' => $allergenesArray,
         ];
       }
-
+        // Récupère les tags associés au menu
+        $tagsArray = [];
+        foreach ($menu->getTags() as $menuTag) {
+          $tagsArray[] = [
+            'id' => $menuTag->getId(),
+            'tag' => $menuTag->getTag(),
+          ];
+        }
+      
       $result[] = [
         'id' => $menu->getId(),
         'titre' => $menu->getTitre(),
@@ -130,10 +130,10 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
           'id' => $menu->getRegime()->getId(),
           'libelle' => $menu->getRegime()->getLibelle()
         ] : null,
-        'plats' => $platsArray,
-        'tags' => $tagsArray,
+          'plats' => $platsArray,
+          'tags' => $tagsArray,
       ];
-    }
+    } 
 
     // Étape 3 - Retourne les résultats
     return $this->json(['status' => 'Succès', 'total' => count($menus), 'menus' => $result]);
