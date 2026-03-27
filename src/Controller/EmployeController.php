@@ -2185,7 +2185,7 @@ final class EmployeController extends AbstractController
    * @param MenuRepository $menuRepository Le repository des menus
    * @return JsonResponse Menu + tags ou 404 si non trouvé
   */
-  #[Route('/menus/{id}', name: 'api_menu_show', methods: ['GET'])]
+  #[Route('/menus/{id}', name: 'api_employe_menu_show', methods: ['GET'])]
   #[OA\Get(
     summary: 'Récupérer un menu avec ses tags',
     description: 'Retourne un menu avec la liste de ses tags associés (utilisé pour gestion admin drag & drop)'
@@ -2226,7 +2226,7 @@ final class EmployeController extends AbstractController
    * @param MenuRepository $menuRepository Le repository des menus
    * @return JsonResponse Liste des menus
   */
-  #[Route('/menus', name: 'api_menu_list', methods: ['GET'])]
+  #[Route('/menus', name: 'api_employe_menus_list', methods: ['GET'])]
   #[OA\Get(
     summary: 'Lister tous les menus',
     description: 'Retourne une liste simplifiée des menus (id + titre) pour sélection dans l’admin'
