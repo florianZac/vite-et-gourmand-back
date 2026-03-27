@@ -48,15 +48,19 @@ class Menu
 	 */
 	#[ORM\ManyToMany(targetEntity: Plat::class)]
 	#[ORM\JoinTable(
-			name: 'propose',
-			joinColumns: [new ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id')],
-			inverseJoinColumns: [new ORM\JoinColumn(name: 'plat_id', referencedColumnName: 'plat_id')]
+    name: 'propose',
+    joinColumns: [new ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id')],
+    inverseJoinColumns: [new ORM\JoinColumn(name: 'plat_id', referencedColumnName: 'plat_id')]
 	)]
 	private Collection $plats;
 
-    #[ORM\ManyToMany(targetEntity: MenuTags::class, inversedBy: 'menus')]
-    #[ORM\JoinTable(name: 'menu_tag')]
-    private Collection $tags;
+	#[ORM\ManyToMany(targetEntity: MenuTags::class, inversedBy: 'menus')]
+	#[ORM\JoinTable(
+		name: 'menu_tag',
+		joinColumns: [new ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id')],
+		inverseJoinColumns: [new ORM\JoinColumn(name: 'menu_tag_id', referencedColumnName: 'id')]
+	)]
+private Collection $tags;
 
     public function __construct()
     {
