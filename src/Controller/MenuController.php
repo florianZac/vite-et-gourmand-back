@@ -477,14 +477,16 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
     foreach ($menus as $menu) {
       // Plats
       $platsArray = [];
-      foreach ($menu->getPlats() as $plat) {
-        if (!$plat) continue; // protection contre null
+        foreach ($menu->getPlats() as $plat) {
+          if (!$plat) continue; // protection contre null
+
           $allergenesArray = [];
           foreach ($plat->getAllergenes() as $allergene) {
-            if (!$allergene) continue; // protection contre null
+            if (!$allergene) continue;
+
             $allergenesArray[] = [
-              'id' => $allergene->getId(),
-              'libelle' => $allergene->getLibelle(),
+                'id' => $allergene->getId(),
+                'libelle' => $allergene->getLibelle(),
             ];
           }
 
@@ -497,7 +499,6 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
             'allergenes' => $allergenesArray,
           ];
         }
-    }   
       // Tags
       $tagsArray = [];
       foreach ($menu->getTags() as $menuTag) {
@@ -508,24 +509,24 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
       }
 
       $result[] = [
-        'id' => $menu->getId() ?? 0,
-        'titre' => $menu->getTitre() ?? 'N/A',
-        'description' => $menu->getDescription() ?? '',
-        'prix_par_personne' => $menu->getPrixParPersonne() ?? 0,
-        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum() ?? 0,
-        'quantite_restante' => $menu->getQuantiteRestante() ?? 0,
+        'id' => $menu->getId(),
+        'titre' => $menu->getTitre(),
+        'description' => $menu->getDescription(),
+        'prix_par_personne' => $menu->getPrixParPersonne(),
+        'nombre_personne_minimum' => $menu->getNombrePersonneMinimum(),
+        'quantite_restante' => $menu->getQuantiteRestante(),
         'theme' => $menu->getTheme() ? [
-          'id' => $menu->getTheme()->getId() ?? 0,
-          'titre' => $menu->getTheme()->getLibelle() ?? 'N/A',
+            'id' => $menu->getTheme()->getId(),
+            'titre' => $menu->getTheme()->getLibelle(),
         ] : null,
         'regime' => $menu->getRegime() ? [
-          'id' => $menu->getRegime()->getId() ?? 0,
-          'libelle' => $menu->getRegime()->getLibelle() ?? 'N/A',
+            'id' => $menu->getRegime()->getId(),
+            'libelle' => $menu->getRegime()->getLibelle(),
         ] : null,
         'plats' => $platsArray,
         'tags' => $tagsArray,
       ];
-  
+    }
 
     return $this->json([
       'status' => 'Succès',
