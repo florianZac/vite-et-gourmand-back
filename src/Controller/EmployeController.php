@@ -2,15 +2,17 @@
 
 namespace App\Controller;
 
+use App\Enum\CommandeStatut;
+
 use App\Entity\Menu;
-use App\Entity\MenuImage;
 use App\Entity\Regime;
 use App\Entity\SuiviCommande;
 use App\Entity\Theme;
 use App\Entity\Allergene;
 use App\Entity\Plat;
-use App\Enum\CommandeStatut;
+use App\Entity\MenuTags;
 
+use App\Repository\MenuTagsRepository;
 use App\Repository\AllergeneRepository;
 use App\Repository\AvisRepository;
 use App\Repository\CommandeRepository;
@@ -21,8 +23,8 @@ use App\Repository\RegimeRepository;
 use App\Repository\SuiviCommandeRepository;
 use App\Repository\ThemeRepository;
 use App\Repository\UtilisateurRepository;
-use App\Service\CloudinaryService;
 
+use App\Service\CloudinaryService;
 use App\Service\MailerService;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,6 +34,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
+
 use OpenApi\Attributes as OA;
 
 /**
@@ -77,7 +80,13 @@ use OpenApi\Attributes as OA;
  *  29. addPlatToMenu()      : Ajoute un plat à un menu
  *  30. removePlatFromMenu() : Supprime un plat d'un menu
  *
- *  31. formatCommande() : Formate une commande en tableau pour éviter la référence circulaire
+ *  31. listMenuTags()       : Retourne tous les tags présent en BDD
+ *  32. createMenuTag()      : Crée un nouveau tag
+ *  33. updateMenuTag()      : Met à jour un tag existant
+ *  34. deleteMenuTag()      : Supprime un tag
+ *  35. assignTagToMenu()    : assignTagToMenu
+ * 
+ *  36. formatCommande() : Formate une commande en tableau pour éviter la référence circulaire
  */
 
 #[Route('/api/employe')]
@@ -1078,12 +1087,12 @@ final class EmployeController extends AbstractController
   }
 
   /**
-   * Fonction pour uploader une image via l'API.
+   * Fonction pour uploader une image via l'API Cloudinary
    * 
    * Cette route permet d'envoyer une image qui sera uploadée
    * sur Cloudinary. La fonction vérifie le rôle, le fichier, son type et sa taille,
    * puis renvoie l'URL de l'image en cas de succès.*/
-/**
+  /**
    * @description Upload une image vers Cloudinary via le back
    * Reçoit un fichier en multipart/form-data
    * Retourne l'URL publique Cloudinary
@@ -1869,6 +1878,233 @@ final class EmployeController extends AbstractController
       'status' => 'Succès',
       'message' => 'Plat supprimé du menu'
     ]);
+  }
+
+  // =========================================================================
+  // MENUS TAGS
+  // =========================================================================
+
+  /**
+   * @description Retourne tous les tags présent en BDD 
+   * @param MenuTagsRepository $menuTagRepository Le repository des tags
+   * @return JsonResponse Liste des tags
+   */
+  #[Route('/menu-tags', name: 'api_menu_tag_list', methods: ['GET'])]
+  #[OA\Get(summary: 'Lister tous les tags de menus', description: 'Retourne la liste complète des tags')]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\Response(response: 200, description: 'Liste des tags')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  public function listMenuTags(MenuTagsRepository $menuTagRepository): JsonResponse
+  {
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer tous les tags
+    $tags = $menuTagRepository->findAll();
+
+    // Étape 3 - Transformer en tableau simple
+    $data = array_map(fn($tag) => [
+      'id' => $tag->getId(),
+      'libelle' => $tag->getTag()
+    ], $tags);
+
+    // Étape 4 - Retourner la réponse
+    return $this->json(['status' => 'Succès', 'tags' => $data]);
+  }
+
+  /**
+   * @description Crée un nouveau tag 
+   * Corps JSON attendu : { "libelle": "Vegan" }
+   * @param Request $request La requête HTTP contenant les données JSON
+   * @param MenuTagsRepository $menuTagRepository Le repository des tags
+   * @param EntityManagerInterface $em L'EntityManager
+   * @return JsonResponse
+   */
+  #[Route('/menu-tags', name: 'api_menu_tag_create', methods: ['POST'])]
+  #[OA\Post(summary: 'Créer un tag de menu', description: 'Crée un nouveau tag pour les menus')]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\RequestBody(required: true, content: new OA\JsonContent(
+    properties: [
+      new OA\Property(property: 'libelle', type: 'string', example: 'Vegan')
+    ]
+  ))]
+  #[OA\Response(response: 201, description: 'Tag créé')]
+  #[OA\Response(response: 400, description: 'Libellé manquant')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  #[OA\Response(response: 409, description: 'Tag déjà existant')]
+  public function createMenuTag(Request $request, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em): JsonResponse
+  {
+
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer les données JSON
+    $data = json_decode($request->getContent(), true);
+    if (empty($data['libelle'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
+    }
+
+    // Étape 3 - Vérifier si le tag existe déjà
+    $existant = $menuTagRepository->findOneBy(['libelle' => $data['libelle']]);
+    if ($existant) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Ce tag existe déjà'], 409);
+    }
+
+    // Étape 4 - Créer et persister le tag
+    $tag = new MenuTags();
+    $tag->setTag($data['libelle']);
+    $em->persist($tag);
+    $em->flush();
+
+    // Étape 5 - Retourner la confirmation
+    return $this->json(['status' => 'Succès', 'message' => 'Tag créé avec succès', 'id' => $tag->getId()], 201);
+  }
+
+  /**
+   * @description Met à jour un tag existant
+   * @param int $id ID du tag à modifier
+   * @param Request $request La requête HTTP contenant les données JSON
+   * @param MenuTagsRepository $menuTagRepository Le repository des tags
+   * @param EntityManagerInterface $em L'EntityManager
+   * @return JsonResponse
+   */
+  #[Route('/menu-tags/{id}', name: 'api_menu_tag_update', methods: ['PUT'])]
+  #[OA\Put(summary: 'Modifier un tag de menu', description: 'Met à jour un tag existant')]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\RequestBody(required: true, content: new OA\JsonContent(
+    properties: [
+      new OA\Property(property: 'libelle', type: 'string', example: 'Vegan')
+    ]
+  ))]
+  #[OA\Response(response: 200, description: 'Tag mis à jour')]
+  #[OA\Response(response: 400, description: 'Libellé manquant')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  #[OA\Response(response: 404, description: 'Tag non trouvé')]
+  #[OA\Response(response: 409, description: 'Tag déjà existant')]
+  public function updateMenuTag(int $id, Request $request, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em): JsonResponse
+  {
+
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer le tag
+    $tag = $menuTagRepository->find($id);
+    if (!$tag) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Tag non trouvé'], 404);
+    }
+
+    // Étape 3 - Récupérer les données JSON
+    $data = json_decode($request->getContent(), true);
+    if (empty($data['libelle'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
+    }
+
+    // Étape 4 - Vérifier doublon
+    $existant = $menuTagRepository->findOneBy(['libelle' => $data['libelle']]);
+    if ($existant && $existant->getId() !== $tag->getId()) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Ce tag existe déjà'], 409);
+    }
+
+    // Étape 5 - Mettre à jour et sauvegarder
+    $tag->setLibelle($data['libelle']);
+    $em->flush();
+
+    return $this->json(['status' => 'Succès', 'message' => 'Tag mis à jour avec succès']);
+  }
+
+  /**
+   * @description Supprime un tag
+   * Accessible pour la gestion des menus
+   * @param int $id ID du tag à supprimer
+   * @param MenuTagsRepository $menuTagRepository Le repository des tags
+   * @param EntityManagerInterface $em L'EntityManager
+   * @return JsonResponse
+   */
+  #[Route('/menu-tags/{id}', name: 'api_menu_tag_delete', methods: ['DELETE'])]
+  #[OA\Delete(summary: 'Supprimer un tag', description: 'Supprime un tag de menu existant')]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\Response(response: 200, description: 'Tag supprimé')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  #[OA\Response(response: 404, description: 'Tag non trouvé')]
+  public function deleteMenuTag(int $id, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em): JsonResponse
+  {
+
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer le tag
+    $tag = $menuTagRepository->find($id);
+    if (!$tag) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Tag non trouvé'], 404);
+    }
+
+    // Étape 3 - Supprimer le tag
+    $em->remove($tag);
+    $em->flush();
+
+    return $this->json(['status' => 'Succès', 'message' => 'Tag supprimé avec succès']);
+  }
+
+  /**
+   * @description Assigne un tag à un menu
+   * Accessible pour la gestion des menus
+   * @param int $menuId ID du menu
+   * @param int $tagId ID du tag
+   * @param MenuRepository $menuRepository Le repository des menus
+   * @param MenuTagsRepository $menuTagRepository Le repository des tags
+   * @param EntityManagerInterface $em L'EntityManager
+   * @return JsonResponse
+   */
+  #[Route('/menus/{menuId}/tags/{tagId}', name: 'api_menu_assign_tag', methods: ['POST'])]
+  #[OA\Post(summary: 'Assigner un tag à un menu', description: 'Ajoute un tag à un menu existant')]
+  #[OA\Tag(name: 'Employé - Menus')]
+  #[OA\Response(response: 200, description: 'Tag assigné')]
+  #[OA\Response(response: 403, description: 'Accès refusé')]
+  #[OA\Response(response: 404, description: 'Menu ou tag non trouvé')]
+  #[OA\Response(response: 409, description: 'Tag déjà associé')]
+  public function assignTagToMenu(
+    int $menuId,
+    int $tagId,
+    MenuRepository $menuRepository,
+    MenuTagsRepository $menuTagRepository,
+    EntityManagerInterface $em
+  ): JsonResponse {
+
+    // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
+    if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
+    }
+
+    // Étape 2 - Récupérer le menu
+    $menu = $menuRepository->find($menuId);
+    if (!$menu) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
+    }
+
+    // Étape 3 - Récupérer le tag
+    $tag = $menuTagRepository->find($tagId);
+    if (!$tag) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Tag non trouvé'], 404);
+    }
+
+    // Étape 4 - Vérifier si le tag est déjà attaché
+    if ($menu->getTags()->contains($tag)) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Tag déjà associé au menu'], 409);
+    }
+
+    // Étape 5 - Ajouter le tag et sauvegarder
+    $menu->addTag($tag);
+    $em->flush();
+
+    return $this->json(['status' => 'Succès', 'message' => 'Tag assigné au menu']);
   }
 
 // =========================================================================

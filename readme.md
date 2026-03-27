@@ -1284,7 +1284,7 @@ Mot de passe : juemmdoy7baw5xkg
 3.11 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
 heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
 
-3.12 Vérifie que les tables existent
+# 4 Vérifie que les tables existent
 mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
 Mot de passe : juemmdoy7baw5xkg
 pour voir les table tape 

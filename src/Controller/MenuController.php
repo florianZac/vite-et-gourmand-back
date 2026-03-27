@@ -96,24 +96,23 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
             'libelle' => $allergene->getLibelle(),
           ];
         }
-
-        $platsArray[] = [
-          'id' => $plat->getId(),
-          'titre' => $plat->getTitrePlat(),
-          'categorie' => $plat->getCategorie(),
-          'photo' => $plat->getPhoto(),
-          'description' => $plat->getDescriptionPlat(),
-          'allergenes' => $allergenesArray,
-        ];
-      }
+      }      
+      $platsArray[] = [
+        'id' => $plat->getId(),
+        'titre' => $plat->getTitrePlat(),
+        'categorie' => $plat->getCategorie(),
+        'photo' => $plat->getPhoto(),
+        'description' => $plat->getDescriptionPlat(),
+        'allergenes' => $allergenesArray,
+      ];
 
       // Récupère les tags associés au menu
       $tagsArray = [];
-      $tags = $menuTagsRepository->findBy(['menu' => $menu]);
-      foreach ($tags as $menuTag) {
-        if ($menuTag && $menuTag->getTag() !== null) {
-            $tagsArray[] = $menuTag->getTag();
-        }
+      foreach ($menu->getTags() as $menuTag) {
+        $tagsArray[] = [
+          'id' => $menuTag->getId(),
+          'libelle' => $menuTag->getTag(),
+        ];
       }
 
       $result[] = [
@@ -191,9 +190,11 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
 
     // Récupère les tags associés au menu
     $tagsArray = [];
-    $tags = $menuTagsRepository->findBy(['menu' => $menu]);
-    foreach ($tags as $menuTag) {
-      $tagsArray[] = $menuTag->getTag();
+    foreach ($menu->getTags() as $menuTag) {
+      $tagsArray[] = [
+        'id' => $menuTag->getId(),
+        'tag' => $menuTag->getTag(),
+      ];
     }
 
     $result = [
@@ -496,16 +497,14 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
             'allergenes' => $allergenesArray,
           ];
         }
-
-        // Tags
-        $tagsArray = [];
-        foreach ($menuTagsRepository->findBy(['menu' => $menu]) as $menuTag) {
-          if ($menuTag && $menuTag->getTag() !== null) {
-            $tagsArray[] = [
-              'id' => $menuTag->getId() ?? 0,
-              'libelle' => $menuTag->getTag(),
-            ];
-          }
+    }   
+      // Tags
+      $tagsArray = [];
+      foreach ($menu->getTags() as $menuTag) {
+        $tagsArray[] = [
+          'id' => $menuTag->getId(),
+          'tag' => $menuTag->getTag(),
+        ];
       }
 
       $result[] = [
@@ -526,7 +525,7 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
         'plats' => $platsArray,
         'tags' => $tagsArray,
       ];
-    }
+  
 
     return $this->json([
       'status' => 'Succès',
@@ -568,9 +567,11 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
 
     // Étape 3 - Récupérer les tags du menu
     $tagsArray = [];
-    $tags = $menuTagsRepository->findBy(['menu' => $menu]);
-    foreach ($tags as $menuTag) {
-      $tagsArray[] = $menuTag->getTag();
+    foreach ($menu->getTags() as $menuTag) {
+      $tagsArray[] = [
+        'id' => $menuTag->getId(),
+        'tag' => $menuTag->getTag(),
+      ];
     }
 
     // Étape 4 - Construire le résultat final

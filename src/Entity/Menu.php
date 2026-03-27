@@ -6,6 +6,7 @@ use App\Repository\MenuRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\MenuTags;
 #[ORM\Entity(repositoryClass: MenuRepository::class)]
 #[ORM\Table(name: 'menu')]
 class Menu
@@ -53,10 +54,15 @@ class Menu
 	)]
 	private Collection $plats;
 
-	public function __construct()
-	{
-			$this->plats = new ArrayCollection();
-	}
+    #[ORM\ManyToMany(targetEntity: MenuTags::class, inversedBy: 'menus')]
+    #[ORM\JoinTable(name: 'menu_tag')]
+    private Collection $tags;
+
+    public function __construct()
+    {
+        $this->plats = new ArrayCollection();
+        $this->tags = new ArrayCollection(); 
+    }
 
 	public function getId(): ?int
 	{
@@ -151,7 +157,7 @@ class Menu
 	public function addPlat(Plat $plat): static
 	{
 			if (!$this->plats->contains($plat)) {
-					$this->plats->add($plat);
+				$this->plats->add($plat);
 			}
 			return $this;
 	}
@@ -164,7 +170,7 @@ class Menu
 
 	public function getConditions(): ?string
 	{
-			return $this->conditions;
+		return $this->conditions;
 	}
 
 	public function setConditions(?string $conditions): static
@@ -172,5 +178,28 @@ class Menu
 			$this->conditions = $conditions;
 			return $this;
 	}
-}
 
+	public function getTags(): Collection
+	{
+		return $this->tags;
+	}
+  public function setTags(Collection $tags): static
+  {
+      $this->tags = $tags;
+      return $this;
+  }
+
+  public function addTag(MenuTags $tag): static
+  {
+      if (!$this->tags->contains($tag)) {
+          $this->tags->add($tag);
+      }
+      return $this;
+  }
+
+  public function removeTag(MenuTags $tag): static
+  {
+      $this->tags->removeElement($tag);
+      return $this;
+  }
+}

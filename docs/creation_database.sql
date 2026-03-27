@@ -16,12 +16,13 @@
 -- 12. Avis
 -- 13. Suivi_commande
 -- 14. menu_tags
+-- 15. liason avec menus
+-- 16. Mise à jour
 
 -- =====================================
 -- SÉCURITÉ : désactivation des contraintes
 -- =====================================
 SET FOREIGN_KEY_CHECKS = 0;
-
 
 -- =====================================
 --  CLEAN (décommente si reset total)
@@ -499,50 +500,163 @@ INSERT IGNORE INTO suivi_commande (statut, date_statut, commande_id) VALUES
 ('En attente', STR_TO_DATE('08-03-2026 12:00:00', '%d-%m-%Y %H:%i:%s'), 6);
 
 -- =====================================
--- MENU TAGS
+-- MENU TAGS AJOUT DES VALEURS
 -- =====================================
-INSERT IGNORE INTO menu_tags (tag, menu_id) VALUES
--- Noël
-('Foie gras', 1), ('Magret', 1), ('Truffe', 1),
-('Saumon fumé', 2), ('Dinde farcie', 2), ('Bûche', 2),
-('Convivial', 3), ('Terroir', 3), ('Chapon', 3),
-('Végétarien', 4), ('Épices', 4), ('Champignons', 4),
-('Alsace', 5), ('Choucroute', 5), ('Bredele', 5),
-('Truffe', 6), ('Confit', 6), ('Périgord', 6),
-('Vegan', 7), ('BIO', 7), ('Épices de Noël', 7),
-('Caviar', 8), ('Homard', 8), ('Prestige', 8),
--- Pâques
-('Agneau', 9), ('Légumes primeurs', 9), ('Agrumes', 9),
-('Saumon', 10), ('Primeurs', 10), ('Chocolat', 10),
-('Provence', 11), ('Agneau', 11), ('Lavande', 11),
-('Famille', 12), ('Enfants', 12), ('Chocolat', 12),
--- Solo
-('Solo', 15),
-('Solo', 23), ('Viande', 23), ('Bœuf', 23), ('Gastronomique', 23),
-('Solo', 24), ('Viande', 24), ('Magret', 24), ('Sud-Ouest', 24),
-('Solo', 25),
-('Solo', 26),
--- Événement & Mariage
-('Mariage', 27), ('Homard', 27), ('Verrines', 27),
-('Événement', 28), ('Anniversaire', 28), ('Élégance', 28),
-('Séminaire', 29),
-('Anniversaire', 30),
--- Mexicain
-('Mexicain', 31), ('Mexicain', 32), ('Mexicain', 33), ('Mexicain', 34), ('Mexicain', 35),
--- Asiatique
-('Asiatique', 36), ('Asiatique', 37), ('Asiatique', 38), ('Asiatique', 39), ('Asiatique', 40),
--- Jour de l'An
-('Nouvel An', 41), ('Nouvel An', 42),
--- Italien
-('Italien', 43), ('Italien', 44), ('Italien', 45),
--- Français
-('Français', 46), ('Français', 47),
--- Classique
-('Classique', 48), ('Huîtres', 48), ('Bordeaux', 48),
-('Classique', 49), ('Légumes BIO', 49), ('Sans viande', 49),
-('Classique', 50), ('100% Végétal', 50), ('BIO', 50),
-('Classique', 51), ('Gascogne', 51), ('Canard', 51);
+INSERT IGNORE INTO menu_tags (tag) VALUES
+('Foie gras'), ('Magret'), ('Truffe'), ('Saumon fumé'), ('Dinde farcie'), 
+('Bûche'), ('Convivial'), ('Terroir'), ('Chapon'), ('Végétarien'),
+('Épices'), ('Champignons'), ('Alsace'), ('Choucroute'), ('Bredele'),
+('Confit'), ('Périgord'), ('Vegan'), ('BIO'), ('Épices de Noël'),
+('Caviar'), ('Homard'), ('Prestige'), ('Agneau'), ('Légumes primeurs'),
+('Agrumes'), ('Saumon'), ('Primeurs'), ('Chocolat'), ('Provence'),
+('Lavande'), ('Famille'), ('Enfants'), ('Solo'), ('Viande'), ('Bœuf'),
+('Gastronomique'), ('Magret'), ('Sud-Ouest'), ('Mariage'), ('Verrines'),
+('Chitake'), ('Anniversaire'), ('Élégance'), ('Séminaire'), ('Mexicain'),
+('Asiatique'), ('Nouvel An'), ('Italien'), ('Tofu'), ('Classique'),
+('Huîtres'), ('Bordeaux'), ('Légumes BIO'), ('Sans viande'), ('100% Végétal'),
+('Gascogne'), ('Canard'), ('Pate fraiche'), ('gorgonzola'), ('Gnocchi'), 
+('carpaccio'), ('parmigiana') , ('pepperoni'), ('Bresaola'), ('Bruschette');
 
+-- =====================================
+-- AJOUT DES RELATIONS AVEC LES MENUS 
+-- menu <-> menu_tags
+-- =====================================
+-- Menu 1
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 1, id FROM menu_tags WHERE tag IN ('Foie gras', 'Magret', 'Truffe');
+-- Menu 2
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 2, id FROM menu_tags WHERE tag IN ('Saumon fumé', 'Dinde farcie', 'Bûche');
+
+-- Menu 3
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 3, id FROM menu_tags WHERE tag IN ('Convivial', 'Terroir', 'Chapon');
+
+-- Menu 4
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 4, id FROM menu_tags WHERE tag IN ('Végétarien', 'Épices', 'Champignons');
+
+-- Menu 5
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 5, id FROM menu_tags WHERE tag IN ('Alsace', 'Choucroute', 'Bredele');
+
+-- Menu 6
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 6, id FROM menu_tags WHERE tag IN ('Truffe', 'Confit', 'Périgord');
+
+-- Menu 7
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 7, id FROM menu_tags WHERE tag IN ('Vegan', 'BIO', 'Épices de Noël');
+
+-- Menu 8
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 8, id FROM menu_tags WHERE tag IN ('Caviar', 'Homard', 'Prestige');
+
+-- Menu 9
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 9, id FROM menu_tags WHERE tag IN ('Agneau', 'Légumes primeurs', 'Agrumes');
+
+-- Menu 10
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 10, id FROM menu_tags WHERE tag IN ('Saumon', 'Primeurs', 'Chocolat');
+
+-- Menu 11
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 11, id FROM menu_tags WHERE tag IN ('Provence', 'Agneau', 'Lavande');
+
+-- Menu 12
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 12, id FROM menu_tags WHERE tag IN ('Famille', 'Enfants', 'Chocolat');
+
+-- Menu 15
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 15, id FROM menu_tags WHERE tag IN ('Solo', 'Chocolat');
+
+-- Menu 23
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 23, id FROM menu_tags WHERE tag IN ('Solo', 'Viande', 'Bœuf');
+
+-- Menu 24
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 24, id FROM menu_tags WHERE tag IN ('Solo', 'Viande', 'Magret');
+
+-- Menu 25
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 25, id FROM menu_tags WHERE tag IN ('Solo', 'Sud-Ouest', 'Gastronomique');
+
+-- Menu 26
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 26, id FROM menu_tags WHERE tag IN ('Solo', 'Champignons', 'Épices');
+
+-- Menu 27
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 27, id FROM menu_tags WHERE tag IN ('Mariage', 'Homard', 'Verrines');
+
+-- Menu 28
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 28, id FROM menu_tags WHERE tag IN ('Événement', 'Anniversaire', 'Élégance');
+
+-- Menu 29
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 29, id FROM menu_tags WHERE tag IN ('Séminaire', 'Convivial', 'Terroir');
+
+-- Menu 30
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 30, id FROM menu_tags WHERE tag IN ('Anniversaire', 'Foie gras', 'Saumon fumé');
+
+-- Menu 31 à 35 (Mexicain)
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 31, id FROM menu_tags WHERE tag IN ('Mexicain', 'BIO', 'Agrumes');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 32, id FROM menu_tags WHERE tag IN ('Mexicain', 'Légumes primeurs');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 33, id FROM menu_tags WHERE tag IN ('Épices', 'Famille');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 34, id FROM menu_tags WHERE tag IN ('Provence', 'BIO');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 35, id FROM menu_tags WHERE tag IN ('Élégance', 'Viande');
+
+-- Menu 36 à 40 (Asiatique)
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 36, id FROM menu_tags WHERE tag IN ('Tofu', '100% Végétal');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 37, id FROM menu_tags WHERE tag IN ('Chitake', 'Champignons');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 38, id FROM menu_tags WHERE tag IN ('BIO', 'Champignons');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 39, id FROM menu_tags WHERE tag IN ('Asiatique', 'Vegan');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 40, id FROM menu_tags WHERE tag IN ('Edamame', 'Tokimeki');
+
+-- Menu 41 à 42 (Jour de l'An)
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 41, id FROM menu_tags WHERE tag IN ('Huîtres', 'Truffe', 'Dinde farcie');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 42, id FROM menu_tags WHERE tag IN ('Prestige', 'Homard', 'Caviar');
+
+-- Menu 43 à 45 (Italien)
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 43, id FROM menu_tags WHERE tag IN ('Pate fraiche', 'gorgonzola');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 44, id FROM menu_tags WHERE tag IN ('parmigiana', 'carpaccio', 'Gnocchi');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 45, id FROM menu_tags WHERE tag IN ('pepperoni' , 'Bresaola' , 'Bruschette');
+
+-- Menu 46 à 47 (Français)
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 46, id FROM menu_tags WHERE tag IN ('Sud-Ouest', 'Confit', 'Agrumes');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 47, id FROM menu_tags WHERE tag IN ('Légumes BIO', 'Terroir', 'Gascogne');
+
+-- Menu 48 à 51 (Classique)
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 48, id FROM menu_tags WHERE tag IN ('Canard', 'Huîtres', 'Bordeaux');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 49, id FROM menu_tags WHERE tag IN ('Convivial', 'Légumes BIO', 'Sans viande');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 50, id FROM menu_tags WHERE tag IN ('Champignons', '100% Végétal', 'BIO');
+INSERT INTO menu_tag (menu_id, menutags_id)
+SELECT 51, id FROM menu_tags WHERE tag IN ('Chapon', 'Gascogne', 'Canard');
 
 -- =====================================
 -- COMMANDES
