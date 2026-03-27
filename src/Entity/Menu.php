@@ -54,13 +54,13 @@ class Menu
 	)]
 	private Collection $plats;
 
-	#[ORM\ManyToMany(targetEntity: MenuTags::class, inversedBy: 'menus')]
-	#[ORM\JoinTable(
-		name: 'menu_tag',
-		joinColumns: [new ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id')],
-		inverseJoinColumns: [new ORM\JoinColumn(name: 'menu_tag_id', referencedColumnName: 'id')]
-	)]
-private Collection $tags;
+  #[ORM\ManyToMany(targetEntity: MenuTags::class, inversedBy: 'menus')]
+  #[ORM\JoinTable(
+    name: 'menu_tag',
+    joinColumns: [new ORM\JoinColumn(name: 'menu_id', referencedColumnName: 'menu_id')],
+    inverseJoinColumns: [new ORM\JoinColumn(name: 'menutags_id', referencedColumnName: 'id')]
+  )]
+  private Collection $tags;
 
     public function __construct()
     {

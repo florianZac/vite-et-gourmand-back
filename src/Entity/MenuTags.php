@@ -52,18 +52,16 @@ class MenuTags
   {
     if (!$this->menus->contains($menu)) {
       $this->menus->add($menu);
-      if (!$menu->getTags()->contains($this)) {
-        $menu->addTag($this);
-      }
+      $menu->addTag($this);
     }
     return $this;
   }
 
-    public function removeMenu(Menu $menu): static
-    {
-      if ($this->menus->removeElement($menu)) {
-        $menu->removeTag($this);
-      }
-      return $this;
+  public function removeMenu(Menu $menu): static
+  {
+    if ($this->menus->removeElement($menu)) {
+      $menu->removeTag($this);
     }
+    return $this;
+  }
 }
