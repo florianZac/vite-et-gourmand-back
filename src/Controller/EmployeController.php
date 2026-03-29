@@ -26,6 +26,7 @@ use App\Repository\UtilisateurRepository;
 
 use App\Service\CloudinaryService;
 use App\Service\MailerService;
+use App\Service\SanitizerService;
 
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -189,7 +190,8 @@ final class EmployeController extends AbstractController
     CommandeRepository $commandeRepository,
     SuiviCommandeRepository $suiviCommandeRepository,
     EntityManagerInterface $em,
-    MailerService $mailerService
+    MailerService $mailerService, 
+    SanitizerService $sanitizer
   ): JsonResponse {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -209,6 +211,7 @@ final class EmployeController extends AbstractController
     if (!$nouveauStatut) {
       return $this->json(['status' => 'Erreur', 'message' => 'Statut obligatoire'], 400);
     }
+    $nouveauStatut = $sanitizer->sanitize($nouveauStatut, 'texte');
 
     // Étape 4 - Récupérer l'ordre strict du cycle de vie
     $ordreStatuts = CommandeStatut::ORDRE;
@@ -758,7 +761,8 @@ final class EmployeController extends AbstractController
     PlatRepository $platRepository,
     RegimeRepository $regimeRepository,
     ThemeRepository $themeRepository,
-    EntityManagerInterface $em
+    EntityManagerInterface $em,
+    SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
@@ -779,6 +783,8 @@ final class EmployeController extends AbstractController
           return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
       }
     }
+    $data['titre'] = $sanitizer->sanitize($data['titre'], 'texte');
+    $data['description'] = $sanitizer->sanitize($data['description'], 'texte');
 
     // Validation supplémentaire pour les valeurs
     if ($data['prix_par_personne'] <= 0) {
@@ -819,6 +825,7 @@ final class EmployeController extends AbstractController
     // Étape 7.1 - Conditions du menu (optionnel)
     // Ex: "Commander minimum 14 jours à l'avance. Conserver au frais."
     if (isset($data['conditions'])) {
+       $data['conditions'] = $sanitizer->sanitize($data['conditions'], 'message');
       $menu->setConditions($data['conditions']);
     }
 
@@ -906,7 +913,8 @@ final class EmployeController extends AbstractController
     PlatRepository $platRepository,
     RegimeRepository $regimeRepository,
     ThemeRepository $themeRepository,
-    EntityManagerInterface $em
+    EntityManagerInterface $em,
+    SanitizerService $sanitizer
   ): JsonResponse {
       
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
@@ -928,6 +936,7 @@ final class EmployeController extends AbstractController
 
     // Étape 4 - Mise à jour des champs
     if (isset($data['titre'])) {
+      $data['titre'] = $sanitizer->sanitize($data['titre'], 'texte');
       $existant = $menuRepository->findOneBy(['titre' => $data['titre']]);
       if ($existant && $existant->getId() !== $menu->getId()) {
         return $this->json(['status' => 'Erreur', 'message' => 'Un menu avec ce titre existe déjà'], 409);
@@ -936,6 +945,7 @@ final class EmployeController extends AbstractController
     }
 
     if (isset($data['description'])) {
+      $data['description'] = $sanitizer->sanitize($data['description'], 'message');
       $menu->setDescription($data['description']);
     }
 
@@ -963,6 +973,7 @@ final class EmployeController extends AbstractController
     // Étape 5 - Mise à jour des conditions (optionnel)
     // Ex: "Commander minimum 14 jours à l'avance. Conserver au frais."
     if (isset($data['conditions'])) {
+      $data['conditions'] = $sanitizer->sanitize($data['conditions'], 'message');
       $menu->setConditions($data['conditions']);
     }
 
@@ -1166,6 +1177,7 @@ final class EmployeController extends AbstractController
    * @param Request $request La requête HTTP contenant les données au format JSON
    * @param ThemeRepository $themeRepository Le repository des thèmes
    * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+   * @param SanitizerService $sanitizer L'EntityManager pour gérer la sanitizer pour les attack XSS
    * @return JsonResponse
    */
 
@@ -1174,7 +1186,7 @@ final class EmployeController extends AbstractController
   #[OA\Tag(name: 'Employé - Référentiels')]
   #[OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'libelle', type: 'string', example: 'Noël')]))]
   #[OA\Response(response: 201, description: 'Thème créé')]  #[OA\Response(response: 400, description: 'Libellé manquant')]  #[OA\Response(response: 403, description: 'Accès refusé')]  #[OA\Response(response: 409, description: 'Thème déjà existant')]
-  public function createTheme(Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
+  public function createTheme(Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -1188,6 +1200,7 @@ final class EmployeController extends AbstractController
     if (empty($data['libelle'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
     }
+    $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
 
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
     $existant = $themeRepository->findOneBy(['tag' => $data['libelle']]);
@@ -1212,6 +1225,7 @@ final class EmployeController extends AbstractController
    * @param Request $request La requête HTTP contenant les données au format JSON
    * @param ThemeRepository $themeRepository Le repository des thèmes
    * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+   * @param SanitizerService $sanitizer L'EntityManager pour gérer la sanitizer pour les attack XSS
    * @return JsonResponse
    */
   #[Route('/themes/{id}', name: 'api_employe_themes_update', methods: ['PUT'])]
@@ -1223,7 +1237,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 404, description: 'Non trouvé')]  
   #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
-  public function updateTheme(int $id, Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em): JsonResponse
+  public function updateTheme(int $id, Request $request, ThemeRepository $themeRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -1244,6 +1258,7 @@ final class EmployeController extends AbstractController
 
     // Étape 5 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
+      $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
       $existant = $themeRepository->findOneBy(['tag' => $data['libelle']]);
       if ($existant && $existant->getId() !== $theme->getId()) {
           return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
@@ -1299,6 +1314,7 @@ final class EmployeController extends AbstractController
    * @param Request $request La requête HTTP contenant les données au format JSON
    * @param RegimeRepository $regimeRepository Le repository des régimes
    * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+   * @param SanitizerService $sanitizer L'EntityManager pour gérer la sanitizer pour les attack XSS
    * @return JsonResponse
    */
   #[Route('/regimes', name: 'api_employe_regimes_create', methods: ['POST'])]
@@ -1308,7 +1324,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 400, description: 'Libellé manquant')]  
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 409, description: 'Déjà existant')]
-  public function createRegime(Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
+  public function createRegime(Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -1322,7 +1338,8 @@ final class EmployeController extends AbstractController
     if (empty($data['libelle'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
     }
-
+    $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
+    
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
     $existant = $regimeRepository->findOneBy(['tag' => $data['libelle']]);
     if ($existant) {
@@ -1346,6 +1363,7 @@ final class EmployeController extends AbstractController
    * @param Request $request La requête HTTP contenant les données au format JSON
    * @param RegimeRepository $regimeRepository Le repository des régimes
    * @param EntityManagerInterface $em L'EntityManager pour gérer les opérations de base de données
+   * @param SanitizerService $sanitizer L'EntityManager pour gérer la sanitizer pour les attack XSS
    * @return JsonResponse
    */
   #[Route('/regimes/{id}', name: 'api_employe_regimes_update', methods: ['PUT'])]
@@ -1356,7 +1374,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 404, description: 'Non trouvé')]  
   #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
-  public function updateRegime(int $id, Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em): JsonResponse
+  public function updateRegime(int $id, Request $request, RegimeRepository $regimeRepository, EntityManagerInterface $em , SanitizerService $sanitizer): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -1377,6 +1395,7 @@ final class EmployeController extends AbstractController
 
     // Étape 5 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
+      $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
       $existant = $regimeRepository->findOneBy(['tag' => $data['libelle']]);
       if ($existant && $existant->getId() !== $regime->getId()) {
         return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
@@ -1436,8 +1455,9 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 400, description: 'Libellé manquant')]  
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 409, description: 'Déjà existant')]
-  public function createAllergene(Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+  public function createAllergene(Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
+
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
@@ -1450,6 +1470,7 @@ final class EmployeController extends AbstractController
     if (empty($data['libelle'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
     }
+    $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
 
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
     $existant = $allergeneRepository->findOneBy(['tag' => $data['libelle']]);
@@ -1479,7 +1500,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 404, description: 'Non trouvé')]  
   #[OA\Response(response: 409, description: 'Libellé déjà utilisé')]
-  public function updateAllergene(int $id, Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+  public function updateAllergene(int $id, Request $request, AllergeneRepository $allergeneRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -1494,12 +1515,14 @@ final class EmployeController extends AbstractController
     if (!$allergene) {
       return $this->json(['status' => 'Erreur', 'message' => 'Allergène non trouvé'], 404);
     }
+    $data['allergene'] = $sanitizer->sanitize($data['allergene'], 'texte');
 
     // Étape 3 - Récupérer les données JSON
     $data = json_decode($request->getContent(), true);
 
     // Étape 4 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
+      $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
       $existant = $allergeneRepository->findOneBy(['tag' => $data['libelle']]);
       if ($existant && $existant->getId() !== $allergene->getId()) {
           return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
@@ -1568,7 +1591,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]  
   #[OA\Response(response: 404, description: 'Allergène non trouvé')]  
   #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
-  public function createPlat(Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em): JsonResponse
+  public function createPlat(Request $request, PlatRepository $platRepository, AllergeneRepository $allergeneRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
     if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
@@ -1582,6 +1605,8 @@ final class EmployeController extends AbstractController
     if (empty($data['titre_plat']) || empty($data['photo']) || empty($data['categorie'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Les champs titre_plat, photo et categorie sont obligatoires'], 400);
     }
+    $data['titre_plat'] = $sanitizer->sanitize($data['titre_plat'], 'texte');
+    $data['categorie'] = $sanitizer->sanitize($data['categorie'], 'texte');
 
     // Étape 4 - Vérifier que le titre n'existe pas déjà
     $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
@@ -1601,6 +1626,7 @@ final class EmployeController extends AbstractController
     $plat->setPhoto($data['photo']);
     $plat->setCategorie($data['categorie']);
     if (isset($data['description_plat'])) {
+      $data['description_plat'] = $sanitizer->sanitize($data['description_plat'], 'message');
       $plat->setDescriptionPlat($data['description_plat']);
     }
 
@@ -1608,6 +1634,7 @@ final class EmployeController extends AbstractController
     if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
       foreach ($data['allergenes'] as $allergeneId) {
         $allergene = $allergeneRepository->find($allergeneId);
+        $data['allergenes'] = $sanitizer->sanitize($data['allergenes'], 'texte');
         if (!$allergene) {
           return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
         }
@@ -1645,7 +1672,8 @@ final class EmployeController extends AbstractController
     PlatRepository $platRepository, 
     AllergeneRepository $allergeneRepository, 
     EntityManagerInterface $em,
-    CloudinaryService $cloudinaryService
+    CloudinaryService $cloudinaryService,
+    SanitizerService $sanitizer
   ): JsonResponse
   {
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
@@ -1667,6 +1695,7 @@ final class EmployeController extends AbstractController
 
     // Étape 4 - Mettre à jour le titre si fourni
     if (isset($data['titre_plat'])) {
+      $data['titre_plat'] = $sanitizer->sanitize($data['titre_plat'], 'texte');
       $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
       if ($existant && $existant->getId() !== $plat->getId()) {
         return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
@@ -1676,6 +1705,7 @@ final class EmployeController extends AbstractController
 
     // Étape 5 - Mise à jour de la description si fournie
     if (isset($data['description_plat'])) {
+      $data['description_plat'] = $sanitizer->sanitize($data['description_plat'], 'message');
       $plat->setDescriptionPlat($data['description_plat']);
     }
 
@@ -1691,6 +1721,7 @@ final class EmployeController extends AbstractController
 
     // Étape 7 - Mettre à jour la catégorie si fournie
     if (isset($data['categorie'])) {
+      $data['categorie'] = $sanitizer->sanitize($data['categorie'], 'texte');
       $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
       if (!in_array($data['categorie'], $categoriesValides)) {
         return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
@@ -1704,6 +1735,7 @@ final class EmployeController extends AbstractController
         $plat->removeAllergene($allergeneExistant);
       }
       foreach ($data['allergenes'] as $allergeneId) {
+        $data['allergenes'] = $sanitizer->sanitize($data['allergenes'], 'texte');
         $allergene = $allergeneRepository->find($allergeneId);
         if (!$allergene) {
           return $this->json(['status' => 'Erreur', 'message' => "Allergène id $allergeneId non trouvé"], 404);
@@ -1937,7 +1969,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 400, description: 'Libellé manquant')]
   #[OA\Response(response: 403, description: 'Accès refusé')]
   #[OA\Response(response: 409, description: 'Tag déjà existant')]
-  public function createMenuTag(Request $request, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em): JsonResponse
+  public function createMenuTag(Request $request, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
 
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
@@ -1950,6 +1982,7 @@ final class EmployeController extends AbstractController
     if (empty($data['libelle'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
     }
+    $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
 
     // Étape 3 - Vérifier si le tag existe déjà
     $existant = $menuTagRepository->findOneBy(['tag' => $data['libelle']]);
@@ -1988,7 +2021,7 @@ final class EmployeController extends AbstractController
   #[OA\Response(response: 403, description: 'Accès refusé')]
   #[OA\Response(response: 404, description: 'Tag non trouvé')]
   #[OA\Response(response: 409, description: 'Tag déjà existant')]
-  public function updateMenuTag(int $id, Request $request, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em): JsonResponse
+  public function updateMenuTag(int $id, Request $request, MenuTagsRepository $menuTagRepository, EntityManagerInterface $em, SanitizerService $sanitizer): JsonResponse
   {
 
     // Étape 1 - Vérifier le rôle EMPLOYE OU ADMIN
@@ -2007,6 +2040,7 @@ final class EmployeController extends AbstractController
     if (empty($data['libelle'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Le libellé est obligatoire'], 400);
     }
+    $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
 
     // Étape 4 - Vérifier doublon
     $existant = $menuTagRepository->findOneBy(['tag' => $data['libelle']]);

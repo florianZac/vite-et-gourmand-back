@@ -19,6 +19,7 @@ use App\Repository\HoraireRepository;
 
 use App\Document\LogActivite;             // import du Document MongoDB
 use App\Service\MailerService;
+use App\Service\SanitizerService;
 
 use App\Entity\Utilisateur;
 use App\Entity\Horaire;
@@ -282,7 +283,8 @@ final class AdminController extends AbstractController
     EntityManagerInterface $em,
     UserPasswordHasherInterface $passwordHasher,  
     RoleRepository $roleRepository,               
-    MailerService $mailerService                  
+    MailerService $mailerService,
+    SanitizerService $sanitizer                 
   ): JsonResponse
   {
     // Étape 1 - Vérifier le rôle ADMIN
@@ -304,7 +306,14 @@ final class AdminController extends AbstractController
     // Étape 5 - Mise à jour des champs
     // On vérifie que le nouvel email n'est pas déjà utilisé par un AUTRE utilisateur
     if (isset($data['email'])) {
-
+      $data['email'] = $sanitizer->sanitize($data['email'], 'email');
+      if (empty($data['email'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+      }
+      if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || 
+        !preg_match('/\.(com|fr)$/i', $data['email'])) {
+          return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+      }
       $emailExistant = $utilisateurRepository->findOneBy(['email' => $data['email']]);
       // getId() !== $utilisateur->getId() permet d'exclure l'utilisateur lui-même
       if ($emailExistant && $emailExistant->getId() !== $utilisateur->getId()) {
@@ -328,11 +337,16 @@ final class AdminController extends AbstractController
 
     // Étape 7 - Mise à jour du prénom
     if (isset($data['prenom'])) {
+      $data['prenom'] = $sanitizer->sanitize($data['prenom'], 'texte');
       $utilisateur->setPrenom($data['prenom']);
     }
 
     // Étape 8 - Vérification doublon téléphone
     if (isset($data['telephone'])) {
+      $data['telephone'] = $sanitizer->sanitize($data['telephone'], 'telephone');
+      if (!preg_match('/^(\+33|0)(6|7)[0-9]{8}$/', $data['telephone'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Téléphone invalide'], 400);
+      }
       $telephoneExistant = $utilisateurRepository->findOneBy(['telephone' => $data['telephone']]);
       // Même logique que pour l'email
       if ($telephoneExistant && $telephoneExistant->getId() !== $utilisateur->getId()) {
@@ -343,16 +357,19 @@ final class AdminController extends AbstractController
 
     // Étape 9 - Mise à jour de la ville
     if (isset($data['ville'])) {
+      $data['ville'] = $sanitizer->sanitize($data['ville'], 'texte');
       $utilisateur->setVille($data['ville']);
     }
 
     // Étape 10 - Mise à jour de l'adresse postale
     if (isset($data['adresse_postale'])) {
+      $data['adresse_postale'] = $sanitizer->sanitize($data['adresse_postale'], 'texte');
       $utilisateur->setAdressePostale($data['adresse_postale']);
     }
 
     // Étape 11 - Modification du rôle
     if (isset($data['role'])) {
+      $data['role'] = $sanitizer->sanitize($data['role'], 'texte');
       $role = $roleRepository->findOneBy(['libelle' => $data['role']]);
       if (!$role) {
         return $this->json(['status' => 'Erreur', 'message' => 'Rôle invalide'], 400);
@@ -412,7 +429,8 @@ final class AdminController extends AbstractController
     EntityManagerInterface $em,
     UserPasswordHasherInterface $passwordHasher,  
     RoleRepository $roleRepository,               
-    MailerService $mailerService                  
+    MailerService $mailerService,
+    SanitizerService $sanitizer
   ): JsonResponse
   {
     // Étape 1 - Vérifier le rôle ADMIN
@@ -434,7 +452,7 @@ final class AdminController extends AbstractController
     // Étape 5 - Mise à jour des champs        
     // On vérifie que le nouvel email n'est pas déjà utilisé par un AUTRE utilisateur
     if (isset($data['email'])) {
-
+      $data['email'] = $sanitizer->sanitize($data['email'], 'email');
       $emailExistant = $utilisateurRepository->findOneBy(['email' => $data['email']]);
       // getId() !== $utilisateur->getId() permet d'exclure l'utilisateur lui-même
       if ($emailExistant && $emailExistant->getId() !== $utilisateur->getId()) {
@@ -458,11 +476,13 @@ final class AdminController extends AbstractController
 
     // Étape 7 - Mise à jour du prénom
     if (isset($data['prenom'])) {
+      $data['prenom'] = $sanitizer->sanitize($data['prenom'], 'texte');
       $utilisateur->setPrenom($data['prenom']);
     }
 
     // Étape 8 - Vérification doublon téléphone
     if (isset($data['telephone'])) {
+      $data['telephone'] = $sanitizer->sanitize($data['telephone'], 'telephone');
       $telephoneExistant = $utilisateurRepository->findOneBy(['telephone' => $data['telephone']]);
       // Même logique que pour l'email
       if ($telephoneExistant && $telephoneExistant->getId() !== $utilisateur->getId()) {
@@ -473,16 +493,19 @@ final class AdminController extends AbstractController
 
     // Étape 9 - Mise à jour de la ville
     if (isset($data['ville'])) {
+      $data['ville'] = $sanitizer->sanitize($data['ville'], 'texte');
       $utilisateur->setVille($data['ville']);
     }
 
     // Étape 10 - Mise à jour de l'adresse postale
     if (isset($data['adresse_postale'])) {
+      $data['adresse_postale'] = $sanitizer->sanitize($data['adresse_postale'], 'texte');
       $utilisateur->setAdressePostale($data['adresse_postale']);
     }
 
     // Étape 11 - Modification du rôle
     if (isset($data['role'])) {
+      $data['role'] = $sanitizer->sanitize($data['role'], 'texte');
       $role = $roleRepository->findOneBy(['libelle' => $data['role']]);
       if (!$role) {
         return $this->json(['status' => 'Erreur', 'message' => 'Rôle invalide'], 400);
@@ -634,7 +657,8 @@ final class AdminController extends AbstractController
       RoleRepository $roleRepository,
       UserPasswordHasherInterface $passwordHasher,
       EntityManagerInterface $em,
-      MailerService $mailerService
+      MailerService $mailerService,
+      SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérifier le rôle ADMIN
@@ -650,22 +674,55 @@ final class AdminController extends AbstractController
       return $this->json(['status' => 'Erreur', 'message' => 'Les champs nom, prenom, email et telephone sont obligatoires'], 400);
     }
 
-    // Étape 4 - Vérifier que l'email n'existe pas déjà
+    // Étape 4 - Sanitization des champs obligatoires et validation regex pour email et téléphone
+    $data['nom'] = $sanitizer->sanitize($data['nom'], 'texte');
+    $data['prenom'] = $sanitizer->sanitize($data['prenom'], 'texte');
+
+    $data['email'] = $sanitizer->sanitize($data['email'], 'email');
+    if (empty($data['email'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+    }
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || 
+      !preg_match('/\.(com|fr)$/i', $data['email'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+    }
+
+    $data['telephone'] = $sanitizer->sanitize($data['telephone'], 'telephone');
+    if (!preg_match('/^(\+33|0)(6|7)[0-9]{8}$/', $data['telephone'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Téléphone invalide'], 400);
+    }
+
+    
+    // Étape 5 - Vérifier que l'email n'existe pas déjà
     if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
     }
 
-    // Étape 5 - Récupérer le rôle ROLE_EMPLOYE
+    // Étape 6 - Récupérer le rôle ROLE_EMPLOYE
     $role = $roleRepository->findOneBy(['libelle' => 'ROLE_EMPLOYE']);
     if (!$role) {
       return $this->json(['status' => 'Erreur', 'message' => 'Rôle ROLE_EMPLOYE introuvable en base'], 500);
     }
 
-    // Étape 6 - Générer un mot de passe temporaire aléatoire
+    // Étape 7 - Sanitize des champs optionnels avant setters
+    if (isset($data['ville'])) {
+        $data['ville'] = $sanitizer->sanitize($data['ville'], 'texte');
+    }
+    if (isset($data['adresse_postale'])) {
+        $data['adresse_postale'] = $sanitizer->sanitize($data['adresse_postale'], 'texte');
+    }
+    if (isset($data['code_postal'])) {
+        $data['code_postal'] = $sanitizer->sanitize($data['code_postal'], 'code_postal');
+    }
+    if (isset($data['pays'])) {
+        $data['pays'] = $sanitizer->sanitize($data['pays'], 'texte');
+    }
+
+    // Étape 8 - Générer un mot de passe temporaire aléatoire
     // L'employé devra le changer à sa première connexion
     $motDePasseTemporaire = bin2hex(random_bytes(8));
 
-    // Étape 7 - Créer le compte employé
+    // Étape 9 - Créer le compte employé
     $employe = new Utilisateur();
     $employe->setNom($data['nom']);
     $employe->setPrenom($data['prenom']);
@@ -678,19 +735,19 @@ final class AdminController extends AbstractController
     $employe->setStatutCompte('actif');
     $employe->setRole($role);
 
-    // Étape 8 - Hasher le mot de passe temporaire
+    // Étape 10 - Hasher le mot de passe temporaire
     $motDePasseHashe = $passwordHasher->hashPassword($employe, $motDePasseTemporaire);
     $employe->setPassword($motDePasseHashe);
 
-    // Étape 9 - Sauvegarder en base
+    // Étape 11 - Sauvegarder en base
     $em->persist($employe);
     $em->flush();
 
-    // Étape 10 - Envoyer les identifiants par email à l'employé
+    // Étape 12 - Envoyer les identifiants par email à l'employé
     // L'email contient le mot de passe temporaire en clair lors du premier envoi, jamais stocké en clair
     $mailerService->sendBienvenueEmployeEmail($employe, $motDePasseTemporaire);
 
-    // Étape 11 - Retourner une confirmation (sans le mot de passe)
+    // Étape 13 - Retourner une confirmation (sans le mot de passe)
     return $this->json([
       'status'  => 'Succès',
       'message' => 'Compte employé créé avec succès. Les identifiants ont été envoyés par email.',
@@ -716,7 +773,8 @@ final class AdminController extends AbstractController
       RoleRepository $roleRepository,
       UserPasswordHasherInterface $passwordHasher,
       EntityManagerInterface $em,
-      MailerService $mailerService
+      MailerService $mailerService,
+      SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérification du rôle
@@ -732,26 +790,64 @@ final class AdminController extends AbstractController
       return $this->json(['status' => 'Erreur', 'message' => 'Les champs nom, prenom, email et telephone sont obligatoires'], 400);
     }
 
-    // Étape 4 - Validation email
+    // Étape 4 - Sanitization des champs obligatoires et validation regex pour email et téléphone
+    $data['nom'] = $sanitizer->sanitize($data['nom'], 'texte');
+    $data['prenom'] = $sanitizer->sanitize($data['prenom'], 'texte');
+
+    $data['email'] = $sanitizer->sanitize($data['email'], 'email');
+
+    if (empty($data['email'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+    }
+
+    if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || 
+      !preg_match('/\.(com|fr)$/i', $data['email'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+    }
+
+    $data['telephone'] = $sanitizer->sanitize($data['telephone'], 'telephone');
+    if (!preg_match('/^(\+33|0)(6|7)[0-9]{8}$/', $data['telephone'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Téléphone invalide'], 400);
+    }
+
+    // Étape 5 - Validation email
     if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
       return $this->json(['status' => 'Erreur', 'message' => 'Format email invalide'], 400);
     }
 
-    // Étape 5 - Vérification que l'email nexiste pas déjà
+    // Étape 6 - Vérification que l'email nexiste pas déjà
     if ($utilisateurRepository->findOneBy(['email' => $data['email']])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
     }
 
-    // Étape 6 - Affecte le role client au nouvelle utilisateur
+    // Étape 7 - Sanitization des champs obligatoires
+    if (empty($data['email'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+    }
+
+    if (isset($data['ville'])) {
+        $data['ville'] = $sanitizer->sanitize($data['ville'], 'texte');
+    }
+    if (isset($data['adresse_postale'])) {
+        $data['adresse_postale'] = $sanitizer->sanitize($data['adresse_postale'], 'texte');
+    }
+    if (isset($data['code_postal'])) {
+        $data['code_postal'] = $sanitizer->sanitize($data['code_postal'], 'code_postal');
+    }
+    if (isset($data['pays'])) {
+        $data['pays'] = $sanitizer->sanitize($data['pays'], 'texte');
+    }
+
+    // Étape 8 - Affecte le role client au nouvelle utilisateur
     $role = $roleRepository->findOneBy(['libelle' => 'ROLE_CLIENT']);
     if (!$role) {
       return $this->json(['status' => 'Erreur', 'message' => 'Rôle ROLE_CLIENT introuvable en base'], 500);
     }
 
-    // Étape 7 - Génère un mote de passe temporaire
+    // Étape 9 - Génère un mote de passe temporaire
     $motDePasseTemporaire = bin2hex(random_bytes(8));
 
-    // Étape 8 - Crée un nouvelle object Utilisateur
+    // Étape 10 - Crée un nouvelle object Utilisateur
     $client = new Utilisateur();
     $client->setNom($data['nom']);
     $client->setPrenom($data['prenom']);
@@ -765,14 +861,14 @@ final class AdminController extends AbstractController
     $client->setRole($role);
     $client->setPassword($passwordHasher->hashPassword($client, $motDePasseTemporaire));
 
-    // Étape 9 - Presiste et sauvegarde les données client
+    // Étape 11 - Presiste et sauvegarde les données client
     $em->persist($client);
     $em->flush();
 
-    // Étape 10 - Envoie le mail aux client avec son mdp client
+    // Étape 12 - Envoie le mail aux client avec son mdp client
     $mailerService->sendPasswordResetEmail($client, $motDePasseTemporaire);
 
-    // Étape 11 - Retourne résultat formatée
+    // Étape 13 - Retourne résultat formatée
     return $this->json([
       'status' => 'Succès',
       'message' => 'Compte client créé avec succès. Identifiants envoyés par email.',
@@ -1213,7 +1309,8 @@ final class AdminController extends AbstractController
   public function createHoraire(
     Request $request,
     HoraireRepository $horaireRepository,
-    EntityManagerInterface $em
+    EntityManagerInterface $em, 
+    SanitizerService $sanitizer
   ): JsonResponse {
     // Étape 1 - Vérifier le rôle ADMIN
     if (!$this->isGranted('ROLE_ADMIN')) {
@@ -1226,6 +1323,7 @@ final class AdminController extends AbstractController
     if (empty($data['jour'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Le champ jour est obligatoire'], 400);
     }
+    $data['jour'] = $sanitizer->sanitize($data['jour'], 'texte');
 
     // Étape 4 - Vérifier qu'un horaire pour ce jour n'existe pas déjà
     $existant = $horaireRepository->findOneBy(['jour' => $data['jour']]);
@@ -1284,7 +1382,8 @@ final class AdminController extends AbstractController
     int $horaire_id,
     Request $request,
     HoraireRepository $horaireRepository,
-    EntityManagerInterface $em
+    EntityManagerInterface $em,
+    SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérifier le rôle ADMIN
@@ -1302,6 +1401,7 @@ final class AdminController extends AbstractController
 
     // Étape 4 - Mise à jour du jour et vérification doublon
     if (isset($data['jour'])) {
+      $data['jour'] = $sanitizer->sanitize($data['jour'], 'texte');
       $existant = $horaireRepository->findOneBy(['jour' => $data['jour']]);
       if ($existant && $existant->getId() !== $horaire->getId()) {
         return $this->json(['status' => 'Erreur', 'message' => 'Un horaire pour ce jour existe déjà'], 409);

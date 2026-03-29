@@ -4,12 +4,18 @@ namespace App\Controller;
 
 use App\Entity\Plat;
 use App\Entity\Allergene;
+
 use App\Repository\PlatRepository;
 use App\Repository\AllergeneRepository;
+
+use App\Service\SanitizerService;
+
 use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+
 use OpenApi\Attributes as OA;
 
 /**
@@ -145,7 +151,8 @@ final class PlatController extends BaseController
   Request $request,
   PlatRepository $platRepository,
   AllergeneRepository $allergeneRepository,
-  EntityManagerInterface $em
+  EntityManagerInterface $em, 
+  SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérifier le rôle ADMIN
@@ -164,19 +171,26 @@ final class PlatController extends BaseController
       return $this->json(['status' => 'Erreur', 'message' => 'certains champs sont manquant'], 400);
     }
 
-    // Étape 4 - Vérifier que le titre n'existe pas déjà
+    // Étape 4 - On sanitize les données
+    $data['titre_plat'] = $sanitizer->sanitize($data['titre_plat'], 'texte');
+    $data['categorie'] = $sanitizer->sanitize($data['categorie'], 'texte');
+    if (!empty($data['description'])) {
+        $data['description'] = $sanitizer->sanitize($data['description'], 'message');
+    }
+
+    // Étape 5 - Vérifier que le titre n'existe pas déjà
     $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
     if ($existant) {
       return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
     }
 
-    // Étape 5 - Vérifier que la catégorie est valide
+    // Étape 6 - Vérifier que la catégorie est valide
     $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
     if (!in_array($data['categorie'], $categoriesValides)) {
       return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
     }
 
-    // Étape 6 - Créer le plat
+    // Étape 7 - Créer le plat
     $plat = new Plat();
     $plat->setTitrePlat($data['titre_plat']);
     $plat->setPhoto($data['photo']);
@@ -187,7 +201,7 @@ final class PlatController extends BaseController
       $plat->setDescriptionPlat($data['description']);
     }
 
-    // Étape 7 - Associer les allergènes si fournis
+    // Étape 8 - Associer les allergènes si fournis
     if (!empty($data['allergenes']) && is_array($data['allergenes'])) {
       foreach ($data['allergenes'] as $allergeneId) {
         $allergene = $allergeneRepository->find($allergeneId);
@@ -198,11 +212,11 @@ final class PlatController extends BaseController
       }
     }
 
-    // Étape 8 - Persister et sauvegarder
+    // Étape 9 - Persister et sauvegarder
     $em->persist($plat);
     $em->flush();
 
-    // Étape 9 - Retourner une confirmation avec l'id créé
+    // Étape 10 - Retourner une confirmation avec l'id créé
     return $this->json(['status' => 'Succès', 'message' => 'Plat créé avec succès', 'id' => $plat->getId()], 201);
   }
 
@@ -235,11 +249,12 @@ final class PlatController extends BaseController
   #[OA\Response(response: 404, description: 'Plat ou allergène non trouvé')]
   #[OA\Response(response: 409, description: 'Titre déjà utilisé')]
   public function updatePlat(
-  int $id,
-  Request $request,
-  PlatRepository $platRepository,
-  AllergeneRepository $allergeneRepository,
-  EntityManagerInterface $em
+    int $id,
+    Request $request,
+    PlatRepository $platRepository,
+    AllergeneRepository $allergeneRepository,
+    EntityManagerInterface $em, 
+    SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérifier le rôle ADMIN
@@ -261,6 +276,7 @@ final class PlatController extends BaseController
 
     // Étape 4 - Mettre à jour le titre si fourni
     if (isset($data['titre_plat'])) {
+      $data['titre_plat'] = $sanitizer->sanitize($data['titre_plat'], 'texte');
       $existant = $platRepository->findOneBy(['titre_plat' => $data['titre_plat']]);
       if ($existant && $existant->getId() !== $plat->getId()) {
         return $this->json(['status' => 'Erreur', 'message' => 'Un plat avec ce titre existe déjà'], 409);
@@ -275,16 +291,18 @@ final class PlatController extends BaseController
 
     // Étape 6 - Mettre à jour la categorie
     if (isset($data['categorie'])) {
+      $data['categorie'] = $sanitizer->sanitize($data['categorie'], 'texte');
       $categoriesValides = ['Entrée', 'Plat', 'Dessert'];
       if (!in_array($data['categorie'], $categoriesValides)) {
-          return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
+        return $this->json(['status' => 'Erreur', 'message' => 'Catégorie invalide (Entrée, Plat, Dessert)'], 400);
       }
       $plat->setCategorie($data['categorie']);
     }
 
     // Étape 7 - Mise à jour de la description si fournie
     if (isset($data['description'])) {
-        $plat->setDescriptionPlat($data['description']);
+      $data['description'] = $sanitizer->sanitize($data['description'], 'message');
+      $plat->setDescriptionPlat($data['description']);
     }
 
     // Étape 8 - Synchroniser les allergènes si fournis

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Service\NominatimService; // On importe le service Nominatim
 use App\Service\OsrmService; // On importe le service OSRM
+use App\Service\SanitizerService;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
@@ -73,19 +74,23 @@ class GeocodeController extends AbstractController
 	)]
 	#[OA\Response(response: 400, description: 'Aucune adresse fournie')]
 	#[OA\Response(response: 404, description: 'Adresse non trouvée')]
-	public function geocodeUser(NominatimService $nominatimService, Request $request): Response
+	public function geocodeUser(NominatimService $nominatimService, Request $request, SanitizerService $sanitizer): Response
 	{
     // On récupère l'adresse depuis l'URL que l'on souhaite géocoder
     $adresse = $request->query->get('adresse');
+    if ($adresse) {
+    	$adresse = $sanitizer->sanitize($adresse, 'texte');
+	  }
 
-    // Si le service retourne des coordonnées, on les renvoie en JSON
+
+    // Étape 1 - Si le service retourne des coordonnées, on les renvoie en JSON
     if (!$adresse) {
       // Si l'adresse n'a pas été trouvée, on renvoie une erreur 400
       return $this->json([
         'error' => 'Aucune adresse fournie'
       ], 400); // Bad request
     }
-    // Si le service retourne des coordonnées, on les renvoie en JSON
+    // Étape 2 - Si le service retourne des coordonnées, on les renvoie en JSON
     $coords = $nominatimService->geocode($adresse);
 
     if ($coords) {
@@ -95,7 +100,7 @@ class GeocodeController extends AbstractController
         'longitude' => $coords['lon'] // Longitude retournée par Nominatim
       ]);
     } else {
-		// Si l'adresse n'a pas été trouvée, on renvoie une erreur 404
+		// Étape 3 - Si l'adresse n'a pas été trouvée, on renvoie une erreur 404
 		return $this->json([
 			'error' => 'Adresse non trouvée'
 		], 404);
@@ -187,39 +192,42 @@ class GeocodeController extends AbstractController
 	)]
 	#[OA\Response(response: 400, description: 'Deux adresses requises')]
 	#[OA\Response(response: 404, description: 'Adresse non trouvée')]
-	public function distance(NominatimService $nominatimService, Request $request): Response
+	public function distance(NominatimService $nominatimService, Request $request, SanitizerService $sanitizer): Response
 	{
-		// Récupération de la première adresse passée dans l'URL
+		// Étape 1 - Récupération de la première adresse passée dans l'URL
 		$adresse1 = $request->query->get('adresse1');
 
-		// Récupération de la deuxième adresse passée dans l'URL
+		// Étape 2 - Récupération de la deuxième adresse passée dans l'URL
 		$adresse2 = $request->query->get('adresse2');
 
-		// Vérifie que les deux adresses sont bien fournies
+    if ($adresse1) $adresse1 = $sanitizer->sanitize($adresse1, 'texte');
+    if ($adresse2) $adresse2 = $sanitizer->sanitize($adresse2, 'texte');
+    
+    // Étape 3 - Vérifie que les deux adresses sont bien fournies
 		if (!$adresse1 || !$adresse2) {
       // Si ce n'est pas le cas, on retourne une erreur HTTP 400
       return $this->json(['error' => 'Veuillez fournir deux adresses'], 400);
 		}
 
-		// Appel du service Nominatim pour convertir l'adresse 1 en coordonnées GPS
+		// Étape 4 - Appel du service Nominatim pour convertir l'adresse 1 en coordonnées GPS
 		$coords1 = $nominatimService->geocode($adresse1);
 
-		// Appel du service Nominatim pour convertir l'adresse 2 en coordonnées GPS
+		// Étape 5 - Appel du service Nominatim pour convertir l'adresse 2 en coordonnées GPS
 		$coords2 = $nominatimService->geocode($adresse2);
 
-		// Vérifie si une des deux adresses n'a pas pu être géocodée
+		// Étape 6 - Vérifie si une des deux adresses n'a pas pu être géocodée
 		if (!$coords1 || !$coords2) {
       // Si une adresse est introuvable, on retourne une erreur
       return $this->json(['error' => 'Adresse non trouvée'], 404);
 		}
 
-		// Calcul de la distance entre les deux coordonnées avec la fonction Haversine
+		// Étape 7 - Calcul de la distance entre les deux coordonnées avec la fonction Haversine
 		$distance = $this->distanceHaversine(
   $coords1['lat'], $coords1['lon'], // coordonnées du point 1
   $coords2['lat'], $coords2['lon']  // coordonnées du point 2
 		);
 
-		// Retour de la réponse au format JSON
+		// Étape 8 - Retour de la réponse au format JSON
 		return $this->json([
       'adresse1' => $adresse1,  // première adresse
       'adresse2' => $adresse2,  // deuxième adresse
@@ -263,54 +271,60 @@ class GeocodeController extends AbstractController
 	#[OA\Response(response: 400, description: 'Aucune adresse client fournie')]
 	#[OA\Response(response: 404, description: 'Adresse client non trouvée')]
 	public function deliveryCost(
-			NominatimService $nominatimService,
-			OsrmService $osrmService,         
-			Request $request
+    NominatimService $nominatimService,
+    OsrmService $osrmService,         
+    Request $request,
+    SanitizerService $sanitizer
 	): Response {
 
-    // Récupération de l'adresse du client dans les paramètres GET
+    // Étape 1 - Récupération de l'adresse du client dans les paramètres GET
     $clientAddress = $request->query->get('adresse');
 
-    // Vérifie que l'adresse du client est fournie
+    $clientAddress = $request->query->get('adresse');
+    if ($clientAddress) {
+        $clientAddress = $sanitizer->sanitize($clientAddress, 'texte');
+    }
+
+    // Étape 2 - Vérifie que l'adresse du client est fournie
     if (!$clientAddress) {
       // Si elle est absente, on renvoie une erreur
       return $this->json(['error' => 'Aucune adresse client fournie'], 400);
     }
 
-    // Conversion de l'adresse client en coordonnées GPS via Nominatim
+    // Étape 3 - Conversion de l'adresse client en coordonnées GPS via Nominatim
     $clientCoords = $nominatimService->geocode($clientAddress);
 
-    // Vérifie si l'adresse du client a pu être trouvée
+    // Étape 4 - Vérifie si l'adresse du client a pu être trouvée
     if (!$clientCoords) {
       return $this->json(['error' => 'Adresse client non trouvée'], 404);
     }
 
-    // Calcul de la distance routière entre le restaurant et le client grâce au service OSRM
+    // Étape 5 - Calcul de la distance routière entre le restaurant et le client grâce au service OSRM
     $distanceKm = $osrmService->getRouteDistance(
       self::RESTAURANT_LON, self::RESTAURANT_LAT, // coordonnées du restaurant
       (float) $clientCoords['lon'], (float) $clientCoords['lat'] // coordonnées du client
     );
 
-    // Si l'API OSRM ne répond pas, on utilise la formule Haversine
+    // Étape 6 - Si l'API OSRM ne répond pas, on utilise la formule Haversine
     if ($distanceKm === null) {
 
-      // On calcule une distance approximative avec Haversine
+      // Étape 7 - On calcule une distance approximative avec Haversine
       $distanceKm = $this->distanceHaversine(
         self::RESTAURANT_LAT, self::RESTAURANT_LON,
         (float) $clientCoords['lat'],
 				(float) $clientCoords['lon']
       );
 
-      // On indique que la distance est une estimation.
+      // Étape 8 - On indique que la distance est une estimation.
       $distanceType = 'vol_oiseau';
 
     } else {
 
-      // Sinon la distance est une distance routière réelle
+      // Étape 9 - Sinon la distance est une distance routière réelle
       $distanceType = 'routiere';
     }
 
-		// Vérifie si la distance dépasse la distance maximale de livraison
+		// Étape 10 - Vérifie si la distance dépasse la distance maximale de livraison
 		if ($distanceKm > self::MAX_DELIVERY_DISTANCE) {
 			return $this->json([
 				'error' => 'Adresse trop éloignée pour la livraison',
@@ -319,7 +333,7 @@ class GeocodeController extends AbstractController
 			], 422);
 		}
 
-    // Calcul du prix de la livraison, si la distance est dans le rayon gratuit la livraison est gratuite
+    // Étape 11 - Calcul du prix de la livraison, si la distance est dans le rayon gratuit la livraison est gratuite
     // 1. Vérifie si la distance est dans le rayon de livraison gratuite
 		if ($distanceKm <= self::FREE_DELIVERY_RADIUS_KM) {
 
@@ -334,7 +348,7 @@ class GeocodeController extends AbstractController
 			$deliveryFee = self::DELIVERY_BASE_FEE + (self::DELIVERY_PER_KM_FEE * $extraDistance);
 		}
 
-    // Retour de toutes les informations en JSON
+    // Étape 12 - Retour de toutes les informations en JSON
 		return $this->json([
 			'restaurant' => self::RESTAURANT_ADDRESS, // adresse du restaurant
 			'client_adresse' => $clientAddress,				// adresse du client

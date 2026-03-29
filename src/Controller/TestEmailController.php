@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Service\MailerService;
+use App\Service\SanitizerService;
 use App\Entity\Utilisateur;
 
 #[Route('')]
@@ -18,12 +19,12 @@ final class TestEmailController extends AbstractController
    * @return JsonResponse
    * 
    */
-  public function sendTestEmail(MailerService $mailerService): JsonResponse
+  public function sendTestEmail(MailerService $mailerService, SanitizerService $sanitizer): JsonResponse
   {
     // Récupère l'email depuis le POST JSON si fourni
     $data = json_decode(file_get_contents('php://input'), true);
     $emailDest = $data['email'] ?? 'admin@vite-et-gourmand.fr'; // email par défaut
-
+    $emailDest = $sanitizer->sanitize($emailDest, 'email');
     // Crée un utilisateur factice avec l'email
     $utilisateur = new Utilisateur();
     $utilisateur->setPrenom('Test');

@@ -5,13 +5,14 @@ namespace App\Controller;
 use App\Enum\CommandeStatut;
 use App\Entity\Commande;
 use App\Entity\SuiviCommande;
-
 use App\Entity\Utilisateur;
+
 use App\Repository\UtilisateurRepository;
 use App\Repository\MenuRepository;
 use App\Repository\CommandeRepository;
 
 use Doctrine\ORM\EntityManagerInterface;
+
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
@@ -24,6 +25,7 @@ use App\Service\OsrmService;
 use App\Service\DistanceService;
 use App\Service\MailerService;
 use App\Service\LogService;
+use App\Service\SanitizerService;
 
 /**
  * @author      Florian Aizac
@@ -189,7 +191,8 @@ final class CommandeController extends BaseController
     MailerService $mailerService,
     LogService $logService,
     NominatimService $nominatimService,
-    OsrmService $osrmService
+    OsrmService $osrmService,
+    SanitizerService $sanitizer
   ): JsonResponse {
 
     // Étape 1 - Vérifier que l'utilisateur est connecté (ROLE_CLIENT)
@@ -215,6 +218,10 @@ final class CommandeController extends BaseController
       if (empty($data[$champ])) {
         return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
       }
+    }
+    $data['ville_livraison'] = $sanitizer->sanitize($data['ville_livraison'], 'texte');
+    if (isset($data['adresse_livraison'])) {
+        $data['adresse_livraison'] = $sanitizer->sanitize($data['adresse_livraison'], 'texte');
     }
 
     // Étape 5 - Récupérer l'adresse de l'utilisateur
@@ -603,7 +610,8 @@ final class CommandeController extends BaseController
     CommandeRepository $commandeRepository,
     EntityManagerInterface $em,
     MailerService $mailerService,
-    LogService $logService
+    LogService $logService,
+    SanitizerService $sanitizer
   ): JsonResponse {
     // Étape 1 - Vérifier le rôle ADMIN
     if (!$this->isGranted('ROLE_ADMIN')) {
@@ -624,6 +632,7 @@ final class CommandeController extends BaseController
     // Étape 4 - Récupérer le motif d'annulation (optionnel pour l'admin)
     $data  = json_decode($request->getContent(), true);
     $motif = $data['motif_annulation'] ?? 'Annulée par l\'administrateur';
+    $motif = $sanitizer->sanitize($motif, 'message');
 
     // Étape 5 - Calculer le montant remboursé (100% : prix menu + livraison)
     $montantRembourse = $commande->getPrixMenu() + $commande->getPrixLivraison();

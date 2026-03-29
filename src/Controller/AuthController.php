@@ -8,6 +8,7 @@ use App\Repository\UtilisateurRepository;
 use App\Repository\PasswordResetTokenRepository;
 use App\Service\MailerService;
 use App\Service\LogService;
+use App\Service\SanitizerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -73,7 +74,8 @@ final class AuthController extends AbstractController
     UtilisateurRepository $utilisateurRepository,// service qui fait les SELECT sur utilisateur
     RoleRepository $roleRepository,              // service qui fait les SELECT sur role
     MailerService $mailerService,                // service qui envoie les emails pour le mail de bienvenue
-    LogService $logService                       // service de logs MongoDB
+    LogService $logService,                      // service de logs MongoDB
+    SanitizerService $sanitizer
   ): JsonResponse
   {
     // Étape 1 - Récupère les données JSON envoyées par le client
@@ -86,6 +88,14 @@ final class AuthController extends AbstractController
       empty($data['ville']) || empty($data['code_postal']) || empty($data['adresse_postale'])) {
       return $this->json(['status' => 'Erreur', 'message' => 'Toutes les données doivent etre remplis'], 400);
     }
+    $data['nom'] = $sanitizer->sanitize($data['nom'], 'texte');
+    $data['prenom'] = $sanitizer->sanitize($data['prenom'], 'texte');
+    $data['email'] = $sanitizer->sanitize($data['email'], 'email');
+    $data['telephone'] = $sanitizer->sanitize($data['telephone'], 'telephone');
+    $data['pays'] = $sanitizer->sanitize($data['pays'] ?? '', 'texte');
+    $data['ville'] = $sanitizer->sanitize($data['ville'] ?? '', 'texte');
+    $data['adresse_postale'] = $sanitizer->sanitize($data['adresse_postale'] ?? '', 'texte');
+    $data['code_postal'] = $sanitizer->sanitize($data['code_postal'] ?? '', 'code_postal');
 
     // Étape 3 - Honeypot : si le champ site_web est rempli c'est un bot
     // On retourne un faux succès pour tromper le bot sans traiter la demande
@@ -93,6 +103,9 @@ final class AuthController extends AbstractController
       return $this->json(['status' => 'Succès', 'message' => 'Compte créé avec succès'], 201);
     }
 
+    if (empty($data['email'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+    }
     // Étape 4 - Validation de l'email (.com et .fr uniquement)
     if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || 
       !preg_match('/\.(com|fr)$/i', $data['email'])) {
@@ -201,11 +214,13 @@ final class AuthController extends AbstractController
     UtilisateurRepository $utilisateurRepository,
     PasswordResetTokenRepository $tokenRepository,
     EntityManagerInterface $em,
-    MailerService $mailerService
+    MailerService $mailerService,
+    SanitizerService $sanitizer
   ): JsonResponse {
     // Étape 1 - Récupérer et valider l'email
     $data = json_decode($request->getContent(), true);
     if (empty($data['email'])) {
+      $data['email'] = $sanitizer->sanitize($data['email'], 'email');
         return $this->json(['status' => 'Erreur', 'message' => 'Email requis'], 400);
     }
 

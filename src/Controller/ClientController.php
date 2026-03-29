@@ -3,13 +3,17 @@
 namespace App\Controller;
 
 use App\Entity\Utilisateur;
+use App\Entity\Avis;
+
+use App\Service\MailerService;
+use App\Service\LogService; // import du LogService MongoDB
+use App\Service\SanitizerService;
+
+use App\Repository\AvisRepository;
 use App\Repository\UtilisateurRepository;
 use App\Repository\CommandeRepository;
 use App\Repository\SuiviCommandeRepository;
-use App\Service\MailerService;
-use App\Service\LogService; // import du LogService MongoDB
-use App\Entity\Avis;
-use App\Repository\AvisRepository;
+
 use App\Enum\CommandeStatut;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,6 +22,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+
 use OpenApi\Attributes as OA;
 
 /**
@@ -143,7 +148,8 @@ final class ClientController extends BaseController
 		Request $request,
 		EntityManagerInterface $em,
 		UserPasswordHasherInterface $passwordHasher,
-		UtilisateurRepository $utilisateurRepository
+		UtilisateurRepository $utilisateurRepository,
+		SanitizerService $sanitizer
 	): JsonResponse {
 		// Étape 1 - Vérifier le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
@@ -163,6 +169,14 @@ final class ClientController extends BaseController
 
 		// Étape 5 - Mise à jour de l'email et vérification doublon
 		if (isset($data['email'])) {
+			$data['email'] = $sanitizer->sanitize($data['email'], 'email');
+			if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL) || 
+			  !preg_match('/\.(com|fr)$/i', $data['email'])) {
+				  return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+			}
+			if (empty($data['email'])) {
+				return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
+			}
 			$emailExistant = $utilisateurRepository->findOneBy(['email' => $data['email']]);
 			if ($emailExistant && $emailExistant->getId() !== $utilisateur->getId()) {
 					return $this->json(['status' => 'Erreur', 'message' => 'Cet email est déjà utilisé'], 409);
@@ -189,16 +203,22 @@ final class ClientController extends BaseController
 
 		// Étape 7 - Mise à jour du nom
 		if (isset($data['nom'])) {
+      $data['nom'] = $sanitizer->sanitize($data['nom'], 'texte');
 			$utilisateur->setNom($data['nom']);
 		}
 
 		// Étape 8 - Mise à jour du prénom
 		if (isset($data['prenom'])) {
+      $data['prenom'] = $sanitizer->sanitize($data['prenom'], 'texte');
 			$utilisateur->setPrenom($data['prenom']);
 		}
 
 		// Étape 9 - Vérification doublon téléphone
 		if (isset($data['telephone'])) {
+      $data['telephone'] = $sanitizer->sanitize($data['telephone'], 'telephone');
+      if (!preg_match('/^(\+33|0)(6|7)[0-9]{8}$/', $data['telephone'])) {
+        return $this->json(['status' => 'Erreur', 'message' => 'Téléphone invalide'], 400);
+      }
 			$telephoneExistant = $utilisateurRepository->findOneBy(['telephone' => $data['telephone']]);
 			if ($telephoneExistant && $telephoneExistant->getId() !== $utilisateur->getId()) {
 				return $this->json(['status' => 'Erreur', 'message' => 'Ce téléphone est déjà utilisé'], 409);
@@ -208,21 +228,25 @@ final class ClientController extends BaseController
 
 		// Étape 10 - Mise à jour de la ville
 		if (isset($data['ville'])) {
+      $data['ville'] = $sanitizer->sanitize($data['ville'], 'texte');
 			$utilisateur->setVille($data['ville']);
 		}
 
 		// Étape 11 - Mise à jour du code postal
 		if (isset($data['code_postal'])) {
+      $data['code_postal'] = $sanitizer->sanitize($data['code_postal'], 'code_postal');
 			$utilisateur->setCodePostal($data['code_postal']);
 		}
 
 		// Étape 12 - Mise à jour de l'adresse postale
 		if (isset($data['adresse_postale'])) {
+      $data['adresse_postale'] = $sanitizer->sanitize($data['adresse_postale'], 'texte');
 			$utilisateur->setAdressePostale($data['adresse_postale']);
 		}
 
 		// Étape 13 - Mise à jour du pays
 		if (isset($data['pays'])) {
+      $data['pays'] = $sanitizer->sanitize($data['pays'], 'texte');
 			$utilisateur->setPays($data['pays']);
 		}
 
@@ -476,7 +500,8 @@ final class ClientController extends BaseController
 		int $id,
 		Request $request,
 		CommandeRepository $commandeRepository,
-		EntityManagerInterface $em
+		EntityManagerInterface $em,
+    SanitizerService $sanitizer
 	): JsonResponse {
 		// Étape 1 - Vérifier le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
@@ -521,6 +546,7 @@ final class ClientController extends BaseController
 
 		// Étape 8 - Mettre à jour l'adresse de livraison si fournie
 		if (isset($data['adresse_livraison'])) {
+      $data['adresse_livraison'] = $sanitizer->sanitize($data['adresse_livraison'], 'texte');
 			$commande->setAdresseLivraison($data['adresse_livraison']);
 		}
 
@@ -532,6 +558,7 @@ final class ClientController extends BaseController
 
 		// Étape 9.1 : Flag pour savoir si un recalcul est nécessaire
 		$recalcul = isset($data['nombre_personnes']) || isset($data['ville_livraison']);
+    $data['ville_livraison'] = $sanitizer->sanitize($data['ville_livraison'], 'texte');
 
 		if ($recalcul) {
 			// Étape 9.2 - Récupérer le menu associé à la commande
@@ -613,7 +640,8 @@ final class ClientController extends BaseController
 		CommandeRepository $commandeRepository,
 		EntityManagerInterface $em,
 		MailerService $mailerService,
-		LogService $logService
+		LogService $logService, 
+    SanitizerService $sanitizer
 	): JsonResponse {
 		// Étape 1 - Vérifie le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
@@ -657,6 +685,10 @@ final class ClientController extends BaseController
 		if (empty($motifAnnulation)) {
 			return $this->json(['status' => 'Erreur', 'message' => 'Le motif d\'annulation est obligatoire'], 400);
 		}
+
+    if (!empty($motifAnnulation)) {
+        $motifAnnulation = $sanitizer->sanitize($motifAnnulation, 'message');
+    }
 
 		// Étape 9 - Calculer le nombre de jours avant la prestation
 		$datePrestation = $commande->getDatePrestation();
@@ -887,7 +919,8 @@ final class ClientController extends BaseController
 		Request $request,
 		CommandeRepository $commandeRepository,
 		AvisRepository $avisRepository,
-		EntityManagerInterface $em
+		EntityManagerInterface $em,
+    SanitizerService $sanitizer
 	): JsonResponse {
 		// Étape 1 - Vérifie le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
@@ -907,6 +940,7 @@ final class ClientController extends BaseController
 		if (empty($data['note']) || empty($data['description'])) {
 			return $this->json(['status' => 'Erreur', 'message' => 'Note et description sont obligatoires'], 400);
 		}
+    $data['description'] = $sanitizer->sanitize($data['description'], 'message');
 
 		// Étape 5 - Vérifier que la note est entre 1 et 5
 		if ($data['note'] < 1 || $data['note'] > 5) {
