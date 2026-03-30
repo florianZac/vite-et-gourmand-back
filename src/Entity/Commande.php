@@ -142,6 +142,13 @@ class Commande
 	private ?string $ville_livraison = null;
 
 	/**
+	 * Indique le code postale de la livraison
+	*/
+	#[ORM\Column(length: 100, nullable: true)]
+	private ?string $code_postal_livraison = null;
+
+
+	/**
 	 * Indique le montant_acompte de la commande
 	*/
 	#[ORM\Column(nullable: true)]
@@ -194,17 +201,17 @@ class Commande
 			return 'INCOHERENT';
 		}
 
-		// (0,0) → terminé
+		// (0,0) -> terminé
 		if ($this->pret_materiel === false && $this->restitution_materiel === false) {
 			return 'TERMINEE';
 		}
 
-		// (1,1) → terminé
+		// (1,1) -> terminé
 		if ($this->pret_materiel === true && $this->restitution_materiel === true) {
 				return 'TERMINEE';
 		}
 
-		// (1,0) → attente retour
+		// (1,0) -> attente retour
 		return 'ATTENTE_RESTITUTION';
 	}
 
@@ -342,6 +349,17 @@ class Commande
 		return $this;
 	}
 
+	public function getCodePostalLivraison(): ?string
+	{
+		return $this->code_postal_livraison;
+	}
+
+	public function setCodePostalLivraison(?string $code_postal_livraison): static
+	{
+		$this->code_postal_livraison = $code_postal_livraison;
+		return $this;
+	}
+
 	public function getVilleLivraison(): ?string
 	{
 		return $this->ville_livraison;
@@ -352,6 +370,7 @@ class Commande
 		$this->ville_livraison = $ville_livraison;
 		return $this;
 	}
+
 
 	public function getMontantAcompte(): ?float
 	{

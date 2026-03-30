@@ -42,16 +42,22 @@ use App\Service\SanitizerService;
 final class CommandeController extends BaseController
 {
     private DistanceService $distanceService;
-
-    public function __construct(DistanceService $distanceService)
-    {
-        $this->distanceService = $distanceService;
-    }
+    private string $restaurantAddress;
+    private float $restaurantLat;
+    private float $restaurantLon;
+  public function __construct(
+      DistanceService $distanceService,
+      string $restaurantAddress,
+      float $restaurantLat,
+      float $restaurantLon
+  ) {
+      $this->distanceService = $distanceService;
+      $this->restaurantAddress = $restaurantAddress;
+      $this->restaurantLat = $restaurantLat;
+      $this->restaurantLon = $restaurantLon;
+  }
 
   // ADRESSE DU RESTAURANT VITE ET GOURMAND
-  private const RESTAURANT_ADDRESS = '22 quai des Chartrons, Bordeaux, France';
-  private const RESTAURANT_LAT = 44.8562;
-  private const RESTAURANT_LON = -0.5709;
 
   // Valeur maximal de la distance de livraison
   private const VALEUR_MAX_DISTANCE =200;
@@ -91,11 +97,6 @@ final class CommandeController extends BaseController
     $ascension = (clone $paques)->modify('+39 days');
     $lundiPentec = (clone $paques)->modify('+50 days');
 
-    $paques      = new \DateTime("$annee-$moisPaques-$jourPaques");
-    $lundiPaques = (clone $paques)->modify('+1 day');
-    $ascension   = (clone $paques)->modify('+39 days');
-    $lundiPentec = (clone $paques)->modify('+50 days');
-
     return [
       // Jours fériés fixes
       "$annee-01-01", // Jour de l'an
@@ -122,7 +123,7 @@ final class CommandeController extends BaseController
  */
   private function calculerJoursOuvrables(\DateTime $datePrestation): int
   {
-    $aujourdhui = new \DateTime();
+    $aujourdhui = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
     $joursOuvrables = 0;
     $dateCourante = clone $aujourdhui;
     // Précalculer les jours fériés des années concernées
@@ -132,7 +133,7 @@ final class CommandeController extends BaseController
         $joursFeries = array_merge($joursFeries, $this->getJoursFeries($annee));
     }
 
-    while ($dateCourante < $datePrestation) {
+    while ($dateCourante->format('Y-m-d') < $datePrestation->format('Y-m-d')) {
       $dateCourante->modify('+1 day');
       $jourSemaine = (int)$dateCourante->format('N'); // 1=lundi, 7=dimanche
       $dateStr = $dateCourante->format('Y-m-d');
@@ -174,6 +175,7 @@ final class CommandeController extends BaseController
         new OA\Property(property: 'adresse_livraison', type: 'string', example: '12 rue des fleurs'),
         new OA\Property(property: 'heure_livraison', type: 'string', example: '12:30'),
         new OA\Property(property: 'ville_livraison', type: 'string', example: 'Bordeaux'),
+        new OA\Property(property: 'code_postal_livraison', type: 'string', example: '33000'),
         new OA\Property(property: 'distance_km', type: 'number', example: 0),
         new OA\Property(property: 'pret_materiel', type: 'boolean', example: false),
       ]
@@ -208,26 +210,43 @@ final class CommandeController extends BaseController
 
     // Étape 3 - Récupérer les données JSON
     $data = json_decode($request->getContent(), true);
-    if ($data === null) {
+    if (!is_array($data)) {
       return $this->json(['status' => 'Erreur', 'message' => 'JSON invalide'], 400);
     }
 
     // Étape 4 - Vérifier les champs obligatoires
-    $champsObligatoires = ['menu_id', 'date_prestation', 'heure_livraison', 'nombre_personnes', 'ville_livraison'];
+    $champsObligatoires = [
+      'menu_id', 
+      'date_prestation', 
+      'heure_livraison', 
+      'nombre_personnes',
+      'adresse_livraison' ,
+      'ville_livraison', 
+      'code_postal_livraison'
+    ];
+
     foreach ($champsObligatoires as $champ) {
-      if (empty($data[$champ])) {
+      if (!isset($data[$champ]) || $data[$champ] === '') {
         return $this->json(['status' => 'Erreur', 'message' => "Le champ $champ est obligatoire"], 400);
       }
-    }
-    $data['ville_livraison'] = $sanitizer->sanitize($data['ville_livraison'], 'texte');
+    }    
+    
     if (isset($data['adresse_livraison'])) {
-        $data['adresse_livraison'] = $sanitizer->sanitize($data['adresse_livraison'], 'texte');
+      $data['adresse_livraison'] = $sanitizer->sanitize($data['adresse_livraison'], 'texte');
+    }
+
+    if (isset($data['ville_livraison'])) {
+      $data['ville_livraison'] = $sanitizer->sanitize($data['ville_livraison'], 'texte');
+    }
+    if (isset($data['code_postal_livraison'])) {
+      $data['code_postal_livraison'] = $sanitizer->sanitize($data['code_postal_livraison'], 'texte');
     }
 
     // Étape 5 - Récupérer l'adresse de l'utilisateur
-    $adresseClient = $utilisateur->getAdressePostale() ?? '';
-    $villeClient = $utilisateur->getVille() ?? '';
-    $adresseCompleteClient = $adresseClient . ', ' . $villeClient . ', France';
+    $adresseClient = $data['adresse_livraison'] ?? '';
+    $codePostalClient = $data['code_postal_livraison'] ?? '';
+    $villeClient = $data['ville_livraison'] ?? '';
+    $adresseCompleteClient = $adresseClient . ', ' . $codePostalClient . ', ' . $villeClient . ', France';
 
     // Étape 6 - Géocodage
     $clientCoords = $nominatimService->geocode($adresseCompleteClient);
@@ -237,19 +256,19 @@ final class CommandeController extends BaseController
 
     // Étape 8 - Calcule de la distance entre le restaurant et le client
     $distanceKm = $osrmService->getRouteDistance(
-      self::RESTAURANT_LON,
-      self::RESTAURANT_LAT,
+      $this->restaurantLon,
+      $this->restaurantLat,
       (float)$clientCoords['lon'],
       (float)$clientCoords['lat']
     );
 
     // Étape 9 - Fallback Haversine si OSRM déconne
-    if ($distanceKm === null) {
+    if ($distanceKm === null || $distanceKm <= 0) {
       $distanceKm = $this->distanceService->distanceHaversine(
-        self::RESTAURANT_LAT,
-        self::RESTAURANT_LON,
-        (float)$clientCoords['lat'],
-        (float)$clientCoords['lon']
+      $this->restaurantLon,
+      $this->restaurantLat,
+      (float)$clientCoords['lon'],
+      (float)$clientCoords['lat']
       );
     }
 
@@ -289,30 +308,42 @@ final class CommandeController extends BaseController
     } catch (\Exception $e) {
       return $this->json(['status' => 'Erreur', 'message' => 'Date de prestation invalide'], 400);
     }
+    // Étape 15 - Vérifier que la date n'est pas dans le passé
+    $aujourdhui = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
+    $aujourdhui->setTime(0,0,0); // ignore l'heure
 
-    // Étape 15 - Valider l'heure de livraison strictement (HH:mm)
+    if ($datePrestation < $aujourdhui) {
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => 'La date de prestation ne peut pas être dans le passé'
+        ], 400);
+    }
+
+    // Étape 16 - Valider l'heure de livraison strictement (HH:mm)
     $heureLivraison = \DateTime::createFromFormat('H:i', $data['heure_livraison']);
-    if (!$heureLivraison) {
+    $errors = \DateTime::getLastErrors();
+    if (!$heureLivraison || $errors['warning_count'] > 0 || $errors['error_count'] > 0){
       return $this->json(['status' => 'Erreur', 'message' => 'Heure de livraison invalide (format attendu : HH:mm)'], 400);
     }
 
-    // Étape 16 - Vérifier que l'heure est dans le créneau d'ouverture
-    $heureMin = new \DateTime('10:00');
-    $heureMax = new \DateTime('20:00');
-    if ($heureLivraison < $heureMin || $heureLivraison > $heureMax) {
+    // Étape 17 - Vérifier que l'heure est dans le créneau d'ouverture
+    $heureMin = \DateTime::createFromFormat('H:i', '10:00');
+    $heureMax = \DateTime::createFromFormat('H:i', '20:00');
+    $heure = $heureLivraison->format('H:i');
+    if ($heure  < $heureMin || $heure  > $heureMax) {
         return $this->json([
             'status' => 'Erreur',
             'message' => 'Heure de livraison en dehors des horaires d\'ouverture (10:00-20:00)'
         ], 400);
     }
 
-    // Étape 17 - Calculer le délai minimum
+    // Étape 18 - Calculer le délai minimum
     $delaiMinimum = $nombrePersonnes > 20 ? 14 : 3;
 
-    // Étape 18 - Calcul des jours ouvrables
+    // Étape 19 - Calcul des jours ouvrables
     $joursOuvrables = $this->calculerJoursOuvrables($datePrestation);
 
-    // Étape 19 - Vérifier délai minimum
+    // Étape 20 - Vérifier délai minimum
     if ($joursOuvrables < $delaiMinimum) {
       return $this->json([
         'status' => 'Erreur',
@@ -320,16 +351,16 @@ final class CommandeController extends BaseController
       ], 400);
     }
 
-    // Étape 20 - Calcul du prix de base
+    // Étape 21 - Calcul du prix de base
     $prixParPersonne = $menu->getPrixParPersonne();
     $prixMenu = $prixParPersonne * $nombrePersonnes;
 
-    // Étape 21 - Appliquer réduction si > min+5
+    // Étape 22 - Appliquer réduction si > min+5
     if ($nombrePersonnes > ($minimumPersonnes + 5)) {
       $prixMenu *= 0.90;
     }
 
-    // Étape 22 - Vérifier distance max
+    // Étape 23 - Vérifier distance max
     if ($distanceKm > self::VALEUR_MAX_DISTANCE) {
       return $this->json([
         'status' => 'Erreur',
@@ -337,7 +368,7 @@ final class CommandeController extends BaseController
       ], 400);
     }
 
-    // Étape 23 - Calculer le prix de livraison
+    // Étape 24 - Calculer le prix de livraison
     // Gratuit si ≤ rayon minimum, sinon frais fixe + coefficient × distance
     $prixLivraison = 0;
     if ($distanceKm > self::VALEUR_MIN_DISTANCE) {
@@ -345,13 +376,13 @@ final class CommandeController extends BaseController
       $prixLivraison = round($prixLivraison, 2);
     }
 
-    // Étape 24 - Calcul de l'acompte
+    // Étape 25 - Calcul de l'acompte
     $libelleTheme = strtolower($menu->getTheme()->getLibelle());
     $tauxAcompte = in_array($libelleTheme, ['événement', 'mariage']) ? 0.50 : 0.30;
     $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
     $prixTotal = round($prixMenu + $prixLivraison, 2);
 
-    // Étape 25 - Récupère la valeur max dans la bdd de la colone numeroCommande
+    // Étape 26 - Récupère la valeur max dans la bdd de la colone numeroCommande
     $lastNumero = $commandeRepository->findMaxNumeroCommande();
     if ($lastNumero === null) {
         $nextNumero = 1;
@@ -359,10 +390,10 @@ final class CommandeController extends BaseController
         $nextNumero = $lastNumero + 1;
     }
 
-    // Étape 26 - Générer le numéro de commande
+    // Étape 27 - Générer le numéro de commande
     $numero_commande  = 'CMD-' . str_pad($nextNumero, 3, '0', STR_PAD_LEFT);
 
-    // Étape 27 - Créer la commande
+    // Étape 28 - Créer la commande
     $commande = new Commande();
     $commande->setUtilisateur($utilisateur)
             ->setMenu($menu)
@@ -370,7 +401,8 @@ final class CommandeController extends BaseController
             ->setHeureLivraison($heureLivraison)
             ->setNombrePersonne($nombrePersonnes)
             ->setAdresseLivraison($data['adresse_livraison'] ?? '')
-            ->setVilleLivraison($data['ville_livraison'])
+            ->setVilleLivraison($data['ville_livraison'] ?? '')
+            ->setCodePostalLivraison($data['code_postal_livraison'] ?? '')
             ->setPrixMenu(round($prixMenu, 2))
             ->setPrixLivraison(round($prixLivraison, 2))
             ->setMontantAcompte(round($montantAcompte, 2))
@@ -381,27 +413,24 @@ final class CommandeController extends BaseController
             ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
             ->setNumeroCommande($numero_commande);
 
-    // Étape 28 - Créer le suivi initial
+    // Étape 29 - Créer le suivi initial
     $suivi = new SuiviCommande();
     $suivi->setStatut(CommandeStatut::EN_ATTENTE)
       ->setDateStatut(new \DateTime())
       ->setCommande($commande);
 
-    // Étape 29 - Persister et sauvegarder
+    // Étape 30 - met à jour le stock
+    $menu->setQuantiteRestante($menu->getQuantiteRestante() - $decrement);
+
+    // Étape 31 - Persister et sauvegarder
     $em->persist($commande);
     $em->persist($suivi);
     $em->flush();
 
-    // Étape 30 - Décrémenter le stock
-    // Le décrement est toujours au moins le minimum du menu
-    $decrement = max($nombrePersonnes, $minimumPersonnes);
-    $menu->setQuantiteRestante($menu->getQuantiteRestante() - $decrement);
-    $em->flush();
-
-    // Étape 31 - Envoyer mail de confirmation
+    // Étape 32 - Envoyer mail de confirmation
     $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-    // Étape 32 - Log MongoDB
+    // Étape 33 - Log MongoDB
     $logService->log(
       'commande_creee',
       $utilisateur->getEmail(),
@@ -410,14 +439,16 @@ final class CommandeController extends BaseController
         'numero_commande' => $numero_commande,
         'montant' => round($prixMenu + $prixLivraison, 2),
         'menu' => $menu->getTitre(),
-        'ville_livraison' => $data['ville_livraison'],
+        'adresse_livraison' => $data['adresse_livraison'] ?? '',
+        'ville_livraison' => $data['ville_livraison'] ?? '',
+        'code_postal_livraison' => $data['code_postal_livraison'] ?? '',
         'pret_materiel' => $commande->isPretMateriel(),
         'stock_restant' => $menu->getQuantiteRestante(),
         'distanceKm' => round($distanceKm, 2),
       ]
     );
     
-    // Étape 33 - Retourner la confirmation
+    // Étape 34 - Retourner la confirmation
     return $this->json([
         'status' => 'Succès',
         'message' => 'Commande créée avec succès',
@@ -470,17 +501,20 @@ final class CommandeController extends BaseController
 
         'adresse_livraison' => $commande->getAdresseLivraison(),
         'ville_livraison' => $commande->getVilleLivraison(),
+        'code_postal_livraison' => $commande->getCodePostalLivraison(),
 
         'pret_materiel' => $commande->isPretMateriel(),
         'restitution_materiel' => $commande->isRestitutionMateriel(),
         'etat_materiel' => $commande->getEtatMateriel(),
 
         'utilisateur' => [
-            'id' => $commande->getUtilisateur()?->getId(),
-            'nom' => $commande->getUtilisateur()?->getNom(),
-            'prenom' => $commande->getUtilisateur()?->getPrenom(),
-            'telephone' => $commande->getUtilisateur()?->getTelephone(),        
-            'code_postal' => $commande->getUtilisateur()?->getCodePostal(),
+          'id' => $commande->getUtilisateur()?->getId(),
+          'nom' => $commande->getUtilisateur()?->getNom(),
+          'prenom' => $commande->getUtilisateur()?->getPrenom(),
+          'telephone' => $commande->getUtilisateur()?->getTelephone(),
+          'code_postal' => $commande->getUtilisateur()?->getCodePostal(),
+          'adresse_postale' => $commande->getUtilisateur()?->getAdressePostale(),
+          'ville' => $commande->getUtilisateur()?->getVille(),
         ],
 
         'menu' => [
@@ -543,6 +577,7 @@ final class CommandeController extends BaseController
 
       'adresse_livraison' => $commande->getAdresseLivraison(),
       'ville_livraison' => $commande->getVilleLivraison(),
+      'code_postal_livraison' => $commande->getCodePostalLivraison(),
 
       'pret_materiel' => $commande->isPretMateriel(),
       'restitution_materiel' => $commande->isRestitutionMateriel(),
@@ -558,11 +593,13 @@ final class CommandeController extends BaseController
       'mail_penalite_envoye' => $commande->isMailPenaliteEnvoye(),
 
       'utilisateur' => [
-          'id' => $commande->getUtilisateur()?->getId(),
-          'nom' => $commande->getUtilisateur()?->getNom(),
-          'prenom' => $commande->getUtilisateur()?->getPrenom(),
-          'telephone' => $commande->getUtilisateur()?->getTelephone(),        
-          'code_postal' => $commande->getUtilisateur()?->getCodePostal(),
+        'id' => $commande->getUtilisateur()?->getId(),
+        'nom' => $commande->getUtilisateur()?->getNom(),
+        'prenom' => $commande->getUtilisateur()?->getPrenom(),
+        'telephone' => $commande->getUtilisateur()?->getTelephone(),
+        'code_postal' => $commande->getUtilisateur()?->getCodePostal(),
+        'adresse_postale' => $commande->getUtilisateur()?->getAdressePostale(),
+        'ville' => $commande->getUtilisateur()?->getVille(),
       ],
 
       'menu' => [

@@ -7,7 +7,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
-
+    restaurant.address: '%env(RESTAURANT_ADDRESS)%'
+    restaurant.lat: '%env(float:RESTAURANT_LAT)%'
+    restaurant.lon: '%env(float:RESTAURANT_LON)%'
 services:
     # default configuration for services in *this* file
     _defaults:
