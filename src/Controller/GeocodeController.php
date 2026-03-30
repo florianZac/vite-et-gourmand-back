@@ -25,6 +25,7 @@ use OpenApi\Attributes as OA;
  *  4. deliveryCost()       : Calcule les frais de livraison entre le restaurant (22 quai des Chartrons, Bordeaux) et l\'adresse du client via OSRM  et tarification. 
  *
  */
+#[Route('/api')]
 class GeocodeController extends AbstractController
 {
 	// Coordonnées fixes du restaurant Vite et Gourmand // 22 quai des Chartrons, Bordeaux
