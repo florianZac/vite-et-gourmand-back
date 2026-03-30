@@ -10,6 +10,7 @@ use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
 use App\Repository\MenuRepository;
 use App\Repository\CommandeRepository;
+use App\Repository\HoraireRepository;
 
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -194,7 +195,8 @@ final class CommandeController extends BaseController
     LogService $logService,
     NominatimService $nominatimService,
     OsrmService $osrmService,
-    SanitizerService $sanitizer
+    SanitizerService $sanitizer,
+    HoraireRepository $horaireRepository 
   ): JsonResponse {
 
     // Étape 1 - Vérifier que l'utilisateur est connecté (ROLE_CLIENT)
@@ -326,24 +328,48 @@ final class CommandeController extends BaseController
       return $this->json(['status' => 'Erreur', 'message' => 'Heure de livraison invalide (format attendu : HH:mm)'], 400);
     }
 
-    // Étape 17 - Vérifier que l'heure est dans le créneau d'ouverture
-    $heureMin = \DateTime::createFromFormat('H:i', '10:00');
-    $heureMax = \DateTime::createFromFormat('H:i', '20:00');
-    $heure = $heureLivraison->format('H:i');
-    if ($heure  < $heureMin || $heure  > $heureMax) {
+   // Étape 17 - Vérifier que l'heure est dans les horaires d'ouverture du jour de prestation
+    // Récupère le jour de la semaine en français (Lundi, Mardi...)
+    $joursSemaine = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    $jourPrestation = $joursSemaine[(int)$datePrestation->format('w')];
+    
+    // Étape 18 - Cherche l'horaire de ce jour en BDD
+    $horaireDuJour = $horaireRepository->findOneBy(['jour' => $jourPrestation]);
+
+    if (!$horaireDuJour) {
         return $this->json([
             'status' => 'Erreur',
-            'message' => 'Heure de livraison en dehors des horaires d\'ouverture (10:00-20:00)'
+            'message' => "Aucun horaire défini pour le $jourPrestation"
         ], 400);
     }
 
-    // Étape 18 - Calculer le délai minimum
+    // Étape 19 - Vérifie si le restaurant est fermé ce jour-là (heures null = fermé)
+    if ($horaireDuJour->getHeureOuverture() === null || $horaireDuJour->getHeureFermeture() === null) {
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => "Le restaurant est fermé le $jourPrestation"
+        ], 400);
+    }
+
+    // Étape 20 - Compare l'heure de livraison avec les horaires d'ouverture
+    $heure = $heureLivraison->format('H:i');
+    $heureOuverture = $horaireDuJour->getHeureOuverture()->format('H:i');
+    $heureFermeture = $horaireDuJour->getHeureFermeture()->format('H:i');
+
+    if ($heure < $heureOuverture || $heure > $heureFermeture) {
+        return $this->json([
+            'status' => 'Erreur',
+            'message' => "Heure de livraison en dehors des horaires d'ouverture du $jourPrestation ($heureOuverture - $heureFermeture)"
+        ], 400);
+    }
+
+    // Étape 21 - Calculer le délai minimum
     $delaiMinimum = $nombrePersonnes > 20 ? 14 : 3;
 
-    // Étape 19 - Calcul des jours ouvrables
+    // Étape 22 - Calcul des jours ouvrables
     $joursOuvrables = $this->calculerJoursOuvrables($datePrestation);
 
-    // Étape 20 - Vérifier délai minimum
+    // Étape 23 - Vérifier délai minimum
     if ($joursOuvrables < $delaiMinimum) {
       return $this->json([
         'status' => 'Erreur',
@@ -351,16 +377,16 @@ final class CommandeController extends BaseController
       ], 400);
     }
 
-    // Étape 21 - Calcul du prix de base
+    // Étape 24 - Calcul du prix de base
     $prixParPersonne = $menu->getPrixParPersonne();
     $prixMenu = $prixParPersonne * $nombrePersonnes;
 
-    // Étape 22 - Appliquer réduction si > min+5
+    // Étape 25 - Appliquer réduction si > min+5
     if ($nombrePersonnes > ($minimumPersonnes + 5)) {
       $prixMenu *= 0.90;
     }
 
-    // Étape 23 - Vérifier distance max
+    // Étape 26 - Vérifier distance max
     if ($distanceKm > self::VALEUR_MAX_DISTANCE) {
       return $this->json([
         'status' => 'Erreur',
@@ -368,7 +394,7 @@ final class CommandeController extends BaseController
       ], 400);
     }
 
-    // Étape 24 - Calculer le prix de livraison
+    // Étape 27 - Calculer le prix de livraison
     // Gratuit si ≤ rayon minimum, sinon frais fixe + coefficient × distance
     $prixLivraison = 0;
     if ($distanceKm > self::VALEUR_MIN_DISTANCE) {
@@ -376,13 +402,13 @@ final class CommandeController extends BaseController
       $prixLivraison = round($prixLivraison, 2);
     }
 
-    // Étape 25 - Calcul de l'acompte
+    // Étape 28 - Calcul de l'acompte
     $libelleTheme = strtolower($menu->getTheme()->getLibelle());
     $tauxAcompte = in_array($libelleTheme, ['événement', 'mariage']) ? 0.50 : 0.30;
     $montantAcompte = ($prixMenu + $prixLivraison) * $tauxAcompte;
     $prixTotal = round($prixMenu + $prixLivraison, 2);
 
-    // Étape 26 - Récupère la valeur max dans la bdd de la colone numeroCommande
+    // Étape 29 - Récupère la valeur max dans la bdd de la colone numeroCommande
     $lastNumero = $commandeRepository->findMaxNumeroCommande();
     if ($lastNumero === null) {
         $nextNumero = 1;
@@ -390,10 +416,10 @@ final class CommandeController extends BaseController
         $nextNumero = $lastNumero + 1;
     }
 
-    // Étape 27 - Générer le numéro de commande
+    // Étape 30 - Générer le numéro de commande
     $numero_commande  = 'CMD-' . str_pad($nextNumero, 3, '0', STR_PAD_LEFT);
 
-    // Étape 28 - Créer la commande
+    // Étape 31 - Créer la commande
     $commande = new Commande();
     $commande->setUtilisateur($utilisateur)
             ->setMenu($menu)
@@ -413,24 +439,24 @@ final class CommandeController extends BaseController
             ->setPretMateriel((bool)($data['pret_materiel'] ?? false))
             ->setNumeroCommande($numero_commande);
 
-    // Étape 29 - Créer le suivi initial
+    // Étape 32 - Créer le suivi initial
     $suivi = new SuiviCommande();
     $suivi->setStatut(CommandeStatut::EN_ATTENTE)
       ->setDateStatut(new \DateTime())
       ->setCommande($commande);
 
-    // Étape 30 - met à jour le stock
+    // Étape 33 - met à jour le stock
     $menu->setQuantiteRestante($menu->getQuantiteRestante() - $decrement);
 
-    // Étape 31 - Persister et sauvegarder
+    // Étape 34 - Persister et sauvegarder
     $em->persist($commande);
     $em->persist($suivi);
     $em->flush();
 
-    // Étape 32 - Envoyer mail de confirmation
+    // Étape 35 - Envoyer mail de confirmation
     $mailerService->sendCommandeCreeeEmail($utilisateur, $commande);
 
-    // Étape 33 - Log MongoDB
+    // Étape 36 - Log MongoDB
     $logService->log(
       'commande_creee',
       $utilisateur->getEmail(),
@@ -448,7 +474,7 @@ final class CommandeController extends BaseController
       ]
     );
     
-    // Étape 34 - Retourner la confirmation
+    // Étape 37 - Retourner la confirmation
     return $this->json([
         'status' => 'Succès',
         'message' => 'Commande créée avec succès',
