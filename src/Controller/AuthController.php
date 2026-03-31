@@ -170,8 +170,11 @@ final class AuthController extends AbstractController
 
     // Étape 12 - Envois un mail de bienvenu de manière automatique
     // Le mail contient un message de bienvenue personnalisé avec le prénom du nouvel utilisateur
-    $mailerService->sendWelcomeEmail($utilisateur);
-
+    try {
+      $mailerService->sendWelcomeEmail($utilisateur);
+    } catch (\Exception $e) {
+      error_log('[MAILER] Erreur : ' . $e->getMessage());
+    }
     // Étape 13 - Enregistrer le log d'inscription dans MongoDB
     // Pourquoi MongoDB et pas MySQL ? -> Les logs sont des données volumineuses sans schéma fixe,
     // Pas de relations nécessaires, optimisé pour l'écriture rapide -> cas d'usage NoSQL idéal
@@ -220,8 +223,11 @@ final class AuthController extends AbstractController
     // Étape 1 - Récupérer et valider l'email
     $data = json_decode($request->getContent(), true);
     if (empty($data['email'])) {
-      $data['email'] = $sanitizer->sanitize($data['email'], 'email');
-        return $this->json(['status' => 'Erreur', 'message' => 'Email requis'], 400);
+      return $this->json(['status' => 'Erreur', 'message' => 'Email requis'], 400);
+    }
+    $data['email'] = $sanitizer->sanitize($data['email'], 'email');
+    if (empty($data['email'])) {
+      return $this->json(['status' => 'Erreur', 'message' => 'Email invalide'], 400);
     }
 
     // Étape 2 - Vérifier que l'utilisateur existe
@@ -263,7 +269,7 @@ final class AuthController extends AbstractController
     $resetLink = $frontUrl . '/reset-password?token=' . $token; 
 
     // Étape 8 - Envoyer l'email contenant le lien
-    $mailerService->sendPasswordResetEmail($utilisateur, $resetLink);
+    $mailerService->sendPasswordResetLinkEmail($utilisateur, $resetLink);
 
     // Étape 9 - Retourner un succès au client
     // Message générique pour des raisons de sécurité

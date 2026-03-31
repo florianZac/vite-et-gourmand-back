@@ -83,10 +83,9 @@ class MailerService
 	 * @return void retourne rien
 	 */
 	//public function sendPasswordResetEmail(Utilisateur $utilisateur, string $motDePasseTemporaire): void
-	public function sendPasswordResetEmail(Utilisateur $utilisateur, string $resetLink): void
+	public function sendPasswordResetLinkEmail(Utilisateur $utilisateur, string $resetLink): void
 	{
 		// Étape 1 - Générer le contenu HTML à partir du template avec le lien de reset
-		// $html = $this->twig->render('emails/password_reset.html.twig', [
 		$html = $this->twig->render('emails/password_reset_link.html.twig', [
 			'prenom'      => $utilisateur->getPrenom(),
 			//'motDePasse' => $motDePasseTemporaire,
@@ -101,6 +100,25 @@ class MailerService
 			->html($html);
 
 		// Étape 3 - Envoyer l'email
+		$this->mailer->send($email);
+	}
+
+	/**
+	 * @description Envoie un email avec un mot de passe temporaire (utilisé par l'admin)
+	 */
+	public function sendPasswordResetEmail(Utilisateur $utilisateur, string $motDePasseTemporaire): void
+	{
+		$html = $this->twig->render('emails/password_reset.html.twig', [
+			'prenom'     => $utilisateur->getPrenom(),
+			'motDePasse' => $motDePasseTemporaire,
+		]);
+
+		$email = (new Email())
+			->from('noreply@vite-et-gourmand.fr')
+			->to($utilisateur->getEmail())
+			->subject('Votre nouveau mot de passe - Vite & Gourmand')
+			->html($html);
+
 		$this->mailer->send($email);
 	}
 
