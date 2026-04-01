@@ -1,0 +1,176 @@
+erDiagram
+    %% ============================================
+    %% MCD - Modèle Conceptuel de Données (Merise)
+    %% Projet : Vite & Gourmand
+    %% Auteur : Florian Aizac
+    %% Date   : 01/04/2026
+    %% ============================================
+    %% Convention Merise : cardinalités (min,max)
+    %% côté entité = combien de fois CETTE entité
+    %% participe à l association
+    %% ============================================
+
+    ROLE {
+        int role_id PK
+        string libelle
+        string description
+    }
+
+    UTILISATEUR {
+        int utilisateur_id PK
+        string nom
+        string prenom
+        string telephone
+        string email
+        string password
+        string pays
+        string ville
+        string adresse_postale
+        string code_postal
+        string statut_compte
+    }
+
+    COMMANDE {
+        int commande_id PK
+        string numero_commande
+        datetime date_commande
+        date date_prestation
+        time heure_livraison
+        string statut
+        float prix_menu
+        int nombre_personne
+        float prix_livraison
+        float prix_total
+        float montant_acompte
+        float montant_rembourse
+        string motif_annulation
+        string adresse_livraison
+        string ville_livraison
+        string code_postal_livraison
+        float distanceKm
+        boolean pret_materiel
+        boolean restitution_materiel
+        datetime dateStatutLivree
+        datetime dateStatutRetourMateriel
+        boolean mailPenaliteEnvoye
+    }
+
+    MENU {
+        int menu_id PK
+        string titre
+        int nombre_personne_minimum
+        float prix_par_personne
+        string description
+        int quantite_restante
+        text conditions
+    }
+
+    PLAT {
+        int plat_id PK
+        string titre_plat
+        string photo
+        string categorie
+        text description_plat
+    }
+
+    ALLERGENE {
+        int allergene_id PK
+        string libelle
+    }
+
+    THEME {
+        int theme_id PK
+        string libelle
+    }
+
+    REGIME {
+        int regime_id PK
+        string libelle
+    }
+
+    AVIS {
+        int avis_id PK
+        smallint note
+        string description
+        string statut
+        datetime date
+    }
+
+    SUIVI_COMMANDE {
+        int suivi_id PK
+        string statut
+        datetime date_statut
+    }
+
+    HORAIRE {
+        int horaire_id PK
+        string jour
+        time heure_ouverture
+        time heure_fermeture
+    }
+
+    MENU_TAGS {
+        int id PK
+        string tag
+    }
+
+    PASSWORD_RESET_TOKEN {
+        int token_id PK
+        string token
+        datetime createdAt
+        datetime expiresAt
+        boolean isUsed
+    }
+
+    %% ============================================
+    %% ASSOCIATIONS avec cardinalites Merise
+    %% Lecture : ENTITE_A |cardA| -- |cardB| ENTITE_B
+    %% ============================================
+
+    %% Un Role possede 0 ou n Utilisateurs
+    %% Un Utilisateur appartient a 1 et 1 seul Role
+    ROLE ||--o{ UTILISATEUR : "posseder (1,1 --- 0,n)"
+
+    %% Un Utilisateur passe 0 ou n Commandes
+    %% Une Commande est passee par 1 et 1 seul Utilisateur
+    UTILISATEUR ||--o{ COMMANDE : "passer (1,1 --- 0,n)"
+
+    %% Un Menu concerne 0 ou n Commandes
+    %% Une Commande concerne 1 et 1 seul Menu
+    MENU ||--o{ COMMANDE : "concerner (1,1 --- 0,n)"
+
+    %% Un Theme thematise 0 ou n Menus
+    %% Un Menu a 1 et 1 seul Theme
+    THEME ||--o{ MENU : "thematiser (1,1 --- 0,n)"
+
+    %% Un Regime categorise 0 ou n Menus
+    %% Un Menu a 1 et 1 seul Regime
+    REGIME ||--o{ MENU : "categoriser (1,1 --- 0,n)"
+
+    %% Un Utilisateur redige 0 ou n Avis
+    %% Un Avis est redige par 1 et 1 seul Utilisateur
+    UTILISATEUR ||--o{ AVIS : "rediger (1,1 --- 0,n)"
+
+    %% Une Commande recoit 0 ou n Avis
+    %% Un Avis porte sur 1 et 1 seule Commande
+    COMMANDE ||--o{ AVIS : "porter_sur (1,1 --- 0,n)"
+
+    %% Une Commande a 1 ou n SuiviCommande
+    %% Un SuiviCommande concerne 1 et 1 seule Commande
+    COMMANDE ||--o{ SUIVI_COMMANDE : "suivre (1,1 --- 0,n)"
+
+    %% Un Utilisateur demande 0 ou n PasswordResetToken
+    %% Un Token est associe a 1 et 1 seul Utilisateur
+    UTILISATEUR ||--o{ PASSWORD_RESET_TOKEN : "demander (1,1 --- 0,n)"
+
+    %% Un Menu propose 0 ou n Plats (max 3)
+    %% Un Plat est propose dans 0 ou n Menus
+    MENU }o--o{ PLAT : "proposer (0,n --- 0,n)"
+
+    %% Un Menu est tague par 0 ou n MenuTags
+    %% Un MenuTag est assigne a 0 ou n Menus
+    MENU }o--o{ MENU_TAGS : "taguer (0,n --- 0,n)"
+
+    %% Un Plat contient 0 ou n Allergenes
+    %% Un Allergene est present dans 0 ou n Plats
+    PLAT }o--o{ ALLERGENE : "contenir (0,n --- 0,n)"

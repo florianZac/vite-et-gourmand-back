@@ -1,0 +1,71 @@
+---
+config:
+  layout: elk
+  theme: default
+---
+flowchart TB
+    Visiteur(("Visiteur")) --> UC1@{ label: "Consulter page d'accueil" } & UC2["Consulter avis clients validés"] & UC3["Consulter tous les menus"] & UC4["Filtrer les menus"] & UC5@{ label: "Consulter détail d'un menu" } & UC6["Créer un compte"] & UC7["Se connecter"] & UC8["Réinitialiser mot de passe"] & UC9@{ label: "Contacter l'entreprise" } & UC10["Consulter mentions légales et CGV"] & UC11["Consulter horaires"]
+    Client(("Client")) -. hérite .-> Visiteur
+    Employe(("Employé")) -. hérite .-> Client
+    Admin(("Administrateur")) -. hérite .-> Employe
+    Client --> UC12["Commander un menu"] & UC13["Consulter ses commandes"] & UC14["Modifier informations personnelles"] & UC15["Modifier une commande"] & UC16["Annuler une commande"] & UC17["Suivre une commande"] & UC18["Donner un avis"]
+    Employe --> UC19["Gérer les menus"] & UC20["Gérer les plats"] & UC21["Gérer les allergènes"] & UC32["Gérer les thèmes"] & UC33["Gérer les règimes"] & UC34["Gérer les MenusTag"]   & UC22["Consulter toutes les commandes"] & UC23["Filtrer les commandes"] & UC24["Modifier statut commande"] & UC25["Annuler commande avec motif"] & UC26["Valider/Refuser avis clients"]
+    Admin --> UC27["Créer compte employé"] & UC28["Désactiver compte employé"] & UC31["Gérer les horaires"] & UC29["Consulter statistiques"] & UC35["Gérer les employés"]  & UC36["Gérer les utilisateurs"]  & UC30@{ label: "Consulter chiffre d'affaires" }
+    UC12 -. include .-> UC7
+    UC15 -. extend .-> UC13
+    UC16 -. extend .-> UC13
+    UC17 -. extend .-> UC13
+    UC18 -. extend .-> UC13
+    UC4 -. extend .-> UC3
+    UC14 -. "<span style=padding-left:>include</span>" .-> UC7
+    UC13 -. "<span style=padding-left:><span style=padding-left:>include</span></span>" .-> UC7
+
+    UC1@{ shape: rect}
+    UC5@{ shape: rect}
+    UC9@{ shape: rect}
+    UC30@{ shape: rect}
+     Visiteur:::acteur
+     UC1:::uc
+     UC2:::uc
+     UC3:::uc
+     UC4:::uc
+     UC5:::uc
+     UC6:::uc
+     UC7:::uc
+     UC8:::uc
+     UC9:::uc
+     UC10:::uc
+     UC11:::uc
+     Client:::acteur
+     Employe:::acteur
+     Admin:::acteur
+     UC12:::uc
+     UC13:::uc
+     UC14:::uc
+     UC15:::uc
+     UC16:::uc
+     UC17:::uc
+     UC18:::uc
+     UC19:::ucEmploye
+     UC20:::ucEmploye
+     UC21:::ucEmploye
+     UC22:::ucEmploye
+     UC23:::ucEmploye
+     UC24:::ucEmploye
+     UC25:::ucEmploye
+     UC26:::ucEmploye
+     UC32:::ucEmploye
+     UC33:::ucEmploye
+     UC34:::ucEmploye
+     UC27:::ucAdmin
+     UC28:::ucAdmin
+     UC29:::ucAdmin
+     UC30:::ucAdmin
+     UC31:::ucAdmin
+     UC35:::ucAdmin
+     UC36:::ucAdmin
+
+    classDef acteur fill:#6366f1,stroke:#4f46e5,color:#fff
+    classDef uc fill:#10b981,stroke:#059669,color:#fff
+    classDef ucEmploye fill:#f59e0b,stroke:#d97706,color:#fff
+    classDef ucAdmin fill:#ef4444,stroke:#dc2626,color:#fff

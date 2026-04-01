@@ -1,49 +1,49 @@
 Aide mémoire est d'Installation Back-end
 
-1. Installation et mise en place de Symfony
+# 1. Installation et mise en place de Symfony
 
-1.1 vérification des versions php,composeur etc ..
+# 1.1 vérification des versions php,composeur etc ..
 php -v   :  vérification de la version de php
 composer -v   :  vérification de la version de composer
 symfony -v   :  vérification de la version du Command Line Interface (CLI)
 
-1.1.1 Vérification des requirement syfony avant installation 
+# 1.1.1 Vérification des requirement syfony avant installation 
 symfony check:requirements
 
-1.1 deplacement et création du dossier projet 
+# 1.1 deplacement et création du dossier projet 
 
 j'utilise actuellement le logiciel Wampserveur : cd D:\wamp64\www
 déplacement dans le dossier concerné :  cd D:\wamp64\www  ensuite pwd on vérifie ou ont est ou ls 
 
-1.1.1 Cas Utilisation site monolite (mono bloc pas de front et back )
+# 1.1.1 Cas Utilisation site monolite (mono bloc pas de front et back )
     création du dossier : symfony new vite-et-gourmand-back --version="lts" --webapp
     car il installe Twig, les formulaires Symfony, le moteur de templates..
 
-1.1.2 Cas Utilisation séparation back et front.
+# 1.1.2 Cas Utilisation séparation back et front.
     Dans mon cas je veut séparer le front et le back du coup la commande est la suivante:
 car mon serveur ne vas que générer du json 
 symfony new vite-et-gourmand-back --version="lts" --api
 
 cas personnel : 
 
-1.2 Installation de symfony
+# 1.2 Installation de symfony
 symfony new vite-et-gourmand-back --version="lts" --api
 
-1.3 déplacement dans le dossier
+# 1.3 déplacement dans le dossier
 cd vite-et-gourmand-back
 
-1.4 lancement du serveur  |   cloture du serveur
+# 1.4 lancement du serveur  |   cloture du serveur
 symfony server:start      |   symfony server:stop
 si on souhaite le lancer à travers la console du dossier bin (attention à la version php)
 php bin/console server:run
 
 Au cas ou Installation de un certificat de sécurité pas nécessaire pour l'instant: symfony server:ca:install 
 
-2. Configuration de la base de donnée
+# 2. Configuration de la base de donnée
 
 Ou : dans le fichier .env du projet
 
-2.1 
+# 2.1 
 de base DATABASE_URL="postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=16&charset=utf8"
 
 mon cas d'utilisation :
@@ -58,17 +58,17 @@ mode d'encodage européen utf4 :  charset=utf8mb4
 donc :
 DATABASE_URL="mysql://florian:123456@localhost:3306/vite_et_gourmand?serverVersion=8.4.7&charset=utf8mb4"
 
-3. création de la base de donnée vite & gourmand
-3.1 création de la base de donnée avec DOCTRINE
+# 3. création de la base de donnée vite & gourmand
+# 3.1 création de la base de donnée avec DOCTRINE
 voir database.sql, create_delete_database et constraints.sql pour voir la création manuel
 
-3.1.1 Installation de MakerBundle 
+# 3.1.1 Installation de MakerBundle 
 composer require symfony/maker-bundle --dev
 
-3.2 création des entity (les tables) 
+# 3.2 création des entity (les tables) 
 il crée deux fichiers src/Entity/name_entity.php la classe entité et src/repository/name_entityRepositoy.php les requetes BDD
 
-3.3 création des entity symphony (des tables sql)
+# 3.3 création des entity symphony (des tables sql)
 
 php bin/console make:entity Role
 php bin/console make:entity Avis
@@ -81,7 +81,7 @@ php bin/console make:entity Plat
 php bin/console make:entity Menu
 php bin/console make:entity Commande
 
-3.3 création (des clés étrangères sql)
+# 3.3 création (des clés étrangères sql)
 
 php bin/console make:entity Utilisateur
 exemple de configuration :
@@ -103,31 +103,31 @@ php bin/console make:entity Commande
 etc..
 penser à bien vérifier la concordance des entity générer en fonction du MCD avant de passer à la suite
 
-3.4 Création de la base de donnée en automatique
+# 3.4 Création de la base de donnée en automatique
 php bin/console doctrine:database:create
 
-3.5 génération de la migration (création de la base de donnée)
+# 3.5 génération de la migration (création de la base de donnée)
 php bin/console make:migration
 
 en dev seulement :
 # Met à jour directement le schéma (sans fichier de migration)
 php bin/console doctrine:schema:update --force
 
-3.6 Execution de la migration pour génèrer la bas de donnée
+# 3.6 Execution de la migration pour génèrer la bas de donnée
 php bin/console doctrine:migrations:migrate
 
-4 Installation du composant sécurity pour gérer les rôles les connexions et la protection des routes.
+# 4 Installation du composant sécurity pour gérer les rôles les connexions et la protection des routes.
 
-4.1 Installation du bundle JWT pour la gestion des tokens
+# 4.1 Installation du bundle JWT pour la gestion des tokens
 composer.bat require lexik/jwt-authentication-bundle
 
-4.2 génèration des clefs de chiffrement
+# 4.2 génèration des clefs de chiffrement
 php bin/console lexik:jwt:generate-keypair
  :  génération de deux fichiers dans le dossier config/jwt
     private.pem qui est la clé privée pour signer les tokens
     public.pem qui est la clé publique afin de vérifier les tokens
 
-4.3 modification du fichier .env
+# 4.3 modification du fichier .env
 avec 
 // variable Symfony qui pointe vers le fichier private.pem ou est présente la clefs privée
 JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
@@ -136,37 +136,37 @@ JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
 //  le mot de passe qui protège la clé privée
 JWT_PASSPHRASE=vite_et_gourmand_secret
 
-4.4 génération des clefs JWT
+# 4.4 génération des clefs JWT
  php bin/console lexik:jwt:generate-keypair --overwrite
 
-4.5 creation des fonctions handler dans src/Security
+# 4.5 creation des fonctions handler dans src/Security
 LoginFailureHandler
 LoginSuccessHandler
 
 Test des routes et tokens
 
-4.6 Installation de doctrine bundle pour inserer les données dans la base
+# 4.6 Installation de doctrine bundle pour inserer les données dans la base
 composer.bat require doctrine/doctrine-bundle
 
-4.7 creation de script sql pour l'instantiation des données dans un users et la table role. 
+# 4.7 creation de script sql pour l'instantiation des données dans un users et la table role. 
 création_utilisateur.sql
 
-4.8 création de la route login dans un controleur
+# 4.8 création de la route login dans un controleur
 php bin/console make:controller AuthController
 
-4.9 Lancement du handler pour test 
+# 4.9 Lancement du handler pour test 
 symfony server:start
 
 Sans Symfony CLI :
 php -S localhost:8000 -t public/
 
-5 Vidé le cache symfony
+# 5 Vidé le cache symfony
 php bin/console cache:clear
 
-5.1 création du document de testpostman 
+# 5.1 création du document de testpostman 
 Test_API_postman
 
-5.2 Choix de la solution mail
+# 5.2 Choix de la solution mail
 Choix mailtrap 
 pourquoi : 
     facile à installer sur symphony et configurer
@@ -175,25 +175,25 @@ pourquoi :
     gratuit
     peu de temps disponible 
 
-5.2.1 Installation de Mailtrap le composant officiel de Symfony pour envoyer des emails
+# 5.2.1 Installation de Mailtrap le composant officiel de Symfony pour envoyer des emails
 composer require symfony/mailer
 
-5.3 Installation de twig pour la création de template HTML pour les mails uniquement
+# 5.3 Installation de twig pour la création de template HTML pour les mails uniquement
 cela permet d'avoir un vrai fichier HTML dédié à chaque email
 composer require twig
 
-5.3 Création d'un template d'email
+# 5.3 Création d'un template d'email
 dans le dossier templates/emails/contact.html.twig
 
-5.4 création d'un compte mailtrap
+# 5.4 création d'un compte mailtrap
 https://mailtrap.io/inboxes/4404595/messages/5352687463/html
 et récupération du MAILER_DSN
 mailtrap  :  sandbox  :  intégration  :  symphony  :  MAILER_DSN="smtp://6836c3cc28f364:****c337@sandbox.smtp.mailtrap.io:2525"
 ne pas oublié de régénerer les crédentiale il faut pas que le mdp soit masquer sa ma souler j'ai perdu 1 heure de débug.
 
-5.5 creation des fonctions sanitazier, validation reggex et rate limitation dans le controleur mail ContactController.php
+# 5.5 creation des fonctions sanitazier, validation reggex et rate limitation dans le controleur mail ContactController.php
 
-5.1 installation rate limiting 
+# 5.1 installation rate limiting 
 composer require symfony/rate-limiter
 composer require symfony/lock
 php bin/console cache:clear
@@ -228,108 +228,108 @@ Solution :
 preg_replace('/(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\bupdate\b)/i')
 cette reggex permet de supprimer tout les mots clefs dangereux SQL.
 
-5.6 Apprendre à utiliser l'injection de dépendance
+# 5.6 Apprendre à utiliser l'injection de dépendance
 taper dans le terminal  php bin/console debug:autowiring --all
 https://symfony.com/doc/current/reference/forms/types/entity.html
 https://symfony.com/doc/current/doctrine.html#fetching-objects-from-the-database
 
 
-5.7 vérification des routes après modification de UtilisateurController.php  :  AdminController.php
+# 5.7 vérification des routes après modification de UtilisateurController.php  :  AdminController.php
 pour respecter la regle un controleur un niveau responsabilité unique que je respecter pas
 Commande pérmettant de vérifier que Symfony voit bien les nouvelles routes :
 php bin/console debug:router | Select-String "admin"
 Commande pérmettant de vérifier toutes les routes du projet :
 php bin/console debug:router | Select-String "api"
 
-5.8 Installation des commandes  syfony pour utilisation de cron 
+# 5.8 Installation des commandes  syfony pour utilisation de cron 
 
 Objectif : chaque jour, vérifier les commandes (pret_materiel=1, restitution_materiel=0) dont le statut est Livré
 
-5.9 Création du fichier de commande
+# 5.9 Création du fichier de commande
 php bin/console make:command        
 Choose a command name  : CheckRetourMaterielCommand
 Crée automatiquement la commande  :  src/Command/CheckRetourMaterielCommand.php
 
-5.9 Création de la command Symfony
+# 5.9 Création de la command Symfony
 php bin/console app:check-retour-materiel
 
-6 Vérification de la commande 
+# 6 Vérification de la commande 
 php bin/console list
 
-6.1 Utilisation de la command crée dans le terminal 
+# 6.1 Utilisation de la command crée dans le terminal 
 php bin/console app:check-retour-materiel
 
-6.2 verification des propriétées et des methodes via symfony apres modification d'une entity
-6.2.1 : php bin/console doctrine:schema:update --force
+# 6.2 verification des propriétées et des methodes via symfony apres modification d'une entity
+# 6.2.1 : php bin/console doctrine:schema:update --force
 
-6.2.2 : Valide le mapping Doctrine 
+# 6.2.2 : Valide le mapping Doctrine 
 php bin/console doctrine:schema:validate
 
-6.2.3 : Génère le SQL théorique et inspecte les FK
+# 6.2.3 : Génère le SQL théorique et inspecte les FK
 php bin/console doctrine:schema:create --dump-sql
 
-6.2.4 : Vérifie que ta BDD est synchronisée
+# 6.2.4 : Vérifie que ta BDD est synchronisée
 php bin/console doctrine:migrations:diff
 # :  Si "No changes detected" c'est parfait
 
-6.3.5 : Apres création du cron et de la doctrine tester la commande dans le terminal :
+# 6.3.5 : Apres création du cron et de la doctrine tester la commande dans le terminal :
  Tester MANUELLEMENT check-retour-materiel
  :  php bin/console app:check-retour-materiel
 
-6.3.6 Voir la version de doctrine-bundle 
+# 6.3.6 Voir la version de doctrine-bundle 
 composer show doctrine/doctrine-bundle | grep versions
 
-6.4 Installation est mise en place de MongoDB sur un projet symfony
+# 6.4 Installation est mise en place de MongoDB sur un projet symfony
 
 Quelle interet ? : Je vais utiliser MongoDB pour gérer les logs d'activité de la sociétée
 Pourquoi ? :Car se sont des données volumineuse qui n'on pas de schéma fixe il non pas de relation entre eux ce qui est le cas d'usage optimale de NoSQL.
 
-6.4.1 Vérification de MongoDB avant d'installation 
+# 6.4.1 Vérification de MongoDB avant d'installation 
 composer show | findstr mongodb sur windows
 composer show | grep mongodb sur linux
 
-6.4.2 Installation de MongoDB
+# 6.4.2 Installation de MongoDB
 composer require doctrine/mongodb-odm-bundle
 
-6.4.2 Vérification de la version mongodb
+# 6.4.2 Vérification de la version mongodb
 mongod --version n'exite pas okay 
 
-6.4.2.1 
+# 6.4.2.1 
 php -m dans visual code la reponse contient MongoDB oui ou non si non continue 
 
-6.4.2.2 ouvrir le bon dossier PHP pour savoir lequel est installer php-v
+# 6.4.2.2 ouvrir le bon dossier PHP pour savoir lequel est installer php-v
 réponse  :  PHP 8.4.15
 du coup le bon dossier  :  D:\wamp64\bin\php\php8.4.15\ext\
 Lance cette commande :
 if (Test-Path "D:\wamp64\bin\php\php8.4.15\ext\php_mongodb.dll") { echo "php_mongodb.dll EST PRESENT" } else { echo "php_mongodb.dll N'EST PAS PRESENT" }
 
 Bon pas de dll disponible passage en docker 
-6.4.5 docker --version
+# 6.4.5 docker --version
 pas de version de docker T_T 
 
-6.4.6 Installation de docker
+# 6.4.6 Installation de docker
 https://www.docker.com/products/docker-desktop/
 https://docs.docker.com/desktop/setup/install/windows-install/
 
-6.5 Fermer tous les processus Docker existants
+# 6.5 Fermer tous les processus Docker existants
 # Liste tous les processus Docker
 Get-Process *docker* | Select-Object Id, ProcessName
 
 # Termine tous les processus Docker bloqués
 Get-Process *docker* | Stop-Process -Force
 
-6.6 Redémarrer les services Docker
+# 6.6 Redémarrer les services Docker
 # Arrêter le service Docker Desktop
 Stop-Service com.docker.service -Force
 
 # Démarrer le service Docker Desktop
 Start-Service com.docker.service
 
-6.7 Supprimer les anciens containers ou images corrompus
+# 6.7 Supprimer les anciens containers ou images corrompus
 docker container prune -f  :  supprime tous les containers arrêtés
 docker image prune -a -f  :  supprime toutes les images inutilisées
 
-6.8 ENFIN on part sur quelque chose de property  (POWERSHELL avec droit admin )
+# 6.8 ENFIN on part sur quelque chose de property  (POWERSHELL avec droit admin )
 Lancer MongoDB via docker 
 mkdir D:\DockerData\MongoDB
 docker run -d --name mongodb -p 27017:27017 -v D:\DockerData\MongoDB:/data/db mongo:6
@@ -420,7 +420,7 @@ docker exec -it mongodb_symphony mongosh --eval "db.runCommand({ping:1})"
 
 if (php -m | findstr mongodb) { Write-Host "MongoDB PRESENT" } else { Write-Host "MongoDB N'EST PAS PRESENT" }
 
-6.8 création du log activité
+# 6.8 création du log activité
 structure à implémenté
 {
   "_id": "ObjectId(...)",
@@ -435,7 +435,7 @@ structure à implémenté
   "createdAt": "2026-02-28T10:30:00"
 }
 
-6.8.1 création du fichier LogActivite.php définissant les donnée représenté dans le log d'activité
+# 6.8.1 création du fichier LogActivite.php définissant les donnée représenté dans le log d'activité
 
 id  :  string  :  Identifiant MongoDB
 message  :  string  :  Message descriptif du log
@@ -444,30 +444,30 @@ role  :  string  :  Rôle de l'utilisateur concerné
 "numero_commande": "CMD-XXXX", "montant": 450.00  :  Données contextuelles supplémentaires 
 date  :  DateTime  :  Date et heure du log
 
-6.8.2 Création du service de gestion de l'enregistrement des logs dans mongodb
+# 6.8.2 Création du service de gestion de l'enregistrement des logs dans mongodb
 création du fichier LogService.php dans src/Service
 
-6.8.3 Ajout des logs à chaque controleur 
+# 6.8.3 Ajout des logs à chaque controleur 
 
-6.9 test
+# 6.9 test
 
 php bin/console cache:clear
 php bin/console debug:container mongodb
 
 On test 
-7.1 Liste des conatiner
+# 7.1 Liste des conatiner
 docker ps -a
 
-7.2 Redémarrage du container
+# 7.2 Redémarrage du container
 docker start vite_et_gourmand_logs
 
-7.3 On revérifie son état 
+# 7.3 On revérifie son état 
 docker ps
 
-7.4 On test son accès en ligne de cmd à travers mongosh
+# 7.4 On test son accès en ligne de cmd à travers mongosh
 docker exec -it vite_et_gourmand_logs mongosh
 
-7.5 Affiche les logs
+# 7.5 Affiche les logs
 docker logs vite_et_gourmand_logs
 
 test dans mongosh :
@@ -1166,29 +1166,30 @@ api_platform:
 # 1.27 vérification des fichiers avant de redeployer sur Heroku 
 
 composer dump-autoload --optimize
-1. Vidange du cache
+
+# 2 Vidange du cache
 php bin/console cache:clear --env=prod
 $env:APP_ENV="prod"; php bin/console cache:clear --env=prod
 
-2. Vérification de la relecture des variables d'environnement
+# 1 Vérification de la relecture des variables d'environnement
 php bin/console debug:dotenv
 
-3. Vérification des variable spécifique
+# 3. Vérification des variable spécifique
 php bin/console debug:container --env-vars
 
-4. Vérification de la connection Doctrine pour MySQL
+# 4. Vérification de la connection Doctrine pour MySQL
 php bin/console doctrine:schema:validate
 
-5. Vérification que les routes sont fonctionnel est correctement chargé
+# 5. Vérification que les routes sont fonctionnel est correctement chargé
 php bin/console debug:router
 
-6. Vérification de la config CORS
+# 6. Vérification de la config CORS
 php bin/console debug:config nelmio_cors
 
-7. Vérification de la config JWT
+# 7. Vérification de la config JWT
 php bin/console debug:config lexik_jwt_authentication
 
-8. Dernière Vérification, vérification de la compilation sans érreur
+# 8. Dernière Vérification, vérification de la compilation sans érreur
 composer install --no-dev --optimize-autoloader
 
 # 1.28 Pousse vers Heroku si la 1.27 fonctionne 
@@ -1207,14 +1208,14 @@ s'ouvre est qu'il y les routes => swagger fonctionne
 
 # 1.31 Mise en place des données dans la nouvelle DDB JawsDB
 
-1. on supprime l'ancienne migration et on la recréer pour repartir propre 
+# 1. on supprime l'ancienne migration et on la recréer pour repartir propre 
 Remove-Item migrations\*.php
 ls migrations/   :  est il vide oui on continue 
 $env:APP_ENV="dev"; php bin/console make:migration
 
 # 2 On crée la base de données JawsDB
 
-2. On récupere les informations de connection pour JawsDB
+# 2. On récupere les informations de connection pour JawsDB
 
 heroku config:get JAWSDB_URL --app vite-et-gourmand-api
 résultat si tout fonctionne :
@@ -1238,7 +1239,7 @@ heroku run --app vite-et-gourmand-api -- php bin/console doctrine:schema:create
 
 # 3 Si sa bug toujours Utiliser recréer les tables avec un dump SQL
 
-3.1 Générer le SQL de toutes tes tables depuis Symfony en local
+# 3.1 Générer le SQL de toutes tes tables depuis Symfony en local
 php bin/console doctrine:schema:update --dump-sql > dump.sql
 
 METTRE A JOUR SA DDB
@@ -1248,40 +1249,39 @@ heroku run php bin/console doctrine:migrations:status --app vite-et-gourmand-api
 cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -pjuemmdoy7baw5xkg mh5niaxni11vqgfn < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
 heroku run php bin/console doctrine:schema:validate -a vite-et-gourmand-api
 
-3.2 Recréer une DB JawsDB
+# 3.2 Recréer une DB JawsDB
 heroku addons:create jawsdb:kitefin --app vite-et-gourmand-api
 
-3.3 Nouvelle DDB
+# 3.3 Nouvelle DDB
 JAWSDB_YELLOW_URL:     mysql://ue3gbfbhdm68zc42:zljkqdfbr7l21x5j@muowdopceqgxjn2b3.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/y1gtp5y6q1qq2atq
 
-3.4 Remttre à jour la ddb
+# 3.4 Remttre à jour la ddb
 heroku config:set DATABASE_URL="mysql://t5f5ela0eyr3yxrf:juemmdoy7baw5xkg@rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/mh5niaxni11vqgfn" --app vite-et-gourmand-api
 
-3.4 définir comme DB principale
+# 3.4 définir comme DB principale
 heroku config:set DATABASE_URL="$(heroku config:get JAWSDB_YELLOW_URL -a vite-et-gourmand-api)" --app vite-et-gourmand-api
 
-3.6 Nettoyer le reste (important)
+# 3.6 Nettoyer le reste (important)
 heroku config:unset JAWSDB_URL --app vite-et-gourmand-api
 heroku config:unset JAWSDB_COBALT_URL --app vite-et-gourmand-api
 
-3.7 Vérifier qu'il n'y à qu'une ddb 
+# 3.7 Vérifier qu'il n'y à qu'une ddb 
 heroku config --app vite-et-gourmand-api
 migration comme exécutée
 php bin/console doctrine:migrations:version --add --all
 
-3.8 Se connecter à JawsDB et Heroku et vider la base
+# 3.8 Se connecter à JawsDB et Heroku et vider la base
 mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
 Mot de passe : juemmdoy7baw5xkg
 
-3.9 Supprime toutes les table (ATTENTION A NE PAS FAIRE)
+# 3.9 Supprime toutes les table (ATTENTION A NE PAS FAIRE)
 DROP TABLE IF EXISTS avis, menu, plat, commande, utilisateur, contient, propose, allergene, regime, role, theme, menu_tags, suivi_commande, password_reset_token, horaire;
 
-
-3.10 Charge les tables depuis le dump SQL
+# 3.10 Charge les tables depuis le dump SQL
 Get-Content .\dump.sql | mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
 Mot de passe : juemmdoy7baw5xkg
 
-3.11 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
+# 3.11 Synchroniser Doctrine Migrations pour éviter que Symfony pense que certaines migrations n’ont pas été exécutées
 heroku run --app vite-et-gourmand-api -- php bin/console doctrine:migrations:version --add --all
 
 # 4 Vérifie que les tables existent
@@ -1300,7 +1300,8 @@ DB :  y1gtp5y6q1qq2atq
 heroku run --app vite-et-gourmand-api -- php bin/console dbal:run-sql "SHOW TABLES;"
 
 Ou en sql c'est mieux !!
-4.1 voir comment est composer une table (retourne les cles les index, les types,les colonnes)
+
+# 4.1 voir comment est composer une table (retourne les cles les index, les types,les colonnes)
 SHOW CREATE TABLE user;
 
 mysql> SHOW TABLES;
@@ -1324,7 +1325,7 @@ mysql> SHOW TABLES;
 | utilisateur                |
 +----------------------------+
 
-4.2 vérifier le contenue le table pour toutes les tables
+# 4.2 vérifier le contenue le table pour toutes les tables
 DESCRIBE allergene;
 mysql> DESCRIBE allergene;
 +--------------+-------------+------+-----+---------+----------------+
@@ -1336,7 +1337,7 @@ mysql> DESCRIBE allergene;
 2 rows in set (0.10 sec)
 
 IMPORTANT DE VERIFIER TOUTES LES TABLES AVANT D'UTILISER CETTE COMMANDE
-4.3 METTRE A JOUR LES DONNEE DE LA BASE D'APRES le fichier create_database.sql
+# 4.3 METTRE A JOUR LES DONNEE DE LA BASE D'APRES le fichier create_database.sql
 
 Sur windows :
 cmd /c ""D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe" -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -pjuemmdoy7baw5xkg mh5niaxni11vqgfn < D:\wamp64\www\vite-et-gourmand-back\docs\creation_database.sql"
@@ -1346,24 +1347,24 @@ SOURCE docs/creation_database.sql;
 
 # 5 Voir les données à l'interieur d'une base de données distante 
 
-5.1 Afficher la table de données
+# 5.1 Afficher la table de données
 mysql -h rtzsaka6vivj2zp1.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -P 3306 -u t5f5ela0eyr3yxrf -p mh5niaxni11vqgfn
 
-5.2 Comment voir les éléments d'une table 
+# 5.2 Comment voir les éléments d'une table 
 SELECT * FROM utilisateur;
 
-5.3 supprimer plusieurs element d'un coup 
+# 5.3 supprimer plusieurs element d'un coup 
 DELETE FROM utilisateur
 WHERE utilisateur_id IN (4 , 5, 6, 7,8,9,10,11,12,13,14,15,16,17,18,19);
 
-5.4 afficher les contraintes liéer à une table donnée
+# 5.4 afficher les contraintes liéer à une table donnée
 SELECT
 TABLE_NAME,
 COLUMN_NAME
 FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
 WHERE REFERENCED_TABLE_NAME = 'utilisateur';
 
-5.5 Trouve et renvoie les utilisateurs qui n'ont pas de contrainte de clefs avec commande avis et password_reset_token
+# 5.5 Trouve et renvoie les utilisateurs qui n'ont pas de contrainte de clefs avec commande avis et password_reset_token
 SELECT *
 FROM utilisateur
 WHERE utilisateur_id NOT IN (
@@ -1376,7 +1377,7 @@ AND utilisateur_id NOT IN (
     SELECT utilisateur_id FROM commande
 );
 
-5.6 supprime les utilisateurs qui n'ont pas de contrainte sauf les utilisateurs id
+# 5.6 supprime les utilisateurs qui n'ont pas de contrainte sauf les utilisateurs id
 DELETE FROM utilisateur
 WHERE utilisateur_id NOT IN (
     SELECT utilisateur_id FROM password_reset_token
@@ -1389,32 +1390,32 @@ AND utilisateur_id NOT IN (
 )
 AND utilisateur_id NOT IN (1, 2, 12, 23);
 
-5.7 Comment modifier un code utilisateur
+# 5.7 Comment modifier un code utilisateur
 UPDATE utilisateur
 SET password = '$2y$13$wjlZHiTr40IOymvkXskeCeZ.3hJGVM2acU3lsL9fbniwGo4GAZNX.';
 
-5.8 Comment cibler les utilisateurs qui ont des commandes
+# 5.8 Comment cibler les utilisateurs qui ont des commandes
 SELECT u.*
 FROM utilisateur u
 INNER JOIN commande c ON u.utilisateur_id = c.utilisateur_id
 GROUP BY u.utilisateur_id;
 
-5.9 Réinitialiser l’auto-increment (seulement si la table est vide)
+# 5.9 Réinitialiser l’auto-increment (seulement si la table est vide)
 ALTER TABLE utilisateur AUTO_INCREMENT = 1;
 
-5.10 Vérifier que les plats son avec ou sans description
+# 5.10 Vérifier que les plats son avec ou sans description
 
 SELECT plat_id, titre_plat, description_plat
 FROM plat
 
-5.11 Ajouter une colonne à une table entière ciblé
+# 5.11 Ajouter une colonne à une table entière ciblé
 ALTER TABLE plat
 ADD COLUMN description_plat VARCHAR(250);
 
-5.12 Verifier la mise à jour d'une table
+# 5.12 Verifier la mise à jour d'une table
 SELECT plat_id, titre_plat, description_plat FROM plat LIMIT 10;
 
-5.13 Mettre à jour une colonne d'une table pointé par son id 
+# 5.13 Mettre à jour une colonne d'une table pointé par son id 
 UPDATE plat SET description_plat = 'Magret de canard rôti accompagné de cèpes.' WHERE plat_id = 2;
 
 # 6 Importation des données dans la DDB  
@@ -1423,16 +1424,16 @@ J'ai créer un fichier dans le docs pour remplir la base de données
 
 Fichier présent à l'adresse : docs/creation_database.sql 
 
-6.1 vérifie que le fichier est bien présent 
+# 6.1 vérifie que le fichier est bien présent 
 
 dir D:\wamp64\www\vite-et-gourmand-back\docs\*.sql
 
-6.2 Lance la commande suivante pour l'insertion des données dans la base de donnée 
+# 6.2 Lance la commande suivante pour l'insertion des données dans la base de donnée 
 
 cd D:\wamp64\www\vite-et-gourmand-back\docs
 cmd /c "D:\wamp64\bin\mysql\mysql8.4.7\bin\mysql.exe -h l6slz5o3eduzatkw.cbetxkdyhwsb.us-east-1.rds.amazonaws.com -u z6kfic0nl9ubmba9 -plgcy2tt6lhnbg7a8 utp2g4edmtrisl82 < creation_database.sql"
 
-6.3 Vérifications des données via appel des routes 
+# 6.3 Vérifications des données via appel des routes 
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/menus
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/horaires
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/plats
@@ -1442,17 +1443,17 @@ https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/allergenes
 https://vite-et-gourmand-api-2b0eeb54e8d5.herokuapp.com/api/avis
 
 
-6.4 Résolution du probleme de JWT  Exception Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTEncodeFailureException
+# 6.4 Résolution du probleme de JWT  Exception Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTEncodeFailureException
 
 heroku config:set JWT_PASSPHRASE=vite_et_gourmand_secret --app vite-et-gourmand-api
 
 heroku run --app vite-et-gourmand-api -- ls config/jwt
 
-6.5 AFFICHE LE LOG
+# 6.5 AFFICHE LE LOG
 heroku logs --num 100 --app vite-et-gourmand-api
 heroku logs --tail --app vite-et-gourmand-api
 
-6.6 changement de mailbox SendPit :
+# 6.6 changement de mailbox SendPit :
 
 MAIL_HOST: smtp.sendpit.com
 MAIL_PORT: 2525
@@ -1479,21 +1480,21 @@ Vérifier la configuration du mail
 # 7 Mise en place de cloudinary pour la gestion des images
 https://console.cloudinary.com/app/c-d5bfca4e46946f1728ea3eff5264e4/settings/upload/presets
 
-7.1 Création du service CloudinaryService.php
+# 7.1 Création du service CloudinaryService.php
 
-7.2 Installation des dépendances Cloudinary
+# 7.2 Installation des dépendances Cloudinary
 composer require cloudinary/cloudinary_php
 
-7.3 Mise a jour de config/services.yaml
+# 7.3 Mise a jour de config/services.yaml
 services:
     App\Service\CloudinaryService:
         arguments:
             $cloudinaryUrl: '%env(CLOUDINARY_URL)%'
 
-7.4 Mise a jour de .env
+# 7.4 Mise a jour de .env
 CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg@drdup0seu
 
-7.5 Mise a des config var heroku
+# 7.5 Mise a des config var heroku
 heroku config:set CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg4MLIm6M_thFfk@drdup0seu --app vite-et-gourmand-api
 heroku restart --app vite-et-gourmand-api
