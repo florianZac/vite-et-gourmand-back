@@ -1203,7 +1203,7 @@ final class EmployeController extends AbstractController
     $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
 
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
-    $existant = $themeRepository->findOneBy(['tag' => $data['libelle']]);
+    $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
     if ($existant) {
       return $this->json(['status' => 'Erreur', 'message' => 'Ce thème existe déjà'], 409);
     }
@@ -1259,7 +1259,7 @@ final class EmployeController extends AbstractController
     // Étape 5 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
       $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
-      $existant = $themeRepository->findOneBy(['tag' => $data['libelle']]);
+      $existant = $themeRepository->findOneBy(['libelle' => $data['libelle']]);
       if ($existant && $existant->getId() !== $theme->getId()) {
           return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
       }
@@ -1341,7 +1341,7 @@ final class EmployeController extends AbstractController
     $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
     
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
-    $existant = $regimeRepository->findOneBy(['tag' => $data['libelle']]);
+    $existant = $regimeRepository->findOneBy(['libelle' => $data['libelle']]);
     if ($existant) {
       return $this->json(['status' => 'Erreur', 'message' => 'Ce régime existe déjà'], 409);
     }
@@ -1396,7 +1396,7 @@ final class EmployeController extends AbstractController
     // Étape 5 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
       $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
-      $existant = $regimeRepository->findOneBy(['tag' => $data['libelle']]);
+      $existant = $regimeRepository->findOneBy(['libelle' => $data['libelle']]);
       if ($existant && $existant->getId() !== $regime->getId()) {
         return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
       }
@@ -1473,7 +1473,7 @@ final class EmployeController extends AbstractController
     $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
 
     // Étape 4 - Vérifier que le libellé n'existe pas déjà
-    $existant = $allergeneRepository->findOneBy(['tag' => $data['libelle']]);
+    $existant = $allergeneRepository->findOneBy(['libelle' => $data['libelle']]);
     if ($existant) {
       return $this->json(['status' => 'Erreur', 'message' => 'Cet allergène existe déjà'], 409);
     }
@@ -1523,7 +1523,7 @@ final class EmployeController extends AbstractController
     // Étape 4 - Mettre à jour le libellé si fourni
     if (isset($data['libelle'])) {
       $data['libelle'] = $sanitizer->sanitize($data['libelle'], 'texte');
-      $existant = $allergeneRepository->findOneBy(['tag' => $data['libelle']]);
+      $existant = $allergeneRepository->findOneBy(['libelle' => $data['libelle']]);
       if ($existant && $existant->getId() !== $allergene->getId()) {
           return $this->json(['status' => 'Erreur', 'message' => 'Ce libellé est déjà utilisé'], 409);
       }

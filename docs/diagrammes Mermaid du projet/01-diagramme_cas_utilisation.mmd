@@ -1,152 +1,195 @@
----
-config:
-  layout: elk
-  %% https://mermaid.ai/open-source/syntax/sequenceDiagram.html
----
 flowchart TB
-    %% Acteurs
-    Visiteur((Visiteur))
-    Client((Client))
-    Employe((Employé))
-    Admin((Administrateur))
 
+%% Acteurs
+Visiteur((Visiteur))
+Client((Client))
+Employe((Employé))
+Admin((Administrateur))
 
- %% Authentification
- subgraph Authentification[" "]
+%% Authentification
+subgraph Authentification[" "]
     direction TB
-        UC13["Se connecter"]
-        UC12["Créer un compte client"]
-  end
+    UC13["Se connecter"]
+    UC12["Créer un compte client"]
+end
 
- %% Filtres visiteurs
- subgraph Filtres["Filtres des menus"]
+%% Filtres visiteurs
+subgraph Filtres["Filtres des menus"]
     direction TB
-        UC5["Rechercher un menu par mots clefs"]
-        UC6["Filtrer les menus par thème"]
-        UC7["Filtrer les menus par régime"]
-        UC8["Filtrer les menus prix max / personne"]
-        UC9["Filtrer par nombre de personnes"]
-        UC10["Réinitialiser les filtres"]
-  end
+    UC5["Rechercher un menu par mots clefs"]
+    UC6["Filtrer les menus par thème"]
+    UC7["Filtrer les menus par régime"]
+    UC8["Filtrer les menus prix max / personne"]
+    UC9["Filtrer par nombre de personnes"]
+    UC10["Réinitialiser les filtres"]
+end
 
- %% Cas Visiteur
- Visiteur(("Visiteur")) --> UC1["Consulter la page d'accueil"] & UC2["Consulter avis clients validés"] & UC3["Consulter moyennes des avis clients"] & UC4["Consulter tous les menus"] & UC11["Consulter le détail d'un menu"] & UC14["Réinitialiser son mot de passe"] & UC15["Contacter l'entreprise"] & UC16["Consulter mentions légales et CGV"] & UC17["Consulter horaires"] & UC12 & UC13 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10
- UC12 --> UC13
+%% Cas Visiteur
+Visiteur --> UC1["Consulter la page d'accueil"]
+Visiteur --> UC2["Consulter avis clients validés"]
+Visiteur --> UC3["Consulter moyennes des avis clients"]
+Visiteur --> UC4["Consulter tous les menus"]
+Visiteur --> UC11["Consulter le détail d'un menu"]
+Visiteur --> UC14["Réinitialiser son mot de passe"]
+Visiteur --> UC15["Contacter l'entreprise"]
+Visiteur --> UC16["Consulter mentions légales et CGV"]
+Visiteur --> UC17["Consulter horaires"]
+Visiteur --> UC12
+Visiteur --> UC13
+Visiteur --> UC5
+Visiteur --> UC6
+Visiteur --> UC7
+Visiteur --> UC8
+Visiteur --> UC9
+Visiteur --> UC10
 
- %% Extensions des filtres
- UC5 -. extend .-> UC4
- UC6 -. extend .-> UC4
- UC7 -. extend .-> UC4
- UC8 -. extend .-> UC4
- UC9 -. extend .-> UC4
- UC10 -. extend .-> UC4
+UC12 --> UC13
 
- %% Client & Employé
- Client(("Client")) -. hérite .- Visiteur
- Client --> UC18["Commander un menu"] & UC19["Consulter ses commandes"] & UC20["Modifier informations personnelles"] & UC21["Modifier une commande"] & UC22["Annuler une commande"] & UC23["Suivre une commande"] & UC24["Donner un avis"]
+%% Extensions des filtres
+UC5 -.->|extend| UC4
+UC6 -.->|extend| UC4
+UC7 -.->|extend| UC4
+UC8 -.->|extend| UC4
+UC9 -.->|extend| UC4
+UC10 -.->|extend| UC4
 
- Employe(("Employé")) -. hérite .-> Client
+%% Héritage
+Client -.->|hérite| Visiteur
+Employe -.->|hérite| Client
+Admin -.->|hérite| Employe
 
- %% Cas Employé
- subgraph Employe_CU["Tâches de l'employé"]
-   direction TB
-     UC25["Consulter toutes les commandes"]
-     UC26["Rechercher une commande"]
-     UC27["Modifier statut commande"]
-     UC28["Annuler commande avec motif"]
-     UC29["Afficher état prêt de matériel pour toutes les commandes"]
-     UC30["Filtrer par le statut des commandes"]
-     UC31["Valider / Refuser avis clients"]
-     UC32["Gérer les menus (création, modification, suppression)"]
-     UC33["Rechercher un menu"]
-     UC34["Gérer les thèmes (création, modification, suppression)"]
-     UC35["Gérer les régimes (création, modification, suppression)"]
-     UC36["Gérer les allergènes (création, modification, suppression)"]
- end
- Employe --> UC25 & UC26 & UC27 & UC28 & UC29 & UC30 & UC31 & UC32 & UC33 & UC34 & UC35 & UC36
+%% Cas Client
+Client --> UC18["Commander un menu"]
+Client --> UC19["Consulter ses commandes"]
+Client --> UC20["Modifier informations personnelles"]
+Client --> UC21["Modifier une commande"]
+Client --> UC22["Annuler une commande"]
+Client --> UC23["Suivre une commande"]
+Client --> UC24["Donner un avis"]
 
- %% Tous nécessitent la connexion
- UC25 -. include .-> UC13
- UC26 -. include .-> UC13
- UC27 -. include .-> UC13
- UC28 -. include .-> UC13
- UC29 -. include .-> UC13
- UC30 -. include .-> UC13
- UC31 -. include .-> UC13
- UC32 -. include .-> UC13
- UC33 -. include .-> UC13
- UC34 -. include .-> UC13
- UC35 -. include .-> UC13
- UC36 -. include .-> UC13
+%% Cas Employé
+subgraph Employe_CU["Tâches de l'employé"]
+    direction TB
+    UC25["Consulter toutes les commandes"]
+    UC26["Rechercher une commande"]
+    UC27["Modifier statut commande"]
+    UC28["Annuler commande avec motif"]
+    UC29["Afficher état matériel"]
+    UC30["Filtrer par statut"]
+    UC31["Valider / Refuser avis"]
+    UC32["Gérer les menus"]
+    UC33["Rechercher un menu"]
+    UC34["Gérer les thèmes"]
+    UC35["Gérer les régimes"]
+    UC36["Gérer les allergènes"]
+end
 
- %% Administrateur
- Admin(("Administrateur")) -. hérite .-> Employe
+Employe --> UC25
+Employe --> UC26
+Employe --> UC27
+Employe --> UC28
+Employe --> UC29
+Employe --> UC30
+Employe --> UC31
+Employe --> UC32
+Employe --> UC33
+Employe --> UC34
+Employe --> UC35
+Employe --> UC36
 
- %% Cas Administrateur
- subgraph Admin_CU["Tâches de l'administrateur"]
-   direction TB
-     UC37["Consulter statistiques"]
-     UC38["Afficher dans statistiques le chiffre d'affaires total"]
-     UC39["Afficher dans statistiques les commandes totales"]
-     UC40["Afficher dans statistiques le revenu moyen par commande"]
-     UC41["Afficher dans statistiques le total remboursé aux clients"]
-     UC42["Afficher dans statistiques le Top 3 des menus les plus commandés"]
-     UC43["Afficher dans statistiques les statistiques Clients"]
-     UC44["Afficher dans statistiques les statistiques concernant les avis"]
-     UC45["Afficher dans statistiques la répartition des commandes par statut (graphique)"]
-     UC46["Afficher dans statistiques le volume de ventes par mois"]
-     UC47["Afficher dans statistiques Commandes & CA par menu"]
-     UC48["Créer compte employé"]
-     UC49["Créer mot de passe temporaire pour un compte employé"]
-     UC50["Désactiver / Réactiver un compte employé"]
-     UC51["Consulter la liste des comptes employé"]
-     UC52["Consulter la liste de tous les Clients"]
-     UC53["Créer, modifier, désactiver, réactiver ou supprimer des Clients"]
-     UC54["Supprimer un avis client"]
- end
- Admin --> UC37 & UC38 & UC39 & UC40 & UC41 & UC42 & UC43 & UC44 & UC45 & UC46 & UC47 & UC48 & UC49 & UC50 & UC51 & UC52 & UC53 & UC54
+%% Include connexion (Employé)
+UC25 -.->|include| UC13
+UC26 -.->|include| UC13
+UC27 -.->|include| UC13
+UC28 -.->|include| UC13
+UC29 -.->|include| UC13
+UC30 -.->|include| UC13
+UC31 -.->|include| UC13
+UC32 -.->|include| UC13
+UC33 -.->|include| UC13
+UC34 -.->|include| UC13
+UC35 -.->|include| UC13
+UC36 -.->|include| UC13
 
- %% Tous nécessitent connexion
- UC37 -. include .-> UC13
- UC38 -. include .-> UC13
- UC39 -. include .-> UC13
- UC40 -. include .-> UC13
- UC41 -. include .-> UC13
- UC42 -. include .-> UC13
- UC43 -. include .-> UC13
- UC44 -. include .-> UC13
- UC45 -. include .-> UC13
- UC46 -. include .-> UC13
- UC47 -. include .-> UC13
- UC48 -. include .-> UC13
- UC49 -. include .-> UC13
- UC50 -. include .-> UC13
- UC51 -. include .-> UC13
- UC52 -. include .-> UC13
- UC53 -. include .-> UC13
- UC54 -. include .-> UC13
+%% Cas Administrateur
+subgraph Admin_CU["Tâches de l'administrateur"]
+    direction TB
+    UC37["Consulter statistiques"]
+    UC38["CA total"]
+    UC39["Commandes totales"]
+    UC40["Revenu moyen"]
+    UC41["Total remboursé"]
+    UC42["Top 3 menus"]
+    UC43["Stats clients"]
+    UC44["Stats avis"]
+    UC45["Répartition commandes"]
+    UC46["Ventes mensuelles"]
+    UC47["CA par menu"]
+    UC48["Créer employé"]
+    UC49["MDP temporaire"]
+    UC50["Activer/Désactiver employé"]
+    UC51["Liste employés"]
+    UC52["Liste clients"]
+    UC53["Gérer clients"]
+    UC54["Supprimer avis"]
+end
 
- %% Autres liens Client
- UC18 -. include .-> UC13
- UC21 -. extend .-> UC19
- UC22 -. extend .-> UC19
- UC23 -. extend .-> UC19
- UC24 -. extend .-> UC19
+Admin --> UC37
+Admin --> UC38
+Admin --> UC39
+Admin --> UC40
+Admin --> UC41
+Admin --> UC42
+Admin --> UC43
+Admin --> UC44
+Admin --> UC45
+Admin --> UC46
+Admin --> UC47
+Admin --> UC48
+Admin --> UC49
+Admin --> UC50
+Admin --> UC51
+Admin --> UC52
+Admin --> UC53
+Admin --> UC54
 
- %% Styles
- classDef acteur fill:#1e293b,stroke:#0f172a,color:#fff
- classDef ucVisiteur fill:#2563eb,stroke:#1e40af,color:#fff
- classDef ucClient fill:#16a34a,stroke:#15803d,color:#fff
- classDef ucEmploye fill:#f59e0b,stroke:#b45309,color:#fff
- classDef ucAdmin fill:#dc2626,stroke:#991b1b,color:#fff
+%% Include connexion (Admin)
+UC37 -.->|include| UC13
+UC38 -.->|include| UC13
+UC39 -.->|include| UC13
+UC40 -.->|include| UC13
+UC41 -.->|include| UC13
+UC42 -.->|include| UC13
+UC43 -.->|include| UC13
+UC44 -.->|include| UC13
+UC45 -.->|include| UC13
+UC46 -.->|include| UC13
+UC47 -.->|include| UC13
+UC48 -.->|include| UC13
+UC49 -.->|include| UC13
+UC50 -.->|include| UC13
+UC51 -.->|include| UC13
+UC52 -.->|include| UC13
+UC53 -.->|include| UC13
+UC54 -.->|include| UC13
 
- class Visiteur acteur
- class Client acteur
- class Employe acteur
- class Admin acteur
+%% Relations Client
+UC18 -.->|include| UC13
+UC21 -.->|extend| UC19
+UC22 -.->|extend| UC19
+UC23 -.->|extend| UC19
+UC24 -.->|extend| UC19
 
- %% Association entre couleurs et cas
- class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 ucVisiteur
- class UC18,UC19,UC20,UC21,UC22,UC23,UC24 ucClient
- class UC25,UC26,UC27,UC28,UC29,UC30,UC31,UC32,UC33,UC34,UC35,UC36 ucEmploye
- class UC37,UC38,UC39,UC40,UC41,UC42,UC43,UC44,UC45,UC46,UC47,UC48,UC49,UC50,UC51,UC52,UC53,UC54 ucAdmin
+%% Styles
+classDef acteur fill:#1e293b,stroke:#0f172a,color:#fff
+classDef ucVisiteur fill:#2563eb,stroke:#1e40af,color:#fff
+classDef ucClient fill:#16a34a,stroke:#15803d,color:#fff
+classDef ucEmploye fill:#f59e0b,stroke:#b45309,color:#fff
+classDef ucAdmin fill:#dc2626,stroke:#991b1b,color:#fff
+
+class Visiteur,Client,Employe,Admin acteur
+
+class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17 ucVisiteur
+class UC18,UC19,UC20,UC21,UC22,UC23,UC24 ucClient
+class UC25,UC26,UC27,UC28,UC29,UC30,UC31,UC32,UC33,UC34,UC35,UC36 ucEmploye
+class UC37,UC38,UC39,UC40,UC41,UC42,UC43,UC44,UC45,UC46,UC47,UC48,UC49,UC50,UC51,UC52,UC53,UC54 ucAdmin
