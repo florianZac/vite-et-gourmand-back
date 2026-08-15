@@ -1,0 +1,68 @@
+services:
+  database:
+    image: mysql:8.4
+    container_name: vite_et_gourmand_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: vite_et_gourmand
+      MYSQL_USER: florian
+      MYSQL_PASSWORD: "123456"
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: vite_et_gourmand_back
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: "mysql://florian:123456@database:3306/vite_et_gourmand?serverVersion=8.4.7&charset=utf8mb4"
+    ports:
+      - "8000:8000"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../vite-et-gourmand-front
+      dockerfile: Dockerfile
+    container_name: vite_et_gourmand_front
+    restart: unless-stopped
+    volumes:
+      - ../vite-et-gourmand-front:/app
+      - front_node_modules:/app/node_modules
+    environment:
+      BACKEND_URL: "http://backend:8000"
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: vite_et_gourmand_pma
+    restart: unless-stopped
+    environment:
+      PMA_HOST: database
+    ports:
+      - "8080:80"
+    depends_on:
+      - database
+
+volumes:
+  db_data:
+  front_node_modules:
