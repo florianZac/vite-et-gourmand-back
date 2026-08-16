@@ -1,0 +1,30 @@
+sequenceDiagram
+    participant U as Utilisateur
+    participant AC as AuthController
+    participant CSL as CheckStatutListener
+    participant LSH as LoginSuccessHandler
+    participant LFH as LoginFailureHandler
+    participant MDB as MongoDB
+
+    Note over U,MDB: Login (POST /api/login)
+
+    U->>AC: POST /api/login (JSON)
+
+    AC->>CSL: CheckPassportEvent
+
+    alt Compte invalide (inactif, bloqué, etc.)
+        CSL-->>AC: Erreur de statut
+        AC-->>U: HTTP 401 (Compte inactif)
+    else Compte valide
+        CSL-->>AC: OK
+
+        alt Identifiants valides
+            AC->>LSH: onAuthenticationSuccess()
+            LSH->>MDB: log("connexion")
+            LSH-->>U: HTTP 200 + JWT + JSON (email, prénom, rôle)
+
+        else Identifiants invalides
+            AC->>LFH: onAuthenticationFailure()
+            LFH-->>U: HTTP 401 (Identifiants incorrects)
+        end
+    end

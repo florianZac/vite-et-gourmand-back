@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant U as Utilisateur
+    participant P as Page Menus
+    participant CTX as AppContext
+    participant D as mockData
+
+    U->>P: Accede au /menus
+    P->>CTX: getMenus()
+    CTX->>D: Charge tous les menus
+    D-->>P: Liste des menus
+    P-->>U: Affiche grille de menus
+
+    U->>P: Saisit recherche "poulet"
+    P->>P: Filtre par Titre/description
+    P-->>U: Menus filtres affiches
+
+    U->>P: Selectionne theme "Mediterraneen"
+    P->>P: Filtre par theme
+    P-->>U: Menus filtres
+
+    U->>P: Selectionne regime "Vegetarien"
+    P->>P: Filtre par regime
+    P-->>U: Menus filtres
+
+    U->>P: Selectionne Prix max / personne
+    P->>P: Filtre par Prix max / personne
+    P-->>U: Menus filtres
+
+    U->>P: Selectionne Nb de personnes
+    P->>P: Filtre par Nb de personnes
+    P-->>U: Menus filtres si vide tout les menus
+
+    U->>P: Clique sur un menu
+    P->>P: Navigate /menus/:id
+    P->>CTX: getMenuById(id)
+    CTX->>D: Cherche menu par ID
+    D-->>P: Details du menu
+    P-->>U: Affiche page detail

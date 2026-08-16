@@ -1,0 +1,33 @@
+sequenceDiagram
+    participant A as Administrateur
+    participant P as Page Admin - Onglet Employes
+    participant CTX as AppContext
+    participant D as mockData
+
+    Note over A,P: Lister les employes
+    A->>P: Accede a onglet "Employes"
+    P->>D: Charge les utilisateurs avec role=employe
+    D-->>P: Liste des employes
+    P-->>A: Affiche tableau (nom, email, statut actif/inactif)
+
+    Note over A,P: Creer un compte employe
+    A->>P: Remplit le formulaire (email pro, mot de passe temporaire)
+    P->>P: Validation email + mot de passe (10 car, maj, min, chiffre, special)
+    A->>P: Clique "Creer le compte"
+    P->>CTX: addEmployee(email, tempPassword)
+    CTX->>D: Insere utilisateur avec role=employe
+    CTX->>CTX: Envoi email avec mot de passe temporaire
+    D-->>CTX: Employe cree
+    P-->>A: Toast "Compte employe cree, email envoye"
+
+    Note over A,P: Desactiver un employe
+    A->>P: Clique "Desactiver" sur un employe actif
+    P->>CTX: toggleEmployee(id, active=false)
+    CTX->>D: Marque le compte comme inactif
+    P-->>A: Toast "Employe desactive"
+
+    Note over A,P: Reactiver un employe
+    A->>P: Clique "Reactiver" sur un employe inactif
+    P->>CTX: toggleEmployee(id, active=true)
+    CTX->>D: Marque le compte comme actif
+    P-->>A: Toast "Employe reactive"

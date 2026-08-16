@@ -1,0 +1,31 @@
+sequenceDiagram
+    participant E as Employe
+    participant P as Page Employe
+    participant CTX as AppContext
+    participant D as mockData
+
+    E->>P: Accede a /employe
+    P->>CTX: Verifie role = employe
+    P->>CTX: getAllOrders()
+    CTX->>D: Toutes les commandes
+    D-->>P: Liste commandes
+    P-->>E: Affiche commandes par statut
+
+    Note over E,P: Validation commande
+    E->>P: Clique "Valider" sur commande en-attente
+    P->>CTX: updateOrderStatus(id, "en-preparation")
+    CTX->>D: Met a jour statut
+    D-->>P: Commande mise a jour
+    P-->>E: Toast "Commande en preparation"
+
+    Note over E,P: Marquer comme livree
+    E->>P: Clique "Livree" sur commande en-preparation
+    P->>CTX: updateOrderStatus(id, "livree")
+    CTX->>D: Met a jour statut
+    P-->>E: Toast "Commande livree"
+
+    Note over E,P: Terminer commande
+    E->>P: Clique "Terminer"
+    P->>CTX: updateOrderStatus(id, "terminee")
+    CTX->>D: Met a jour statut
+    P-->>E: Toast "Commande terminee"

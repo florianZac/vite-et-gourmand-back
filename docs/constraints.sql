@@ -72,3 +72,10 @@ ADD CONSTRAINT `fk_commande_menu`
 FOREIGN KEY (menu_id) REFERENCES menu(menu_id)
 ON DELETE RESTRICT
 ON UPDATE CASCADE;
+
+-- Ajout de nouvelles colonnes pour la gestion des annulations de commandes et la gestion des remboursements
+-- nul autorisé pour le cas pas encore annulée ou pas encore remboursée.
+-- du coup lors de la création d'une commande ont peut s'en passer et ne pas les remplir.
+ALTER TABLE commande 
+ADD COLUMN motif_annulation VARCHAR(255) NULL,
+ADD COLUMN montant_rembourse DOUBLE NULL;

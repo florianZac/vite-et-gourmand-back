@@ -1,0 +1,46 @@
+{% extends 'emails/base_email.html.twig' %}
+{% block content %}
+    <h2>Confirmation de votre commande</h2>
+    <p>Bonjour {{ prenom }},</p>
+    <p>
+        Nous avons bien enregistré votre commande <strong>{{ numero_commande }}</strong>
+        prévue le <strong>{{ date_prestation }}</strong>.
+    </p>
+    <p>Voici le récapitulatif de votre commande :</p>
+    <table style="width:100%; border-collapse:collapse; margin: 20px 0;">
+        <tr style="background:#f8f8f8;">
+            <td style="padding:10px; border:1px solid #ddd;"><strong>Prix du menu</strong></td>
+            <td style="padding:10px; border:1px solid #ddd;">{{ prix_menu }} €</td>
+        </tr>
+        <tr>
+            <td style="padding:10px; border:1px solid #ddd;"><strong>Frais de livraison</strong></td>
+            <td style="padding:10px; border:1px solid #ddd;">{{ prix_livraison }} €</td>
+        </tr>
+        <tr style="background:#f8f8f8;">
+            <td style="padding:10px; border:1px solid #ddd;"><strong>Total</strong></td>
+            <td style="padding:10px; border:1px solid #ddd;">{{ (prix_menu + prix_livraison) }} €</td>
+        </tr>
+        <tr>
+            <td style="padding:10px; border:1px solid #ddd;"><strong>Acompte à régler</strong></td>
+            <td style="padding:10px; border:1px solid #ddd; color:#27ae60;"><strong>{{ montant_acompte }} €</strong></td>
+        </tr>
+        <tr style="background:#f8f8f8;">
+            <td style="padding:10px; border:1px solid #ddd;"><strong>Ville de livraison</strong></td>
+            <td style="padding:10px; border:1px solid #ddd;">{{ ville_livraison }}</td>
+        </tr>
+    </table>
+    <p style="color: #7f8c8d;">
+        Votre commande est actuellement en attente de validation par notre équipe.
+        Vous recevrez un email dès qu'elle sera acceptée.
+    </p>
+    <p>
+        Pour toute question, n'hésitez pas à nous contacter :
+    </p>
+    <p>
+        <a href="mailto:contact@vite-et-gourmand.fr?subject=Commande%20{{ numero_commande }}"
+        style="display:inline-block; padding:10px 20px; background:#27ae60; color:white; text-decoration:none; border-radius:5px;">
+        Contacter la société
+        </a>
+    </p>
+    <hr>
+{% endblock %}

@@ -27,12 +27,13 @@ CREATE TABLE `menu` (
 
 CREATE TABLE `utilisateur` (
   `utilisateur_id` INT NOT NULL AUTO_INCREMENT,
-  `email` VARCHAR(255) NOT NULL,    -- 50 n'est pas assez pour stocker une adresse email, passage à 255
-  `password` VARCHAR(255) NOT NULL, -- 50 n'est pas assez pour stocker un mot de passe hashé bcrypt, passage à 255
+  `nom` VARCHAR(50) NOT NULL,
   `prenom` VARCHAR(50) NOT NULL,
   `telephone` VARCHAR(50) NOT NULL,
-  `ville` VARCHAR(50) NOT NULL,
+  `email` VARCHAR(255) NOT NULL,    -- 50 n'est pas assez pour stocker une adresse email, passage à 255
+  `password` VARCHAR(255) NOT NULL, -- 50 n'est pas assez pour stocker un mot de passe hashé bcrypt, passage à 255
   `pays` VARCHAR(50) NOT NULL,
+  `ville` VARCHAR(50) NOT NULL,
   `adresse_postale` VARCHAR(50) NOT NULL,
   PRIMARY KEY (`utilisateur_id`)
 );
@@ -111,3 +112,68 @@ CREATE TABLE `contient` (
     FOREIGN KEY (allergene_id) REFERENCES allergene(allergene_id) ON DELETE CASCADE
 );
 
+-- Modification énnoncer 
+-- Liaison entre un commande et suivis de commande
+-- je souhaite réaliser un suivis de commande pour chaque commande afin de pouvoir suivre l'évolution de la commande (en préparation, en livraison, livré etc...)
+-- une commande peut avoir un ou plusieurs suivis de commande (ex: en préparation, en livraison, livré etc...)
+-- cas Une commande peut avoir 1 ou plusieurs suivis 1,n
+-- un suivis de commande appartient à une seule commande
+-- Un suivi appartient à exactement une commande 1,1
+
+-- cas Commande 1,n --- appartient --- 1,1 suivis
+
+-- Création de la table suivi_commande
+CREATE TABLE suivi_commande (
+    suivi_id        INT          NOT NULL AUTO_INCREMENT,
+    statut          VARCHAR(50)  NOT NULL,
+    date_statut     DATETIME     NOT NULL,
+    commande_id     INT          NOT NULL,  -- clé étrangère vers commande
+
+    -- Clé primaire
+    PRIMARY KEY (suivi_id),
+
+    -- Clé étrangère vers commande
+    CONSTRAINT fk_suivi_commande 
+        FOREIGN KEY (commande_id) 
+        REFERENCES commande(commande_id)
+        ON DELETE CASCADE  -- si la commande est supprimée, ses suivis sont supprimés aussi
+
+--Affiche commande avec ces noms présent en bdd
+SELECT
+    commande_id,
+    numero_commande,
+    date_commande,
+    date_prestation,
+    statut,
+    utilisateur_id,
+    menu_id,
+    motif_annulation,
+    montant_rembourse,
+    pret_materiel,
+    heure_livraison,
+    prix_menu,
+    nombre_personne,
+    prix_livraison,
+    montant_acompte,
+    adresse_livraison,
+    ville_livraison,
+    distanceKm,
+    prix_total
+FROM commande
+ORDER BY commande_id;
+
+--Met à jour la ligne prix menu + prix livraison pointant des id particulier
+UPDATE commande
+SET 
+    prix_total = prix_menu + prix_livraison,
+    distanceKm = CASE commande_id
+        WHEN 1 THEN 12
+        WHEN 2 THEN 15
+        WHEN 3 THEN 20
+        WHEN 4 THEN 25
+        WHEN 5 THEN 30
+        WHEN 6 THEN 10
+        WHEN 7 THEN 36
+        ELSE distanceKm
+    END
+WHERE commande_id IN (1,2,3,4,5,6,7);

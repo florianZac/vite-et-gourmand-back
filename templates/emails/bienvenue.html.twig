@@ -1,0 +1,25 @@
+{% extends 'emails/base_email.html.twig' %}
+
+{% block content %}
+
+    <h2>Bienvenue chez Vite & Gourmand</h2>
+    <p>Bonjour <strong>{{ prenom }}</strong>,</p>
+
+    <p>Nous sommes heureux de vous accueillir au sein de notre communauté Vite & Gourmand !</p>
+
+    <div class="highlight">
+        <p>Votre compte a été créé avec succès. Vous pouvez maintenant :</p>
+        <ul>
+            <li>Consulter nos menus exclusifs</li>
+            <li>Passer vos commandes facilement</li>
+            <li>Suivre l'historique de vos commandes</li>
+            <li>Laisser des avis sur nos prestations</li>
+        </ul>
+    </div>
+
+    <p><strong>À propos de nous :</strong></p>
+
+    <p>Depuis 25 ans, Julie et José proposent leurs prestations culinaires pour tous vos événements.
+    Nos menus sont en constante évolution pour vous offrir le meilleur de la gastronomie bordelaise.</p>
+
+{% endblock %}

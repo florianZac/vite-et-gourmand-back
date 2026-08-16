@@ -1,77 +1,1493 @@
 route à tester 
 
-PUBLIC_ACCESS
+PUBLIC_ACCESS :
+
 test 1.1 ->  GET    /api/menus | voir fichier MenuController.php fonction index()
-test 1.2 ->  GET    /api/menus/{id}
-test 1.3 ->  GET    /api/horaires
-test 1.4 ->  POST   /api/contact
-test 1.5 ->  POST   /api/register
-test 1.6 ->  POST   /api/login
-
-ROLE_CLIENT
-GET    /api/client/profil
-PUT    /api/client/profil
-GET    /api/client/commandes
-DELETE /api/client/commandes/{id}
-POST   /api/client/avis
-
-ROLE_EMPLOYE
-GET    /api/employe/commandes
-GET    /api/employe/commandes/{id}
-PUT    /api/employe/commandes/{id}
-DELETE /api/employe/commandes/{id}
-PUT    /api/employe/avis/{id}
-
+le visiteur non authentifié peut lister de tous les menus .
+test 1.2 ->  GET    /api/menus/{id} | voir fichier MenuController.php fonction show()
+le visiteur non authentifié peut voir les détails d'un menu par son id .
+test 1.3 ->  GET    /api/horaires | voir fichier HoraireController.php fonction indexHoraire()
+le visiteur non authentifié peut lister les horaires d'ouverture du restaurant.
+test 1.4 ->  GET    /api/horaires/{id} | voir fichier HoraireController.php fonction showHoraire()
+le visiteur non authentifié peut voir les détails d'un horaire d'ouverture du restaurant par son id .
+teste 1.5 ->  GET   /api/horairesIndexTable/{value} | voir fichier HoraireController.php fonction indexHoraireTable()
+le visiteur non authentifié peut lister les horaires d'ouverture du restaurant à partir d'une valeur d'index de table.
+test 1.6 ->  POST   /api/contact  | voir fichier ContactController.php fonction contact(),
+                                   le template d'email dans templates/emails/contact.html.twig et base_email.html.twig 
+                                   ainsi que le service MailerService.php fonction sendContactEmail() 
+                                   qui utilise Twig pour générer le contenu de l'email à partir du template
+le visiteur non authentifié peut envoyer un message de contact via le formulaire de contact.
+test 1.7 ->  POST   /api/register | voir fichier AuthController.php fonction register()
+le visiteur non authentifié peut s'inscrire en tant que client via le formulaire d'inscription.
+test 1.8 ->  POST   /api/login    | voir fichier AuthController.php fonction login()
+le visiteur non authentifié peut se connecter et recevoir un token d'authentification pour accéder aux routes protégées de l'API.
 
 
+ROLE_ADMIN :
 
+CREATION D'un CRUD pour la gestion des utilisateurs par un admin.
 
-test 1.1 :
+test 2.1 -> GET    /api/admin/utilisateurs | voir fichier AdminController.php fonction getAllUsers()
+test 2.2 -> GET    /api/admin/utilisateurs/{id} | voir fichier AdminController.php fonction getUserById()
+test 2.3 -> DELETE /api/admin/utilisateurs/{id} | voir fichier AdminController.php fonction deleteUserByID()
+test 2.4 -> DELETE /api/admin/utilisateurs/email/{email} | voir fichier AdminController.php fonction deleteUserByEmail()
+test 2.5 -> PUT    /api/admin/utilisateurs/{id} | voir fichier AdminController.php fonction updateUserAdminById()
+test 2.6 -> PUT    /api/admin/utilisateurs/email/{email} | voir fichier AdminController.php fonction updateUserAdminByEmail()
+test 2.7 -> PUT    /api/admin/utilisateurs/{id}/desactivation | voir fichier AdminController.php fonction desactiverCompte()
+test 2.8 -> PUT    /api/admin/utilisateurs/{id}/reactiverCompte | voir fichier AdminController.php fonction reactiverCompte() 
+test 2.9 -> GET    /api/admin/avis  | voir fichier AdminController.php fonction getAvisEnAttente() 
+test 2.10 -> PUT   /api/admin/avis/1/approuver  | voir fichier AdminController.php fonction approuverAvis() 
+test 2.11 -> PUT   /api/admin/avis/1/refuser  | voir fichier AdminController.php fonction refuserAvis() 
+test 2.12 -> DELETE  /api/admin/avis/1  | voir fichier AdminController.php fonction supprimerAvis() 
+test 2.13 -> GET /api/admin/statistiques   | voir fichier AdminController.php fonction getStatistiques() 
+test 2.14 -> GET /api/admin/allergenes  | voir fichier AllergeneController.php fonction getAllAllergenes() 
+liste de tous les allergènes
+test 2.15 -> GET /api/admin/allergenes/{id}  | voir fichier AllergeneController.php fonction getAllergeneById() 
+cible un allergène par son id
+test 2.16 -> POST /api/admin/allergenes  | voir fichier AllergeneController.php fonction createAllergeneX() 
+créer un allergène
+test 2.17 -> PUT /api/admin/allergenes/{id}  | voir fichier AllergeneController.php fonction updateAllergene() 
+modifie un allergène
+test 2.18 -> DELETE /api/admin/allergenes/{id} | voir fichier AllergeneController.php fonction deleteAllergene()
+supprime un allergène
+test 2.19 -> GET /api/admin/regimes  | voir fichier RegimeController.php fonction getAllRegimes() 
+liste de tous les régimes
+test 2.20 -> GET /api/admin/regimes/{id}  | voir fichier RegimeController.php fonction getRegimeById() 
+cible un régimes par son id
+test 2.21 -> POST /api/admin/regimes  | voir fichier RegimeController.php fonction createRegime() 
+créer un régimes
+test 2.22 -> PUT /api/admin/regimes/{id}  | voir fichier RegimeController.php fonction updateRegime() 
+modifie un régimes
+test 2.23 -> DELETE /api/admin/regimes/{id} | voir fichier RegimeController.php fonction deleteRegime()
+supprime un régimes
+test 2.24 -> GET /api/admin/themes  | voir fichier ThemeController.php fonction getAllThemes() 
+liste de tous les thèmes
+test 2.25 -> GET /api/admin/themes/{id}  | voir fichier ThemeController.php fonction getThemeById() 
+cible un thèmes par son id
+test 2.26 -> POST /api/admin/themes  | voir fichier ThemeController.php fonction createTheme() 
+créer un thèmes
+test 2.27 -> PUT /api/admin/themes/{id}  | voir fichier ThemeController.php fonction updateTheme() 
+modifie un thèmes
+test 2.28 -> DELETE /api/admin/themes/{id} | voir fichier ThemeController.php fonction deleteTheme()
+supprime un thèmes
+test 2.29 -> GET /api/admin/plats  | voir fichier PlatController.php fonction getAllPlats() 
+liste de tous les plats
+test 2.30 -> GET /api/admin/plats/{id}  | voir fichier PlatController.php fonction getPlatById() 
+cible un plat par son id
+test 2.31 -> POST /api/admin/plats  | voir fichier PlatController.php fonction createPlat() 
+créer un plat
+test 2.32 -> PUT /api/admin/plats/{id}  | voir fichier PlatController.php fonction updatePlat() 
+modifie un plat
+test 2.33 -> DELETE /api/admin/plats/{id} | voir fichier PlatController.php fonction deletePlat()
+supprime un plat
+test 2.34 -> GET /api/admin/menus  | voir fichier MenuControllerAdmin.php fonction getAllMenus() 
+liste de tous les menus
+test 2.35 -> GET /api/admin/menus/{id}  | voir fichier MenuControllerAdmin.php fonction getMenuById() 
+cible un menu par son id
+test 2.36 -> POST /api/admin/menus  | voir fichier MenuControllerAdmin.php fonction createMenu() 
+créer un menu
+test 2.37 -> PUT /api/admin/menus/{id}  | voir fichier MenuControllerAdmin.php fonction updateMenu() 
+modifie un menu
+test 2.38 -> DELETE /api/admin/menus/{id} | voir fichier MenuControllerAdmin.php fonction deleteMenu()
+supprime un menu
+test 2.39 -> PUT /api/admin/commandes/{id}/annuler | voir fichier CommandeController.php fonction annulerCommande()
+annule une commande avec remboursement 100%
+test 2.40 -> GET /api/admin/commandes | voir fichier CommandeController.php fonction getAllCommandes()
+liste de toutes les commandes
+test 2.41 -> GET /api/admin/commandes/{id} | voir fichier CommandeController.php fonction getCommandeById()
+Retourne une commande par son id
+
+ROLE_CLIENT :
+
+test 3.1 -> GET    /api/client/profil | voir fichier ClientController.php fonction getProfil()
+un client authentifié peut voir les données de son profil.
+test 3.2 -> PUT    /api/client/profil | voir fichier ClientController.php fonction updateProfil()
+un client authentifié peut mettre à jour les données de son profil.
+test 3.3 -> POST /api/client/compte/desactivation | voir fichier ClientController.php fonction demandeDesactivation()
+permet à un client de demander la désactivation de son compte
+test 3.4 -> GET    /api/client/commandes | voir fichier ClientController.php fonction getCommandes()
+un client authentifié peut voir la liste de ses commandes.
+test 3.5 -> POST /api/client/commandes/{id}/annuler | avec id == commande_id voir fichier ClientController.php fonction annulerCommande()
+                                le template d'email dans templates/emails/annulation_commande.html.twig
+                                ainsi que le service MailerService.php fonction sendAnnulationEmail() 
+                                qui utilise Twig pour générer le contenu de l'email à partir du template
+un client authentifié peut annuler une de ses commandes en justifiant d'un motif d'annulation
+test 3.6 -> GET  /api/client/commandes/{id}/suivi | voir fichier ClientController.php fonction getSuiviCommande()
+un client authentifié peut voir le suivi de ses commandes.
+test 3.7 -> POST /api/client/commandes/{id}/avis |  voir fichier ClientController.php fonction createAvis()
+Un client authentifié peut laisser un avis si sa commande est en statut "terminée"
+test 3.8 -> POST /api/client//compte/desactivation | voir fichier ClientController.php fonction demandeDesactivation()
+Un client authentifié peut demander la désactivation de son commande
+
+ROLE_EMPLOYE :
+
+test 4.0 -> Post /api/login | test le login d'un utilisateur ayant le ROLE_EMPLOYE
+test 4.1 -> GET  /api/employe/commandes | voir fichier EmployeController.php fonction getCommandes() afficher toutes les commandes en cours
+test 4.2 -> GET  /api/employe/commandes/recherche/{nom} | voir fichier EmployeController.php fonction rechercherCommande() rechercher par numéro de commande
+test 4.3 -> POST /api/employe/commandes/{id}/statut | voir fichier EmployeController.php fonction changerStatut() modifier le statut d'une commande
+test 4.4 -> GET  /api/employe/avis | voir fichier EmployeController.php fonction getAvisEnAttente() afficher les avis en attente
+test 4.5 ->PUT  /api/employe/avis/{id}/approuver   | voir fichier EmployeController.php fonction approuverAvis() approuver un avis
+
+test 4.6 -> GET  /api/employe/menus    | voir fichier EmployeController.php fonction getAllMenus() afficher les menus
+test 4.7 -> GET  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction getMenuById() afficher un menu par id
+test 4.8 -> POST /api/employe/menus    | voir fichier EmployeController.php fonction createMenu() créer un menu
+test 4.9 -> PUT  /api/employe/menus/{id}   | voir fichier EmployeController.php fonction updateMenu() modifier un menu
+test 4.10 -> POST /api/employe/themes   | voir fichier EmployeController.php fonction createTheme() créer un theme
+test 4.11 -> PUT  /api/employe/themes/{id}  | voir fichier EmployeController.php fonction updateTheme() modifier un theme
+test 4.12 -> POST /api/employe/regimes  | voir fichier EmployeController.php fonction createRegime() créer un regime
+test 4.13 -> PUT  /api/employe/regimes/{id} | voir fichier EmployeController.php fonction updateRegime() modifier un élément de la table regime
+
+/*------------------------------------------------------------------------
+* Début des tests pour le Role : PUBLIC_ACCESS :
+------------------------------------------------------------------------*/
+test 1.1 : test qui retourne la liste des menus
 Méthode : GET
-URL : http://127.0.0.1:8000/api/menus
+URL :  http://127.0.0.1:8000/api/menus
 Body : aucun
 résultat : test 1.1 réussi, liste des menus reçue
-
-test 1.2 :
+/*------------------------------------------------------------------------*/
+test 1.2 : test qui retourne un menu par son id
 Méthode : GET
-URL : http://127.0.0.1:8000/api/menus/1
+URL :  http://127.0.0.1:8000/api/menus/1
 Body : aucun
 résultat : test 1.2 réussi, menu 1 reçu
 
 test 1.2.1 : test complementaire du test 1.2 id qui n'existe pas
 Méthode : GET
-URL : http://127.0.0.1:8000/api/menus/100
+URL :  http://127.0.0.1:8000/api/menus/100
 Body : aucun
 résultat : test 1.2.1 réussi, "message": "Menu non trouvé" reçu
-
-
-
-test 1.3 :
+/*------------------------------------------------------------------------*/
+test 1.3 : test qui retourne la liste des horaires d'ouverture du restaurant
 Méthode : GET
-URL : http://127.0.0.1:8000/api/horaires
+URL :  http://127.0.0.1:8000/api/horaires
 Body : aucun
-résultat : test 1.3 réussi, liste des horaires reçue
+résultat : test 1.3 réussi, liste des horaires reçue avec gestion du cas null == Fermé
+/*------------------------------------------------------------------------*/
+test 1.4 : test qui retourne un horaire d'ouverture du restaurant par son id
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/horaires/1
+Body : aucun
+résultat : test 1.4 réussi, horaire 1 reçu
 
+test 1.4.1 : test complementaire du test 1.4 id qui n'existe pas
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/horaires/100
+Body : aucun
+résultat : test 1.4.1 réussi, "message": "Horaire non trouvé" reçu
+/*------------------------------------------------------------------------*/
 
-test 1.x :
-Méthode : 
-URL : 
-Body : 
-résultat : 
+test 1.5 : test complementaire du test 1.4 id qui existe mais avec des valeurs null
+Méthode : GET 
+URL :  http://127.0.0.1:8000/api/horairesIndexTable/1
+Body : aucun
+résultat : test 1.5 réussi, liste des horaires reçue avec gestion du cas null == Fermé
 
+/*------------------------------------------------------------------------*/
+test 1.6 : plusieurs tests complémentaires pour la route POST /api/contact  
+           pour tester les différentes protections de sécurité mises en place dans le controller ContactController.php fonction contact()
 Méthode : POST
-URL : http://127.0.0.1:8000/api/login
+URL :  http://127.0.0.1:8000/api/contact
+Body : raw → JSON
+{
+    "sujet": "Test de contact",
+    "email": "test@vite-et-gourmand.fr",
+    "message": "Ceci est un message de test."
+}
+résultat : test 1.6 réussi, message envoyé avec succès
+
+test 1.6.1 : test Protection Content-Type
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/contact
+Headers : Content-Type: text/plain
+Body :
+{
+    "email": "client@gmail.com",
+    "sujet": "Demande de devis",
+    "message": "Bonjour je souhaite un devis"
+}
+résultat : test 1.6.1 réussi, erreur 415 Unsupported Media Type reçue
+{
+    "status": "error",
+    "message": "Content-Type invalide, JSON attendu"
+}
+
+test 1.6.2 : test JSON invalide
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/contact
+Headers : Content-Type: text/plain
+Body : 
+"Bonjour je souhaite un devis"
+
+résultat : test 1.6.2 réussi, erreur 400 + Format JSON invalide reçu
+{
+    "status": "error",
+    "message": "Format JSON invalide"
+}
+
+test 1.6.3 : test Champs vides
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/contact
+Headers : Content-Type: application/json
+Body : 
+{
+    "email": "",
+    "sujet": "",
+    "message": ""
+}
+A continuer .............
+
+/*------------------------------------------------------------------------
+* Fin des tests pour le Role : PUBLIC_ACCESS :
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+* Début des tests pour le Role : tout les roles :
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------*/
+test 1.7 : test pour l'inscription d'un nouvel utilisateur dans le cas ROLE_VISITEUR ou ROLE_CLIENT
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/register
+Body : raw → JSON
+{
+    "nom": "Aizac",
+    "prenom": "Florian",
+    "telephone": "0600000000",
+    "email": "test@gmail.com",
+    "password": "password123",
+    "pays": "France",
+    "ville": "Montpellier",
+    "code_postal": "34000",
+    "adresse_postale": "1 rue de la Gourmandise"
+}
+résultat : test 1.7 réussi, utilisateur créé avec succès code 201 reçu
+{
+    "status": "success",
+    "message": "Compte créé avec succès"
+}
+
+test 1.7.1 : test pour l'inscription d'un nouvel utilisateur avec un email déjà utilisé
+la même requete que le test 1.7 est utilisée mais avec un email déjà utilisé
+résultat : test 1.7.1 réussi, erreur 409 + message "Email déjà utilisé" reçu
+{
+    "status": "error",
+    "message": "Cet email est déjà utilisé"
+}
+
+/*------------------------------------------------------------------------*/
+test 1.8 : test pour la connexion d'un utilisateur et la réception du token d'authentification
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/login
 Body : raw → JSON
 {
     "email": "admin@vite-et-gourmand.fr",
     "password": "123456"
 }
-
-résultat : test 1.1 réussi, token d'authentification reçu
+résultat : test 1.8 réussi, token d'authentification reçu
 token	: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NzE4NDkyOTIsImV4cCI6MTc3MTg1Mjg5Miwicm9sZXMiOlsiUk9MRV9BRE1JTiJdLCJ1c2VybmFtZSI6ImFkbWluQHZpdGUtZXQtZ291cm1hbmQuZnIifQ.hVKUz_drs2ZBc5MjIm6cAwJfneQaX087gbgDqAUcD1V0m7M0iZHWu2lm6_X9CVTQa4gn6fYn1AXHeNkvY7b7uz4rsWMrtnUSLHTeahjF7ASF3WmSbIXiTuiDDtoN9QB7rRQeeUmxekZo2gbF641AfRcr1Vlr_WjKd5JjQQwfVkmHdIis57MbKfwxgfSXdj7bh-sFIYGRVembTKjMmFuVw8HUT9Qxod1kN2zH0w-mRy51KUJdlFqsUKIA9-ncJ6nsNDiNpHf6v4uosh_NjWfaVRJfoVLoRocGr83N2rz2mIMO1HlfiCKWYcZP96IZZEDRWjtPLA7KSYpwXMzbT1nZXg
 email	admin@vite-et-gourmand.fr
 prenom	Admin
 role	ROLE_ADMIN
 
+/*------------------------------------------------------------------------
+* Fin des tests pour le Role : tout les roles :
+------------------------------------------------------------------------*/
 
-test 1.2
+/*------------------------------------------------------------------------
+* Début des tests pour le Role : ROLE_ADMIN :
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------*/
+test 2.0 : test pour la récupération de la liste des utilisateurs
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs
+Headers : Authorization
+Résultat : test 2.0 réussi, liste des utilisateurs reçue
+/*------------------------------------------------------------------------*/
+test 2.1 : test pour la récupération d'un utilisateurs
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/{id}
+Headers : Authorization
+Résultat : test 2.1 réussi, utilisateur récupéré
+
+test 2.2 : test pour la récupération d'un utilisateurs avec un id qui n'existe pas
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/{id}
+Headers : Authorization
+Résultat : test 2.2 réussi, erreur 404 + message "Utilisateur non trouvé" reçu
+{
+    "message": "Utilisateur non trouvé"
+}
+/*------------------------------------------------------------------------*/
+test 2.3 : test pour la suppression d'un utilisateur par son id
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/1
+Headers : Authorization
+Résultat : test 2.3 réussi, utilisateur supprimé avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur supprimé avec succès" 
+}
+
+test 2.3.1 : test pour la suppression d'un utilisateur avec un id qui n'existe pas
+Méthode : DELETE  
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/999
+Headers : Authorization
+Résultat : test 2.3.1 réussi, erreur 404 + message "Utilisateur non trouvé" reçu
+{
+    "message": "Utilisateur non trouvé"
+}
+
+test 2.3.2 : test pour la suppression d'un utilisateur sans token d'authentification
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/2
+Headers : aucun
+Résultat : test 2.3.2 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "error",
+    "message": "Accès refusé"
+}
+
+test 2.3.3 : test pour la suppression d'un utilisateur avec un token d'authentification mais sans le rôle ADMIN
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/2
+Headers : Authorization (token d'un utilisateur non ADMIN)
+Résultat : test 2.3.3 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "Erreur",
+    "message": "Accès refusé"
+}
+
+test 2.3.4 : test pour la suppression d'un utilisateur avec un token d'authentification et le rôle ADMIN mais qui tente de se supprimer lui meme
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/1
+Headers : Authorization (token d'un utilisateur ADMIN)
+Résultat : test 2.3.4 réussi, erreur 403 + message "Vous ne pouvez pas supprimer votre propre compte" reçu
+{
+    "status": "Erreur",
+    "message": "Vous ne pouvez pas supprimer votre propre compte"
+}
+
+test 2.4 : test pour la suppression d'un utilisateur via son email
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/email/test@example.com
+Headers : Authorization (token d'un utilisateur ADMIN)
+Résultat : test 2.4 réussi, utilisateur supprimé avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur supprimé avec succès" 
+}
+
+/*------------------------------------------------------------------------*/
+test 2.5 : test pour la mise à jour des informations d'un utilisateur par son id
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/{id}
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "prenom": "FloFlo"
+}
+Résulat : test 2.5 réussi, utilisateur mis à jour avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur mis à jour avec succès"
+}
+
+test 2.5.1 : test pour la mise à jour des informations d'un utilisateur avec un id qui n'existe pas
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/40
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "prenom": "FloFlo"
+}
+Résulat : test 2.5.1 réussi, erreur 404 + message "Utilisateur non trouvé" reçu
+{
+    "message": "Utilisateur non trouvé"
+}
+
+test 2.5.2 : test pour la mise à jour des informations d'un utilisateur sans token d'authentification
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/40
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "prenom": "FloFlo"
+}
+Résulat : test 2.5.2 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "Erreur",
+    "message": "Accès refusé"
+}
+
+test 2.6.0 : test mise à jour du mot de passe d'un utilisateur et vérification de la réception de l'email de notification
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/admin/utilisateurs/7
+Headers : Authorization (token d'un utilisateur ADMIN)
+Body : {
+    "password": "nouveaumdp"
+}
+Résulat : test 2.6.0 réussi, erreur 403 + message "Accès refusé" reçu
+{
+    "status": "Erreur",
+    "message": "Accès refusé"
+}
+
+/*------------------------------------------------------------------------*/
+test 2.6.1 : test pour la mise à jour des informations d'un utilisateur par son email par un admin
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/utilisateurs/email/client2@gmail.com
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "prenom": "clientcontent"
+}
+Résulat : test 2.6.1 réussi, utilisateur mis à jour avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur mis à jour avec succès"
+}
+
+test 2.6.2 : test pour la désactivation d'un compte utilisateur par un admin
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/utilisateurs/email/client2@gmail.com
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "prenom": "clientcontent"
+}
+Résulat : test 2.6.2 réussi, utilisateur mis à jour avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Utilisateur mis à jour avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+
+test 2.7 : test pour la désactivation d'un compte utilisateur par un admin
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/utilisateurs/{id}/desactivation
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.7 réussi
+{
+    "status": "Succès",
+    "message": "Compte désactivé avec succès"
+}
+/*------------------------------------------------------------------------*/
+
+test 2.8 : test pour la reactivation d'un compte utilisateur par un admin
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/utilisateurs/{id}/reactivation
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.8 réussi
+{
+    "status": "Succès",
+    "message": "Compte réactivé avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+
+test 2.9 : test pour la récupération des avis en attente
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/avis
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.9 réussi
+
+/*------------------------------------------------------------------------*/
+test 2.10 : test pour approuvé un avis en attente de publication
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/avis/1/approuver
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.10 réussi
+
+/*------------------------------------------------------------------------*/
+
+test 2.11 : test pour refuser un avis en attente de publication
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/avis/1/refuser
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.11 réussi
+
+/*------------------------------------------------------------------------*/
+test 2.12 : Test de suppression d'un avis client
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/admin/avis/1
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.12 réussi
+
+/*------------------------------------------------------------------------*/
+test 2.13 : Test des statistiques de l'entreprise
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/statistiques
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.13 réussi
+
+/*------------------------------------------------------------------------*/
+test 2.14 : Test de la récupération de la liste de tous les allergènes
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/allergenes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{}
+Résulat : test 2.14 réussi
+{
+    "status": "Succès",
+    "total": 10,
+    "allergenes": [
+        {
+            "id": 1,
+            "libelle": "Gluten"
+        },
+        {
+            "id": 2,
+            "libelle": "Lactose"
+        },
+        {
+            "id": 3,
+            "libelle": "Fruits à coque"
+        },
+        {
+            "id": 4,
+            "libelle": "Oeufs"
+        },
+        {
+            "id": 5,
+            "libelle": "Poissons"
+        },
+        {
+            "id": 6,
+            "libelle": "Crustacés"
+        },
+        {
+            "id": 7,
+            "libelle": "Mollusques"
+        },
+        {
+            "id": 8,
+            "libelle": "Sésame"
+        },
+        {
+            "id": 9,
+            "libelle": "Soja"
+        },
+        {
+            "id": 10,
+            "libelle": "Sulfites"
+        }
+    ]
+}
+/*------------------------------------------------------------------------*/
+test 2.15 : Test de ciblage dun allergène par son id
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/allergenes/2
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.15 réussi  
+{
+    "status": "Succès",
+    "allergene": {
+        "id": 1,
+        "libelle": "Gluten"
+    }
+}
+/*------------------------------------------------------------------------*/
+test 2.16 : Test de création allergène 
+Méthode : POST
+URL : http://127.0.0.1:8000/api/admin/allergenes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "libelle": "les femmes"
+}
+Résulat : test 2.16 réussi
+{
+    "status": "Succès",
+    "message": "Allergène créé avec succès",
+    "id": 11
+}
+/*------------------------------------------------------------------------*/
+test 2.17 : Test de modification allergène 
+PUT
+URL : http://127.0.0.1:8000/api/admin/allergenes/11
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "libelle": "les nouilles"
+}
+Résulat : test 2.16 réussi
+{
+    "status": "Succès",
+    "message": "Allergène mis à jour avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+test 2.18 : Test: supprimer un allergène
+Méthode : DELETE
+URL : http://127.0.0.1:8000
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.18  réussi
+
+/*------------------------------------------------------------------------*/
+test 2.19 : Test : liste de tous les régimes 
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/regimes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.19 réussi
+{
+}
+/*------------------------------------------------------------------------*/
+test 2.20 : Test : cible un régimes par son id 
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/regimes/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.20 réussi
+{
+    "status": "Succès",
+    "regime": {
+        "id": 1,
+        "libelle": "Tous"
+    }
+}
+/*------------------------------------------------------------------------*/
+test 2.21 : Test : créer un régimes
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/admin/regimes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "libelle": "Viandar"
+}
+Résulat : test 2.21 réussi
+{
+    "status": "Succès",
+    "message": "Régime créé avec succès",
+    "id": 7
+}
+/*------------------------------------------------------------------------*/
+test 2.22 : Test : modifie un régimes
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/admin/regimes/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.22 réussi
+{
+    "status": "Succès",
+    "message": "Régime mis à jour avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+test 2.23 : Test : supprime un régimes 
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/regimes/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.23 réussi
+{
+    "status": "Succès",
+    "message": "Régime supprimé avec succès"
+}
+/*------------------------------------------------------------------------*/
+test 2.24 : Test : liste de tous les thèmes
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/themes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.24 réussi
+{
+    "status": "Succès",
+    "total": 8,
+    "themes": [
+        {
+            "id": 1,
+            "libelle": "Tous"
+        },
+        {
+            "id": 2,
+            "libelle": "Italien"
+        },
+        {
+            "id": 3,
+            "libelle": "Asiatique"
+        },
+        {
+            "id": 4,
+            "libelle": "Mexicain"
+        },
+        {
+            "id": 5,
+            "libelle": "Français"
+        },
+        {
+            "id": 6,
+            "libelle": "Noêl"
+        },
+        {
+            "id": 7,
+            "libelle": "Pâques"
+        },
+        {
+            "id": 10,
+            "libelle": "Jour de l'an"
+        }
+    ]
+}
+/*------------------------------------------------------------------------*/
+test 2.25 : Test : cible un thèmes par son id 
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/themes/1
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.25 réussi
+{
+    "status": "Succès",
+    "theme": {
+        "id": 1,
+        "libelle": "Tous"
+    }
+}
+
+/*------------------------------------------------------------------------*/
+test 2.26 : Test : créer un thèmes 
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/admin/themes 
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "libelle": "Asenssion"
+}
+Résulat : test 2.26 réussi
+{
+    "status": "Succès",
+    "message": "Thème créé avec succès",
+    "id": 11
+}
+/*------------------------------------------------------------------------*/
+test 2.27 : Test : modifie un thèmes 
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/admin/themes/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.27 réussi
+{
+    "status": "Succès",
+    "message": "Thème mis à jour avec succès"
+}
+/*------------------------------------------------------------------------*/
+test 2.28 : Test : supprime un thèmes 
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/themes/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.28 réussi 
+{
+    "status": "Succès",
+    "message": "Thème supprimé avec succès"
+}
+/*------------------------------------------------------------------------*/
+test 2.29 : Test : liste de tous les plats 
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/plats
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.29 réussi 
+{
+    "status": "Succès",
+    "total": 0,
+    "plats": []
+}
+
+/*------------------------------------------------------------------------*/
+test 2.30 : Test cible un plat par son id  
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/plats/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.30 réussi
+{
+    "status": "Succès",
+    "plat": {
+        "id": 1,
+        "titrePlat": "Une frite une fois",
+        "photo": "abc",
+        "allergenes": []
+    }
+}
+/*------------------------------------------------------------------------*/
+test 2.31 : Test : créer un plat
+Méthode : POST
+URL : http://127.0.0.1:8000/api/admin/plats
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "titre_plat": "Une frite deux fois",
+    "photo": "abc"
+}
+Résulat : test 2.31 réussi 
+{
+    "status": "Succès",
+    "message": "Plat créé avec succès",
+    "id": 2
+}
+/*------------------------------------------------------------------------*/
+test 2.32 : Test : modifie un plat 
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/plats/2
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "titre_plat": "Une frite trois fois",
+    "photo": "abc"
+}
+Résulat : test 2.32 réussi 
+{
+    "status": "Succès",
+    "message": "Plat mis à jour avec succès"
+}
+/*------------------------------------------------------------------------*/
+test 2.33 : Test : supprime un plat 
+Méthode : DELETE
+URL :  http://127.0.0.1:8000/api/admin/plats/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.33 réussi 
+{
+    "status": "Succès",
+    "message": "Plat supprimé avec succès"
+}
+/*------------------------------------------------------------------------*/
+test 2.34 : Test : liste de tous les menus 
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/admin/menus
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.34 réussi 
+{
+    "status": "Succès",
+    "total": 3,
+    "menus": [
+        {
+            "id": 1,
+            "titre": "Festin de Noël Traditionnel",
+            "nombrePersonneMinimum": 10,
+            "prixParPersonne": 45,
+            "description": "Un menu raffiné aux saveurs de Gascogne pour célébrer les fêtes de fin d'année dans la pure tradition du Sud-Ouest.",
+            "quantiteRestante": 50,
+            "regime": {
+                "id": 1,
+                "libelle": "Tous"
+            },
+            "theme": {
+                "id": 6,
+                "libelle": "Noêl"
+            },
+            "plats": []
+        },
+        {
+            "id": 2,
+            "titre": "Réveillon Étoilé de Noël",
+            "nombrePersonneMinimum": 8,
+            "prixParPersonne": 40,
+            "description": "Un repas de Noël gastronomique digne des plus grandes tables, avec des produits d'exception sélectionnés par nos chefs.",
+            "quantiteRestante": 30,
+            "regime": {
+                "id": 4,
+                "libelle": "Vegan"
+            },
+            "theme": {
+                "id": 6,
+                "libelle": "Noêl"
+            },
+            "plats": []
+        },
+        {
+            "id": 3,
+            "titre": "Réveillon de Noël Classique",
+            "nombrePersonneMinimum": 12,
+            "prixParPersonne": 50,
+            "description": "Un menu traditionnel et généreux pour un réveillon de Noël inoubliable, inspiré des recettes classiques de la Gascogne.",
+            "quantiteRestante": 40,
+            "regime": {
+                "id": 2,
+                "libelle": "Classique"
+            },
+            "theme": {
+                "id": 10,
+                "libelle": "Jour de l'an"
+            },
+            "plats": []
+        }
+    ]
+}
+/*------------------------------------------------------------------------*/
+test 2.35 : Test : cible un menu par son id 
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/menus/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.35 réussi 
+{
+    "status": "Succès",
+    "menu": {
+        "id": 1,
+        "titre": "Festin de Noël Traditionnel",
+        "nombrePersonneMinimum": 10,
+        "prixParPersonne": 45,
+        "description": "Un menu raffiné aux saveurs de Gascogne pour célébrer les fêtes de fin d'année dans la pure tradition du Sud-Ouest.",
+        "quantiteRestante": 50,
+        "regime": {
+            "id": 1,
+            "libelle": "Tous"
+        },
+        "theme": {
+            "id": 6,
+            "libelle": "Noêl"
+        },
+        "plats": []
+    }
+}
+/*------------------------------------------------------------------------*/
+test 2.36 : Test : créer un menu 
+Méthode : POST
+URL : http://127.0.0.1:8000/api/admin/menus
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "titre": "Un blanquette",
+    "nombre_personne_minimum": "5",
+    "prix_par_personne": "20",
+    "description": "test",
+    "titre": "20",
+    "quantite_restante": "20",
+    "regime_id": "1",
+    "theme_id": "1"
+
+}
+Résulat : test 2.36 réussi
+{
+    "status": "Succès",
+    "message": "Menu créé avec succès",
+    "id": 4
+}
+/*------------------------------------------------------------------------*/
+test 2.37 : Test : modifie un menu 
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/menus/{id}
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+    "titre": "Un blanquette2",
+    "nombre_personne_minimum": "5",
+    "prix_par_personne": "20",
+    "description": "test",
+    "titre": "20",
+    "quantite_restante": "20",
+    "regime_id": "1",
+    "theme_id": "1"
+
+}
+Résulat : test 2.37 réussi
+{
+    "status": "Succès",
+    "message": "Menu mis à jour avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+test 2.38 : Test : supprime un menu 
+Méthode : DELETE
+URL : http://127.0.0.1:8000/api/admin/menus/{id} 
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.38 réussi 
+{
+    "status": "Succès",
+    "message": "Menu supprimé avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+test 2.39 : Test : annule une commande avec remboursement 100%
+Méthode : PUT
+URL : http://127.0.0.1:8000/api/admin/commandes/2/annuler
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.39 réussi 
+{
+    "status": "Succès",
+    "message": "Commande annulée avec succès",
+    "numero_commande": "CMD-002",
+    "motif_annulation": "Annulée par l'administrateur",
+    "montant_rembourse": 225
+}
+
+/*------------------------------------------------------------------------*/
+test 2.40 : Test : liste de toutes les commandes
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/commandes
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.40 réussi
+{
+}
+
+/*------------------------------------------------------------------------*/
+test 2.41 : Test : liste de toutes les commandes
+Méthode : GET
+URL : http://127.0.0.1:8000/api/admin/commandes/2 
+Headers : Authorization: Bearer TOKEN_ADMIN
+Body :
+{
+}
+Résulat : test 2.41 réussi
+{
+}
+
+/*------------------------------------------------------------------------
+* Fin des tests pour le Role : ROLE_ADMIN :
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+* Début des tests pour le Role : ROLE_CLIENT :
+/*------------------------------------------------------------------------*/
+test 3.1 : test pour la récupération du profil d'un client authentifié
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/client/profil
+Headers : Authorization
+Résultat : test 3.1 réussi, données du profil du client reçu
+
+/*------------------------------------------------------------------------*/
+test 3.2 : test pour la mise à jour du profil d'un client authentifié
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/client/profil
+Headers : Authorization
+Body : 
+{
+    "nom": "Aizac",
+    "prenom": "Florian",
+    "code_postal": "34000"
+}
+
+Résultat : test 3.2 réussi, profil du client mis à jour avec succès et retourne le code 200
+{
+    "status": "success",
+    "message": "Profil mis à jour avec succès"
+}
+
+/*------------------------------------------------------------------------*/
+test 3.3 : test de demande de désactivation de compte par un client
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/client/compte/desactivation
+Headers : Authorization: Bearer TON_TOKEN_CLIENT
+Résultat : test 3.3 réussi, passage du statut_compte à en_attente_desactivation 
+{
+    'status'  => 'Succès',
+    'message' => 'Votre demande de désactivation a été prise en compte. Un administrateur la traitera prochainement.'
+}
+/*------------------------------------------------------------------------*/
+test 3.4 : test pour la récupération de la liste des commandes d'un client authentifié
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/client/commandes
+Headers : AuthorireactiverComptezation
+Résultat : test 3.4 réussi, liste des commandes du client reçu
+{
+    "status": "Succès",
+    "commandes": [] // liste des commandes du client vide actuellement normal il y as pas de données dans la BDD
+}
+
+/*------------------------------------------------------------------------*/
+test 3.5 : test pour l'annulation d'une commande par un client authentifié
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/client/commandes/annuler/1
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_CLIENT
+Body :
+{
+    "motif_annulation": " J'peux pas, j'ai poney"
+}
+Résultat : test 3.5 réussi, commande annulée avec succès et retourne bien le code 200 et génération de l'email de confirmation d'annulation ok
+{
+    "status": "Succès",
+    "message": "Vous n'avez pas été remboursé",
+    "montant_rembourse": 0
+}
+/*------------------------------------------------------------------------*/
+test 3.6 : test pour récuperer le suivis de commande d'un client authentifié
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/client/commandes/{id}/suivi
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_CLIENT
+Body :
+{
+}
+Résultat : test 3.6 réussi, retour du suivis retournée avec succès et retourne bien le code 200
+{
+    "status": "Succès",
+    "total": 5,
+    "message": "Suivis retournée avec succès",
+    "suivis": [
+        {
+            "statut": "En attente",
+            "date_statut": "20/02/2026 10:00"
+        },
+        {
+            "statut": "Acceptée",
+            "date_statut": "21/02/2026 14:30"
+        },
+        {
+            "statut": "En préparation",
+            "date_statut": "22/02/2026 09:00"
+        },
+        {
+            "statut": "En livraison",
+            "date_statut": "23/02/2026 12:00"
+        },
+        {
+            "statut": "Terminée",
+            "date_statut": "24/02/2026 12:00"
+        }
+    ]
+}
+
+test 3.7 : test pour publié un avis d'un client authentifié si la commande est en statut terminée.
+faire login recup token ensuite 
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/client/commandes/3/avis
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_CLIENT
+Body :
+{
+ "note": 5,
+ "description": "Je me suis régalez vous etes au top !!!!",
+}  
+Résultat : test 3.7 réussi,JSON retournée avec succès et retourne bien le code 201
+
+/*------------------------------------------------------------------------*/
+
+test 3.8 : test la désactivation de son compte d'un client authentifié
+faire login recup token ensuite 
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/client/compte/desactivation
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_CLIENT
+Body :
+{
+}  
+Résultat : test 3.8 réussi
+
+/*------------------------------------------------------------------------
+* Fin des tests pour le Role : ROLE_CLIENT :
+------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+* Début des tests pour le Role : ROLE_EMPLOYE :
+------------------------------------------------------------------------*/
+test 4.0 : Test pérmétant de vérfier le login employé
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/login 
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{
+    "email": "employe@vite-et-gourmand.fr",
+    "password": "123"
+}  
+
+Résultat : test 4.0 réussi, renvoie bien 201
+
+/*------------------------------------------------------------------------*/
+
+test 4.1 : test permétant d'afficher toutes les commandes en cours pour le role employée
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/employe/commandes   
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{
+}  
+Résultat : test 4.1 réussi,
+
+/*------------------------------------------------------------------------*/
+test 4.2 : test de la fonction de rechercher par nom de commande exemple 'CMD-002' == nom
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/employe/commandes/recherche/CMD-002 
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{
+}  
+
+Résultat : test 4.2 réussi,
+{
+    "status": "Succès",
+    "commandes": [
+        {
+            "id": 2,
+            "numeroCommande": "CMD-002",
+            "dateCommande": "2026-02-24T11:00:00+00:00",
+            "datePrestation": "2026-02-26T00:00:00+00:00",
+            "heureLivraison": "1970-01-01T14:00:00+00:00",
+            "prixMenu": 200,
+            "nombrePersonne": 15,
+            "prixLivraison": 25,
+            "statut": "annulée",
+            "pretMateriel": true,
+            "restitutionMateriel": false,
+            "utilisateur": {
+                "id": 1,
+                "email": "admin@vite-et-gourmand.fr",
+                "password": "$2y$13$x8x9WNIvAdUonbLgzVu2Q.qc92sJfN2Oag/8uGMJUE.FADEfncf1G",
+                "prenom": "Admin",
+                "telephone": "0123456789",
+                "ville": "Montpellier",
+                "pays": "France",
+                "adressePostale": "123 Rue de la Gourmandise",
+                "role": {
+                    "id": 7,
+                    "libelle": "ROLE_ADMIN"
+                },
+                "nom": "admin",
+                "codePostal": "34400",
+                "userIdentifier": "admin@vite-et-gourmand.fr",
+                "roles": [
+                    "ROLE_ADMIN"
+                ],
+                "statutCompte": "actif"
+            },
+            "menu": {
+                "id": 2,
+                "titre": "Réveillon Étoilé de Noël",
+                "nombrePersonneMinimum": 8,
+                "prixParPersonne": 40,
+                "description": "Un repas de Noël gastronomique digne des plus grandes tables, avec des produits d'exception sélectionnés par nos chefs.",
+                "quantiteRestante": 30,
+                "regime": {
+                    "id": 4,
+                    "libelle": "Vegan"
+                },
+                "theme": {
+                    "id": 6,
+                    "libelle": "Noêl"
+                },
+                "plats": []
+            },
+            "motifAnnulation": " J'peux pas, j'ai poney",
+            "montantRembourse": 0
+        }
+    ]
+}
+
+/*------------------------------------------------------------------------*/
+test 4.3 : test de modification du statut d'une commande
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/employe/commandes/1/statut
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{ "statut": "Acceptée" }
+
+Résultat : test 4.3 réussi, retourne 200 changement du statut
+
+
+/*------------------------------------------------------------------------*/
+
+test 4.4 : test affichage des avis en attente
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/employe/avis
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.4 réussi, retourne 200
+
+/*------------------------------------------------------------------------*/
+test 4.5 : test  pour approuver un avis
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/employe/avis/2/approuver
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.5 réussi, retourne 200
+{
+    "status": "Succès",
+    "message": "Avis approuvé avec succès"
+}
+/*------------------------------------------------------------------------*/
+
+test 4.6 : test de vérification de l'affichage des menus
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/employe/menus
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.6 réussi, retourne 200
+{
+
+}
+
+/*------------------------------------------------------------------------*/
+test 4.7 : test permétant d'afficher un menu avec ses allergenes
+Méthode : GET
+URL :  http://127.0.0.1:8000/api/employe/menus/{id} 
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.7 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 4.8 : test permétant d'ajouter un menu
+Méthode : GET
+URL :  /api/employe/menus
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.8 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 4.9 : test permétant de modifier un menu
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/employe/menus/{id}
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.9 réussi, retourne 200
+{
+
+} 
+
+/*------------------------------------------------------------------------*/
+test 4.10 : test permétant d'ajouter un theme
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/employe/themes
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.10 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 4.11 : test permétant de modifier un theme par son id
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/employe/themes/{id}
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.11 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 4.12 : test permétant d'ajouter un regime
+Méthode : POST
+URL :  http://127.0.0.1:8000/api/employe/regimes
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.12 réussi, retourne 200
+{
+
+}
+/*------------------------------------------------------------------------*/
+test 4.13 : test permétant de modifier un élément de la table regime
+Méthode : PUT
+URL :  http://127.0.0.1:8000/api/employe/regimes/{id}
+Headers : 
+    Content-Type: application/json
+    Authorization: Bearer TOKEN_EMPLOYE
+Body :
+{}
+Résultat : test 4.13 réussi, retourne 200
+{
+
+}
+
+/*------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------
+* Début des tests pour le Role : ROLE_EMPLOYE :
+------------------------------------------------------------------------*/

@@ -1,0 +1,52 @@
+sequenceDiagram
+    participant A as Administrateur
+    participant P as Page Admin - Utilisateurs
+    participant CTX as AppContext
+    participant D as mockData
+
+    Note over A,P: Lister les utilisateurs
+    A->>P: Accede a onglet "Utilisateurs"
+    P->>CTX: getUsers()
+    CTX->>D: Charge tous les utilisateurs
+    D-->>P: Liste des utilisateurs
+    P-->>A: Affiche tableau (nom, email, role, statut)
+
+    Note over A,P: Modifier le role
+    A->>P: Selectionne un nouveau role pour un utilisateur
+    P->>CTX: updateUserRole(userId, newRole)
+    CTX->>D: Met a jour le role
+    P-->>A: Toast "Role mis a jour"
+
+    Note over A,P: Desactiver un compte
+    A->>P: Clique "Desactiver" sur un utilisateur
+    P-->>A: Boite de confirmation
+    A->>P: Confirme
+    P->>CTX: deactivateUser(userId)
+    CTX->>D: Marque le compte comme inactif
+    P-->>A: Toast "Compte desactive"
+
+    Note over A,P: Reactiver un compte
+    A->>P: Clique "Reactiver" sur un utilisateur inactif
+    P->>CTX: reactivateUser(userId)
+    CTX->>D: Marque le compte comme actif
+    P-->>A: Toast "Compte reactive"
+
+    Note over A,P: Supprimer un utilisateur
+    A->>P: Clique "Supprimer"
+    P->>P: Verifie que ce n est pas son propre compte
+    alt Propre compte
+        P-->>A: Erreur "Impossible de supprimer votre propre compte"
+    else Autre utilisateur
+        P-->>A: Boite de confirmation
+        A->>P: Confirme
+        P->>CTX: deleteUser(userId)
+        CTX->>D: Supprime l utilisateur
+        P-->>A: Toast "Utilisateur supprime"
+    end
+
+    Note over A,P: Reset mot de passe
+    A->>P: Clique "Reset mot de passe"
+    P->>CTX: resetPassword(userId)
+    CTX->>D: Genere mot de passe temporaire
+    CTX->>CTX: Envoi email avec mdp temporaire
+    P-->>A: Toast "Mot de passe reinitialise, email envoye"

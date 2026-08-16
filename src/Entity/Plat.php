@@ -1,11 +1,11 @@
 <?php
-
 namespace App\Entity;
 
 use App\Repository\PlatRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\Allergene;
 
 #[ORM\Entity(repositoryClass: PlatRepository::class)]
 #[ORM\Table(name: 'plat')]
@@ -22,10 +22,15 @@ class Plat
     #[ORM\Column(length: 255)]
     private ?string $photo = null;
 
+    #[ORM\Column(length: 50)]
+    private ?string $categorie = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $description_plat = null;
     /**
      * @var Collection<int, Allergene>
      */
-    #[ORM\ManyToMany(targetEntity: Allergene::class)]
+    #[ORM\ManyToMany(targetEntity: Allergene::class, inversedBy: 'plats')]
     #[ORM\JoinTable(
         name: 'contient',
         joinColumns: [new ORM\JoinColumn(name: 'plat_id', referencedColumnName: 'plat_id')],
@@ -51,7 +56,17 @@ class Plat
     public function setTitrePlat(string $titre_plat): static
     {
         $this->titre_plat = $titre_plat;
+        return $this;
+    }
 
+    public function getDescriptionPlat(): ?string
+    {
+        return $this->description_plat;
+    }
+
+    public function setDescriptionPlat(?string $description_plat): static
+    {
+        $this->description_plat = $description_plat;
         return $this;
     }
 
@@ -63,7 +78,17 @@ class Plat
     public function setPhoto(string $photo): static
     {
         $this->photo = $photo;
+        return $this;
+    }
 
+    public function getCategorie(): ?string
+    {
+        return $this->categorie;
+    }
+
+    public function setCategorie(string $categorie): static
+    {
+        $this->categorie = $categorie;
         return $this;
     }
 
@@ -87,7 +112,6 @@ class Plat
     public function removeAllergene(Allergene $allergene): static
     {
         $this->allergenes->removeElement($allergene);
-
         return $this;
     }
 }

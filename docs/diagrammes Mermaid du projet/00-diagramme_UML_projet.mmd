@@ -1,0 +1,154 @@
+classDiagram
+    direction TB
+
+    %% ============================================
+    %% ENTITÉS - Vite & Gourmand
+    %% Diagramme de classes UML (Doctrine Entities)
+    %% Convention de cardinalité : 1 / 0..1 / 0..n / 1..n
+    %% ============================================
+
+    class Utilisateur {
+        int id PK
+        string nom
+        string prenom
+        string telephone
+        string email
+        string password
+        string pays
+        string ville
+        string adresse_postale
+        string code_postal
+        string statut_compte
+        getId() int
+        getRoles() array
+        getUserIdentifier() string
+        eraseCredentials() void
+    }
+
+    class Role {
+        int id PK
+        string libelle
+        string description
+        getUtilisateurs() Collection
+    }
+
+    class Commande {
+        int id PK
+        string numero_commande
+        DateTime date_commande
+        DateTime date_prestation
+        Time heure_livraison
+        string statut
+        float prix_menu
+        int nombre_personne
+        float prix_livraison
+        float prix_total
+        float montant_acompte
+        float montant_rembourse
+        string motif_annulation
+        string adresse_livraison
+        string ville_livraison
+        string code_postal_livraison
+        float distanceKm
+        bool pret_materiel
+        bool restitution_materiel
+        DateTime dateStatutLivree
+        DateTime dateStatutRetourMateriel
+        bool mailPenaliteEnvoye
+        getEtatMateriel() string
+    }
+
+    class Menu {
+        int id PK
+        string titre
+        int nombre_personne_minimum
+        float prix_par_personne
+        string description
+        int quantite_restante
+        text conditions
+        getPlats() Collection
+        getTags() Collection
+    }
+
+    class Plat {
+        int id PK
+        string titre_plat
+        string photo
+        string categorie
+        text description_plat
+        getAllergenes() Collection
+    }
+
+    class Allergene {
+        int id PK
+        string libelle
+        getPlats() Collection
+    }
+
+    class Theme {
+        int id PK
+        string libelle
+    }
+
+    class Regime {
+        int id PK
+        string libelle
+    }
+
+    class Avis {
+        int id PK
+        smallint note
+        string description
+        string statut
+        DateTimeImmutable date
+    }
+
+    class SuiviCommande {
+        int id PK
+        string statut
+        DateTime date_statut
+    }
+
+    class Horaire {
+        int id PK
+        string jour
+        Time heure_ouverture
+        Time heure_fermeture
+    }
+
+    class MenuTags {
+        int id PK
+        string tag
+        getMenus() Collection
+    }
+
+    class PasswordResetToken {
+        int id PK
+        string token
+        DateTime createdAt
+        DateTime expiresAt
+        bool isUsed
+        isValid() bool
+    }
+
+    %% ============================================
+    %% RELATIONS ManyToOne (1,n)
+    %% ============================================
+
+    Role "1" --> "0,n" Utilisateur : possède
+    Utilisateur "1" --> "0,n" Commande : passe
+    Menu "1" --> "0,n" Commande : concerne
+    Regime "1" --> "0,n" Menu : catégorise
+    Theme "1" --> "0,n" Menu : thématise
+    Utilisateur "1" --> "0,n" Avis : rédige
+    Commande "1" --> "0,n" Avis : reçoit
+    Commande "1" --> "0,n" SuiviCommande : suit
+    Utilisateur "1" --> "0,n" PasswordResetToken : demande
+
+    %% ============================================
+    %% RELATIONS ManyToMany (n,n)
+    %% ============================================
+
+    Menu "0,n" --> "0,n" Plat : propose
+    Menu "0,n" --> "0,n" MenuTags : tagué par
+    Plat "0,n" --> "0,n" Allergene : contient
