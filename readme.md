@@ -1498,3 +1498,30 @@ CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg@drdup0seu
 # 7.5 Mise a des config var heroku
 heroku config:set CLOUDINARY_URL=cloudinary://353472624727459:5qxlnkO3rPAvHg4MLIm6M_thFfk@drdup0seu --app vite-et-gourmand-api
 heroku restart --app vite-et-gourmand-api
+
+
+# 7.6 supprimer l'image corrompue et la retélécharger proprement
+
+docker compose -f compose.dev.yml down -v
+docker rmi mysql:8.4
+docker compose -f compose.dev.yml up --build
+
+# 7.7 partir d'un volume propre lance 
+docker compose -f compose.dev.yml down -v
+docker compose -f compose.dev.yml up --build
+
+# 7.8 Génèration de la base de donnée la migration 
+docker compose -f compose.dev.yml exec backend php bin/console make:migration
+docker compose -f compose.dev.yml exec backend php bin/console doctrine:migrations:migrate --no-interaction
+
+# 7.9 Génèration du schéma directement, sans migrations
+docker compose -f compose.dev.yml exec backend php bin/console doctrine:schema:drop --force
+docker compose -f compose.dev.yml exec backend php bin/console doctrine:schema:create
+
+# 7.10  Redémarre
+docker compose -f compose.dev.yml restart backend
+docker compose -f compose.dev.yml logs backend
+
+# 7.11  Vide le cache
+docker compose -f compose.dev.yml exec backend php bin/console cache:clear
+docker compose -f compose.dev.yml restart backend
