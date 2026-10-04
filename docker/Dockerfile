@@ -1,13 +1,16 @@
 FROM php:8.4-cli
 
-# Dépendances système + extensions PHP nécessaires (MySQL, intl pour Symfony, zip)
+# Dépendances système + extensions PHP nécessaires (MySQL, intl pour Symfony, zip, mongodb pour Atlas)
 RUN apt-get update && apt-get install -y \
         git \
         unzip \
         libicu-dev \
         libzip-dev \
         default-mysql-client \
+        libssl-dev \
     && docker-php-ext-install pdo pdo_mysql intl \
+    && pecl install mongodb \
+    && docker-php-ext-enable mongodb \
     && rm -rf /var/lib/apt/lists/*
 
 # Composer

@@ -1,22 +1,62 @@
 <?php
+
 namespace App\Service;
 
-use App\Entity\LogActivite;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Document\LogActivite;
+use Doctrine\ODM\MongoDB\DocumentManager;
+use Psr\Log\LoggerInterface;
 
 /**
  * @author      Florian Aizac
  * @created     28/02/2026
- * @description Service gérant l'enregistrement des logs d'activité (MySQL)
+ * @description Service gérant l'enregistrement des logs d'activité dans MongoDB
+ * 
+ * Pourquoi un service dédié ?
+ *      Centralise toute la logique de logging en un seul endroit
+ *      S'injecte facilement dans n'importe quel controller via l'autowiring Symfony
+ *      Facile à étendre si on veut ajouter de nouveaux types de logs
+ * 
+ * Utilisation dans un controller :
+ *   $this->logService->log(
+ *         'commande_creee', // type
+ *         $utilisateur->getEmail() // email,  
+ *         $utilisateur->getRole()->getLibelle() // rôle,
+ *             [  
+ *                 'numero_commande' => $commande->getNumeroCommande(), 
+ *                 'montant'         => $commande->getPrixMenu(),
+ *             ]);
+ * 
+ *  1. log()              : Enregistre un log d'activité dans MongoDB
+ *  2. genererMessage()   : Génère automatiquement un message lisible selon le type de log
+ *
+ * Robustesse : si MongoDB Atlas est injoignable, l'erreur est tracée dans les logs Symfony
+ * mais n'interrompt jamais l'action métier (connexion, commande, changement de statut...).
+ * 
  */
 class LogService
 {
-	public function __construct(private EntityManagerInterface $em) {}
+	// Injection du DocumentManager MongoDB (équivalent de l'EntityManager pour MySQL)
+	// + Logger Symfony pour tracer un éventuel échec d'écriture MongoDB
+	public function __construct(
+		private DocumentManager $dm,
+		private LoggerInterface $logger,
+	) {}
 
+	/**
+	 * @description Enregistre un log d'activité dans MongoDB
+	 * 
+	 * @param string $type    Type d'action : connexion, commande_creee, commande_annulee, statut_change, inscription
+	 * @param string $email   Email de l'utilisateur concerné
+	 * @param string $role    Rôle de l'utilisateur : ROLE_CLIENT, ROLE_EMPLOYE, ROLE_ADMIN
+	 * @param array  $contexte Données supplémentaires variables selon le type de log
+	 * @return void
+	 */
 	public function log(string $type, string $email, string $role, array $contexte = []): void
 	{
+		// Étape 1 - Générer le message automatiquement selon le type
 		$message = $this->genererMessage($type, $email, $contexte);
 
+		// Étape 2 - Créer le document MongoDB
 		$log = new LogActivite();
 		$log->setType($type);
 		$log->setMessage($message);
@@ -24,18 +64,34 @@ class LogService
 		$log->setRole($role);
 		$log->setContexte($contexte);
 
-		$this->em->persist($log);
-		$this->em->flush();
+		// Étape 3 - Persister et sauvegarder dans MongoDB
+		// Un log ne doit jamais faire échouer l'action de l'utilisateur :
+		// en cas d'erreur MongoDB, on la trace et on continue
+		try {
+			// persist() prépare l'insertion
+			$this->dm->persist($log);
+			// flush() exécute l'insertion dans MongoDB
+			$this->dm->flush();
+		} catch (\Throwable $e) {
+			$this->logger->error('[LogService] Écriture MongoDB impossible : ' . $e->getMessage(), ['type' => $type, 'email' => $email]);
+		}
 	}
 
+	/**
+	 * @description Génère automatiquement un message lisible selon le type de log
+	 * @param string $type    Le type d'action
+	 * @param string $email   L'email de l'utilisateur
+	 * @param array  $contexte Les données contextuelles
+	 * @return string Le message formaté
+	 */
 	private function genererMessage(string $type, string $email, array $contexte): string
 	{
 		return match($type) {
 			'connexion'         => "L'utilisateur $email s'est connecté",
 			'inscription'       => "Nouvel utilisateur inscrit : $email",
-			'commande_creee'    => "Commande {$contexte['numero_commande']} créée par $email (montant : {$contexte['montant']} €)",
-			'commande_annulee'  => "Commande {$contexte['numero_commande']} annulée par $email",
-			'statut_change'     => "Commande {$contexte['numero_commande']} : statut changé en '{$contexte['nouveau_statut']}' par $email",
+			'commande_creee'    => "Commande " . ($contexte['numero_commande'] ?? '?') . " créée par $email (montant : " . ($contexte['montant'] ?? 0) . " €)",
+			'commande_annulee'  => "Commande " . ($contexte['numero_commande'] ?? '?') . " annulée par $email",
+			'statut_change'     => "Commande " . ($contexte['numero_commande'] ?? '?') . " : statut changé en '" . ($contexte['nouveau_statut'] ?? '?') . "' par $email",
 			default             => "Action '$type' effectuée par $email",
 		};
 	}

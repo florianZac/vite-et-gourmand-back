@@ -1093,25 +1093,15 @@ final class AdminController extends AbstractController
 
     // Étape 4 - Filtre par date si fourni
     // MongoDB stocke createdAt en DateTime ->comparaison directe possible
-    // Date invalide -> 400 au lieu d'une erreur 500
-    try {
-      if ($dateDebut) {
-        $qb->field('createdAt')->gte(new \DateTime($dateDebut));
-      }
-      if ($dateFin) {
-        $qb->field('createdAt')->lte(new \DateTime($dateFin . ' 23:59:59'));
-      }
-    } catch (\Exception $e) {
-      return $this->json(['status' => 'Erreur', 'message' => 'Format de date invalide (attendu : YYYY-MM-DD)'], 400);
+    if ($dateDebut) {
+      $qb->field('createdAt')->gte(new \DateTime($dateDebut));
+    }
+    if ($dateFin) {
+      $qb->field('createdAt')->lte(new \DateTime($dateFin . ' 23:59:59'));
     }
 
     // Étape 5 - Exécuter la requête
-    // MongoDB Atlas injoignable -> 503 avec un message clair au lieu d'une erreur 500
-    try {
-      $logs = $qb->getQuery()->execute()->toArray();
-    } catch (\Throwable $e) {
-      return $this->json(['status' => 'Erreur', 'message' => 'Base MongoDB injoignable : ' . $e->getMessage()], 503);
-    }
+    $logs = $qb->getQuery()->execute();
 
     // Étape 6 - Agréger les données pour les graphiques
     // On parcourt les logs et on regroupe par menu
@@ -1120,7 +1110,7 @@ final class AdminController extends AbstractController
     $caParMois         = []; // CA par mois pour courbe d'évolution
 
     foreach ($logs as $log) {
-      $contexte = $log->getContexte() ?? [];
+      $contexte = $log->getContexte();
       $menu     = $contexte['menu']    ?? 'Inconnu';
       $montant  = $contexte['montant'] ?? 0;
       $mois     = $log->getCreatedAt()->format('Y-m'); // ex: "2026-03"
@@ -1234,7 +1224,7 @@ final class AdminController extends AbstractController
     // Étape 2 - Récupérer les filtres depuis la query string
     $type   = $request->query->get('type');             // ex: ?type=connexion
     $email  = $request->query->get('email');            // ex: ?email=florian@email.fr
-    $limit  = max(1, min(1000, (int) ($request->query->get('limit', 100)))); // défaut 100, borné 1..1000
+    $limit  = (int) ($request->query->get('limit', 100)); // défaut 100 résultats
 
     // Étape 3 - Construire la requête MongoDB via le QueryBuilder ODM
     // Différence clé avec MySQL :
@@ -1255,12 +1245,7 @@ final class AdminController extends AbstractController
     }
 
     // Étape 5 - Exécuter la requête et récupérer les résultats
-    // MongoDB Atlas injoignable -> 503 avec un message clair au lieu d'une erreur 500
-    try {
-      $logs = $qb->getQuery()->execute()->toArray();
-    } catch (\Throwable $e) {
-      return $this->json(['status' => 'Erreur', 'message' => 'Base MongoDB injoignable : ' . $e->getMessage()], 503);
-    }
+    $logs = $qb->getQuery()->execute();
 
     // Étape 6 - Formater les résultats pour la réponse JSON
     // MongoDB retourne des objets LogActivite -> on les sérialise manuellement
