@@ -10,6 +10,7 @@ use App\Entity\Utilisateur;
 use App\Repository\UtilisateurRepository;
 use App\Repository\MenuRepository;
 use App\Repository\CommandeRepository;
+use App\Repository\SuiviCommandeRepository;
 use App\Repository\HoraireRepository;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -500,15 +501,19 @@ final class CommandeController extends BaseController
   #[OA\Tag(name: 'Admin - Commandes')]
   #[OA\Response(response: 200, description: 'Liste des commandes retournée')]
   #[OA\Response(response: 403, description: 'Accès refusé')]
-  public function getAllCommandes(CommandeRepository $commandeRepository): JsonResponse
+  public function getAllCommandes(CommandeRepository $commandeRepository, SuiviCommandeRepository $suiviCommandeRepository): JsonResponse
   {
     // Étape 1 - Vérifier le rôle ADMIN
         if (!$this->isGranted('ROLE_EMPLOYE') && !$this->isGranted('ROLE_ADMIN')) { 
       return $this->json(['status' => 'Erreur', 'message' => 'Accès refusé'], 403);
     }
 
-    // Étape 2 - Récupérer toutes les commandes
-    $commandes = $commandeRepository->findAll();
+    // Étape 2 - Récupérer toutes les commandes (client et menu chargés dans la même requête SQL)
+    $commandes = $commandeRepository->findAllAvecRelations();
+
+    // Étape 2.1 - Suivis de TOUTES les commandes en une seule requête
+    //   (le front n'a plus besoin d'appeler /suivi pour chaque commande)
+    $suivis = $suiviCommandeRepository->findFormatesParCommandes(array_map(fn($c) => $c->getId(), $commandes));
 
     // Étape 3 - Formater pour éviter la référence circulaire
     $data = [];
@@ -547,7 +552,10 @@ final class CommandeController extends BaseController
             'id' => $commande->getMenu()?->getId(),
             'titre' => $commande->getMenu()?->getTitre(),
 
-        ]
+        ],
+
+        // Historique des statuts (même format que GET /api/employe/commandes/{id}/suivi)
+        'suivis' => $suivis[$commande->getId()] ?? [],
       ];
     }
 

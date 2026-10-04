@@ -42,7 +42,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 	#[ORM\Column(length: 50)]
 	private ?string $adresse_postale = null;
 
-	#[ORM\ManyToOne(targetEntity: Role::class, inversedBy: 'utilisateurs')]
+	// fetch EAGER : le rôle est chargé avec l'utilisateur dans la même requête SQL.
+	// Il est lu à CHAQUE requête authentifiée (JWT -> getRoles()) : sans EAGER, 1 requête SQL de plus à chaque appel API
+	#[ORM\ManyToOne(targetEntity: Role::class, inversedBy: 'utilisateurs', fetch: 'EAGER')]
 	#[ORM\JoinColumn(name: 'role_id', referencedColumnName: 'role_id', nullable: false)]
 	private ?Role $role = null;
 

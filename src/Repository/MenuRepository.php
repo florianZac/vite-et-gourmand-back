@@ -40,4 +40,39 @@ class MenuRepository extends ServiceEntityRepository
 	//            ->getOneOrNullResult()
 	//        ;
 	//    }
+
+	/**
+	 * @description Tous les menus avec thème, régime, plats, allergènes et tags en UNE seule requête SQL
+	 * (évite le problème "N+1" : avant, Doctrine faisait une requête par menu, par plat et par liste de tags)
+	 * @return Menu[]
+	 */
+	public function findAllAvecDetails(): array
+	{
+		return $this->createQueryBuilder('m')
+			->leftJoin('m.theme', 'th')->addSelect('th')
+			->leftJoin('m.regime', 'r')->addSelect('r')
+			->leftJoin('m.plats', 'p')->addSelect('p')
+			->leftJoin('p.allergenes', 'a')->addSelect('a')
+			->leftJoin('m.tags', 't')->addSelect('t')
+			->orderBy('m.id', 'ASC')
+			->getQuery()
+			->getResult();
+	}
+
+	/**
+	 * @description Un menu avec thème, régime, plats, allergènes et tags en UNE seule requête SQL
+	 */
+	public function findAvecDetails(int $id): ?Menu
+	{
+		return $this->createQueryBuilder('m')
+			->leftJoin('m.theme', 'th')->addSelect('th')
+			->leftJoin('m.regime', 'r')->addSelect('r')
+			->leftJoin('m.plats', 'p')->addSelect('p')
+			->leftJoin('p.allergenes', 'a')->addSelect('a')
+			->leftJoin('m.tags', 't')->addSelect('t')
+			->where('m.id = :id')
+			->setParameter('id', $id)
+			->getQuery()
+			->getOneOrNullResult();
+	}
 }

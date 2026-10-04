@@ -385,7 +385,7 @@ final class ClientController extends BaseController
 	 * @description Retourne la liste des commandes du client connecté
 	 * Inclut : titre du menu, montant de la réduction, avis si existant
 	 */
-	public function getCommandes(CommandeRepository $commandeRepository, AvisRepository $avisRepository): JsonResponse
+	public function getCommandes(CommandeRepository $commandeRepository, AvisRepository $avisRepository, SuiviCommandeRepository $suiviCommandeRepository): JsonResponse
 	{
 		// Étape 1 - Vérifie le rôle CLIENT
 		if (!$this->isGranted('ROLE_CLIENT')) {
@@ -400,8 +400,13 @@ final class ClientController extends BaseController
 			return $this->json(['status' => 'Erreur', 'message' => 'Utilisateur non connecté'], 401);
 		}
 
-		// Étape 4 - Récupère ses commandes via le repository
+		// Étape 4 - Récupère ses commandes via le repository (menu chargé dans la même requête)
 		$commandes = $commandeRepository->findByUtilisateur($utilisateur);
+
+		// Étape 4.1 - Avis et suivis de TOUTES ses commandes en 2 requêtes au total
+		//   (avant : une requête d'avis par commande, puis un appel /suivi par commande côté front)
+		$avisParCommande = $avisRepository->findParCommandePourUtilisateur($utilisateur);
+		$suivis = $suiviCommandeRepository->findFormatesParCommandes(array_map(fn($c) => $c->getId(), $commandes));
 
 		// Étape 5 - Formater les commandes pour éviter la référence circulaire
 		$data = [];
@@ -413,11 +418,8 @@ final class ClientController extends BaseController
 			$prixSansReduction = $menu ? $menu->getPrixParPersonne() * $commande->getNombrePersonne() : 0;
 			$reductionMontant = round($prixSansReduction - $commande->getPrixMenu(), 2);
 
-			// Chercher si un avis existe pour cette commande
-			$avisExistant = $avisRepository->findOneBy([
-				'commande' => $commande,
-				'utilisateur' => $utilisateur
-			]);
+			// Avis existant pour cette commande (déjà chargé à l'étape 4.1)
+			$avisExistant = $avisParCommande[$commande->getId()] ?? null;
 			$avisData = null;
 			if ($avisExistant) {
 				$avisData = [
@@ -445,6 +447,8 @@ final class ClientController extends BaseController
 				'menu_titre' => $commande->getMenu()?->getTitre(),
 				'reduction_montant' => $reductionMontant > 0 ? $reductionMontant : 0,
 				'avis' => $avisData,
+				// Historique des statuts (même format que GET /api/client/commandes/{id}/suivi)
+				'suivis' => $suivis[$commande->getId()] ?? [],
 			];
 		}
 

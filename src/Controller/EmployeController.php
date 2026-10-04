@@ -566,8 +566,8 @@ final class EmployeController extends AbstractController
   #[Route('/avis', name: 'api_admin_avis_list', methods: ['GET'])]
   public function getAllAvis(AvisRepository $avisRepository): JsonResponse
 {
-    // Étape 1 — récupere tous les avis des clients
-    $avis = $avisRepository->findAll();
+    // Étape 1 — récupere tous les avis des clients (client et commande chargés dans la même requête SQL)
+    $avis = $avisRepository->findAvecRelations();
 
     // Étape 2 - Formater les données pour éviter la référence circulaire
     $data = [];
@@ -612,7 +612,7 @@ final class EmployeController extends AbstractController
     }
 
     // Étape 2 - Récupérer tous les avis en attente
-    $avis = $avisRepository->findBy(['statut' => 'en_attente']);
+    $avis = $avisRepository->findAvecRelations('en_attente');
 
     // Étape 3 - Formater les données pour éviter la référence circulaire
     $data = [];

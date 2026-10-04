@@ -1000,16 +1000,34 @@ final class AdminController extends AbstractController
     $statsCommandes = $commandeRepository->getStatistiques();
 
     // Étape 3 - Stats utilisateurs
-    $totalUtilisateurs  = count($utilisateurRepository->findAll());
-    $comptesActifs      = count($utilisateurRepository->findBy(['statut_compte' => 'actif']));
-    $comptesInactifs    = count($utilisateurRepository->findBy(['statut_compte' => 'inactif']));
-    $comptesEnAttente   = count($utilisateurRepository->findBy(['statut_compte' => 'en_attente_desactivation']));
+    // Une seule requête GROUP BY au lieu de 4 requêtes qui chargeaient tous les utilisateurs
+    $comptesParStatut = [];
+    foreach ($utilisateurRepository->createQueryBuilder('u')
+      ->select('u.statut_compte AS statut, COUNT(u.id) AS nombre')
+      ->groupBy('u.statut_compte')
+      ->getQuery()->getArrayResult() as $ligne) {
+      $comptesParStatut[$ligne['statut']] = (int) $ligne['nombre'];
+    }
+    $totalUtilisateurs  = array_sum($comptesParStatut);
+    $comptesActifs      = $comptesParStatut['actif'] ?? 0;
+    $comptesInactifs    = $comptesParStatut['inactif'] ?? 0;
+    $comptesEnAttente   = $comptesParStatut['en_attente_desactivation'] ?? 0;
 
     // Étape 4 - Stats avis
-    $totalAvis          = count($avisRepository->findAll());
-    $avisEnAttente      = count($avisRepository->findBy(['statut' => 'en_attente']));
-    $avisValides        = count($avisRepository->findBy(['statut' => 'validé']));
-    $avisRefuses        = count($avisRepository->findBy(['statut' => 'refusé']));
+    // Une seule requête GROUP BY au lieu de 4 requêtes qui chargeaient tous les avis
+    $avisParStatut = [];
+    foreach ($avisRepository->createQueryBuilder('a')
+      ->select('a.statut AS statut, COUNT(a.id) AS nombre')
+      ->groupBy('a.statut')
+      ->getQuery()->getArrayResult() as $ligne) {
+      $avisParStatut[$ligne['statut']] = (int) $ligne['nombre'];
+    }
+    $totalAvis          = array_sum($avisParStatut);
+    $avisEnAttente      = $avisParStatut['en_attente'] ?? 0;
+    // Un avis validé par un employé passe au statut "publié" (EmployeController::approuverAvis).
+    // L'ancien code comptait "validé", un statut qui n'existe pas : le total affichait toujours 0
+    $avisValides        = $avisParStatut['publié'] ?? 0;
+    $avisRefuses        = $avisParStatut['refusé'] ?? 0;
 
     // Étape 5 - Retourner toutes les statistiques
     return $this->json([
@@ -1039,7 +1057,6 @@ final class AdminController extends AbstractController
   // LOGS - SOURCE MongoDB (NoSQL)
   // =========================================================================
 
-  #[Route('/statistiques/graphiques', name: 'api_admin_statistiques_graphiques', methods: ['GET'])]
   #[OA\Get(
       summary: 'Données graphiques (MongoDB)',
       description: 'Retourne CA par menu et par mois depuis les logs MongoDB. Filtres optionnels : menu, debut, fin.'

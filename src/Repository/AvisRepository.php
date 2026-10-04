@@ -31,6 +31,8 @@ class AvisRepository extends ServiceEntityRepository
 	public function findLastPublishedAvis(int $limit = 5): array
 	{
 		return $this->createQueryBuilder('a')
+			// Auteur chargé dans la même requête (évite une requête par avis)
+			->leftJoin('a.utilisateur', 'u')->addSelect('u')
 			// On ignore les espaces avant/après et on ignore la casse
 			->where('LOWER(TRIM(a.statut)) = :statut')
 			->setParameter('statut', strtolower('publié'))
@@ -132,4 +134,39 @@ class AvisRepository extends ServiceEntityRepository
 	//            ->getOneOrNullResult()
 	//        ;
 	//    }
+
+	/**
+	 * @description Avis avec client et commande chargés dans la même requête SQL (au lieu de 2 par avis)
+	 * @param string|null $statut Filtre facultatif sur le statut (ex : en_attente)
+	 * @return Avis[]
+	 */
+	public function findAvecRelations(?string $statut = null): array
+	{
+		$qb = $this->createQueryBuilder('a')
+			->leftJoin('a.utilisateur', 'u')->addSelect('u')
+			->leftJoin('a.commande', 'c')->addSelect('c')
+			->orderBy('a.id', 'ASC');
+		if ($statut !== null) {
+			$qb->andWhere('a.statut = :statut')->setParameter('statut', $statut);
+		}
+		return $qb->getQuery()->getResult();
+	}
+
+	/**
+	 * @description Avis d'un client indexés par id de commande (une seule requête pour toutes ses commandes)
+	 * @return array<int, Avis>
+	 */
+	public function findParCommandePourUtilisateur($utilisateur): array
+	{
+		$avis = $this->createQueryBuilder('a')
+			->where('a.utilisateur = :u')
+			->setParameter('u', $utilisateur)
+			->getQuery()
+			->getResult();
+		$index = [];
+		foreach ($avis as $a) {
+			$index[$a->getCommande()->getId()] = $a;
+		}
+		return $index;
+	}
 }

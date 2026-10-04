@@ -40,4 +40,17 @@ class PlatRepository extends ServiceEntityRepository
 	//            ->getOneOrNullResult()
 	//        ;
 	//    }
+
+	/**
+	 * @description Tous les plats avec leurs allergènes en UNE seule requête SQL (au lieu d'une par plat)
+	 * @return Plat[]
+	 */
+	public function findAllAvecAllergenes(): array
+	{
+		return $this->createQueryBuilder('p')
+			->leftJoin('p.allergenes', 'a')->addSelect('a')
+			->orderBy('p.id', 'ASC')
+			->getQuery()
+			->getResult();
+	}
 }

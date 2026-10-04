@@ -40,4 +40,31 @@ class SuiviCommandeRepository extends ServiceEntityRepository
 	//            ->getOneOrNullResult()
 	//        ;
 	//    }
+
+	/**
+	 * @description Suivis de plusieurs commandes en UNE seule requête, regroupés par id de commande
+	 *   et triés du plus ancien au plus récent (même format que la route /suivi)
+	 * @param int[] $commandeIds
+	 * @return array<int, array<int, array{statut: string, date_statut: string}>>
+	 */
+	public function findFormatesParCommandes(array $commandeIds): array
+	{
+		if (!$commandeIds) {
+			return [];
+		}
+		$suivis = $this->createQueryBuilder('s')
+			->where('s.commande IN (:ids)')
+			->setParameter('ids', $commandeIds)
+			->orderBy('s.date_statut', 'ASC')
+			->getQuery()
+			->getResult();
+		$parCommande = [];
+		foreach ($suivis as $suivi) {
+			$parCommande[$suivi->getCommande()->getId()][] = [
+				'statut'      => $suivi->getStatut(),
+				'date_statut' => $suivi->getDateStatut()->format('d/m/Y H:i'),
+			];
+		}
+		return $parCommande;
+	}
 }

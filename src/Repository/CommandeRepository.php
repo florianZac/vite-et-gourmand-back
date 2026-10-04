@@ -57,6 +57,8 @@ class CommandeRepository extends ServiceEntityRepository
 		// Étape 6      : Exécute la requete et retourne les résultats sous forme d'un tableau d'objets Commande
 		// Étape 6.1    : équivalent à "GET ALL"
 		return $this->createQueryBuilder('c')
+			// menu chargé dans la même requête (évite une requête par commande)
+			->leftJoin('c.menu', 'm')->addSelect('m')
 			->andWhere('c.utilisateur = :utilisateur')
 			->setParameter('utilisateur', $utilisateur)
 			->orderBy('c.date_commande', 'DESC')
@@ -80,6 +82,9 @@ class CommandeRepository extends ServiceEntityRepository
 	public function findCommandesEnCours(): array
 	{
 		return $this->createQueryBuilder('c')
+			// client et menu chargés dans la même requête (évite 2 requêtes par commande)
+			->leftJoin('c.utilisateur', 'u')->addSelect('u')
+			->leftJoin('c.menu', 'm')->addSelect('m')
 			// Exclut les commandes terminées ou Annulées
 			->where('c.statut NOT IN (:statut)')
 			->setParameter('statut', [CommandeStatut::TERMINEE, CommandeStatut::ANNULEE])
@@ -255,6 +260,8 @@ class CommandeRepository extends ServiceEntityRepository
 		// Récupération de toutes les commandes non Annulées
 		// =====================================================
 		$commandes = $this->createQueryBuilder('c')
+			// menu chargé dans la même requête (utilisé pour les ventes par menu : évite une requête par menu)
+			->leftJoin('c.menu', 'm')->addSelect('m')
 			->where('c.statut != :statut')
 			->setParameter('statut', CommandeStatut::ANNULEE)
 			->getQuery()
@@ -460,4 +467,18 @@ class CommandeRepository extends ServiceEntityRepository
 	//            ->getOneOrNullResult()
 	//        ;
 	//    }
+
+	/**
+	 * @description Toutes les commandes avec client et menu en UNE seule requête SQL
+	 * @return Commande[]
+	 */
+	public function findAllAvecRelations(): array
+	{
+		return $this->createQueryBuilder('c')
+			->leftJoin('c.utilisateur', 'u')->addSelect('u')
+			->leftJoin('c.menu', 'm')->addSelect('m')
+			->orderBy('c.id', 'ASC')
+			->getQuery()
+			->getResult();
+	}
 }

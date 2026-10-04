@@ -78,7 +78,8 @@ final class MenuController extends AbstractController
 public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
 {
     // Étape 1 - Récupère tous les menus depuis la base de données
-    $menus = $menuRepository->findAll();
+    // Menus + thème, régime, plats, allergènes et tags en une seule requête SQL
+    $menus = $menuRepository->findAllAvecDetails();
 
     // Étape 2 - Formate les données pour chaque menu
     $result = [];
@@ -158,7 +159,7 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
 	public function show(int $id, MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
 	{
     // Étape 1 - Récupère le menu par son id
-    $menu = $menuRepository->find($id);
+    $menu = $menuRepository->findAvecDetails($id); // menu + plats, allergènes, tags, thème, régime en une requête
 
     // Étape 2 - Si le menu n'existe pas retourner 404
     if (!$menu) {
@@ -449,7 +450,8 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
 	public function getAllPlats(PlatRepository $platRepository): JsonResponse
 	{
     // Étape 1 - Récupère tous les plats depuis la base de données
-    $plats = $platRepository->findAll();
+    // Plats + allergènes en une seule requête SQL (au lieu d'une par plat)
+    $plats = $platRepository->findAllAvecAllergenes();
 
     // Étape 2 - Formate les données
       $result = [];
@@ -471,7 +473,8 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
   public function getAllMenus(MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
     // Étape 1 - Récupérer tous les menus
-    $menus = $menuRepository->findAll();
+    // Menus + thème, régime, plats, allergènes et tags en une seule requête SQL
+    $menus = $menuRepository->findAllAvecDetails();
 
     $result = [];
     foreach ($menus as $menu) {
@@ -555,7 +558,7 @@ public function index(MenuRepository $menuRepository, MenuTagsRepository $menuTa
   public function getMenuById(int $id, MenuRepository $menuRepository, MenuTagsRepository $menuTagsRepository): JsonResponse
   {
     // Étape 1 - Chercher le menu par son ID
-    $menu = $menuRepository->find($id);
+    $menu = $menuRepository->findAvecDetails($id); // menu + plats, allergènes, tags, thème, régime en une requête
     if (!$menu) {
       return $this->json(['status' => 'Erreur', 'message' => 'Menu non trouvé'], 404);
     }
